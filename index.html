@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Piano Roll Prototype</title>
+  <style>
+    /* Minimal styling for visualization */
+    #pianoRoll {
+      display: flex;
+      align-items: flex-end;
+      height: 180px;
+      margin: 20px;
+      border: 1px solid #ccc;
+    }
+    .key {
+      position: relative;
+      border: 1px solid #000;
+      text-align: center;
+      vertical-align: top;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .white-key {
+      width: 40px;
+      height: 180px;
+      background-color: rgb(211, 252, 31);
+      z-index: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .black-key {
+      width: 25px;
+      height: 100px;
+      background-color: rgb(211, 252, 31);
+      color: white;
+      margin-left: -12.5px;
+      margin-right: -12.5px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      align-self: flex-start;
+      flex-direction: column;
+      padding-bottom: 5px; /* Adjust the value as needed for spacing */
+    }
+
+  </style>
+</head>
+<body>
+  <h1>Piano Roll Prototype</h1>
+  <div id="pianoRoll"></div>
+  <button id="basicBtn">Generate Basic Roll</button>
+  <button id="rangeBtn">Generate Range Roll (D4 to A4)</button>
+
+  <!-- Include the compiled JS (from app.ts) -->
+  <script src="app.js"></script>
+  <script>
+    // Initialize the piano roll once the DOM is loaded.
+    document.addEventListener("DOMContentLoaded", () => {
+      const pianoRoll = new PianoRollGenerator("pianoRoll");
+
+      // Button to generate the basic roll (C4 to C5)
+      document.getElementById("basicBtn").addEventListener("click", () => {
+        pianoRoll.generateRollBasic();
+      });
+
+      // Button to generate a custom range roll (D4 to A4)
+      document.getElementById("rangeBtn").addEventListener("click", () => {
+        try {
+          const start = new Note("D", 4);
+          const end = new Note("A", 4);
+          pianoRoll.generateRollRange(start, end);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      // Generate the basic piano roll by default.
+      pianoRoll.generateRollBasic();
+    });
+  </script>
+</body>
+</html>
