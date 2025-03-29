@@ -23,7 +23,7 @@
     .white-key {
       width: 40px;
       height: 180px;
-      background-color: rgb(211, 252, 31);
+      background-color: rgb(255, 255, 255);
       z-index: 1;
       display: flex;
       align-items: flex-end;
@@ -32,7 +32,7 @@
     .black-key {
       width: 25px;
       height: 100px;
-      background-color: rgb(211, 252, 31);
+      background-color: rgb(0, 0, 0);
       color: white;
       margin-left: -12.5px;
       margin-right: -12.5px;
@@ -44,6 +44,9 @@
       flex-direction: column;
       padding-bottom: 5px; /* Adjust the value as needed for spacing */
     }
+    .highlight {
+      background-color: rgb(60, 124, 167);
+    }
 
   </style>
 </head>
@@ -52,20 +55,20 @@
   <div id="pianoRoll"></div>
   <button id="basicBtn">Generate Basic Roll</button>
   <button id="rangeBtn">Generate Range Roll (D4 to A4)</button>
+  <button id="scaleBtn">Generate Minor Scale (C4 to C5)</button>
 
-  <!-- Include the compiled JS (from app.ts) -->
-  <script src="app.js"></script>
-  <script>
-    // Initialize the piano roll once the DOM is loaded.
+  <script type="module">
+    import { PianoRollGenerator } from "./dist/piano-roll-generator.js";
+    import { Note } from "./dist/note.js";
+    import { Scale } from "./dist/scale.js";
+    
     document.addEventListener("DOMContentLoaded", () => {
       const pianoRoll = new PianoRollGenerator("pianoRoll");
 
-      // Button to generate the basic roll (C4 to C5)
       document.getElementById("basicBtn").addEventListener("click", () => {
         pianoRoll.generateRollBasic();
       });
 
-      // Button to generate a custom range roll (D4 to A4)
       document.getElementById("rangeBtn").addEventListener("click", () => {
         try {
           const start = new Note("D", 4);
@@ -76,7 +79,17 @@
         }
       });
 
-      // Generate the basic piano roll by default.
+      document.getElementById("scaleBtn").addEventListener("click", () => {
+        try {
+          const start = new Note("C", 4);
+          const end = new Note("C", 5);
+          const scale = Scale.buildScale(start, Scale.minor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
       pianoRoll.generateRollBasic();
     });
   </script>

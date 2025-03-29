@@ -1,9 +1,8 @@
 {
-    "compilerOptions": {
-      "target": "ES6",
-      "lib": ["es2016", "dom"],
-      "outDir": "./dist"
-    },
-    "include": ["app.ts"]
-  }
-  
+  "compilerOptions": {
+    "target": "ES6",
+    "lib": ["es2016", "dom"],
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*.ts"]
+}
