@@ -3,60 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <title>Piano Roll Prototype</title>
-  <style>
-    /* Minimal styling for visualization */
-    #pianoRoll {
-      display: flex;
-      align-items: flex-end;
-      height: 180px;
-      margin: 20px;
-      border: 1px solid #ccc;
-    }
-    .key {
-      position: relative;
-      border: 1px solid #000;
-      text-align: center;
-      vertical-align: top;
-      font-size: 12px;
-      line-height: 1;
-    }
-    .white-key {
-      width: 40px;
-      height: 180px;
-      background-color: rgb(255, 255, 255);
-      z-index: 1;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    .black-key {
-      width: 25px;
-      height: 100px;
-      background-color: rgb(0, 0, 0);
-      color: white;
-      margin-left: -12.5px;
-      margin-right: -12.5px;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      align-self: flex-start;
-      flex-direction: column;
-      padding-bottom: 5px; /* Adjust the value as needed for spacing */
-    }
-    .highlight {
-      background-color: rgb(60, 124, 167);
-    }
-
-  </style>
+  <link rel = "stylesheet" href = "style.css"/>
 </head>
 <body>
   <h1>Piano Roll Prototype</h1>
   <div id="pianoRoll"></div>
-  <button id="basicBtn">Generate Basic Roll</button>
-  <button id="rangeBtn">Generate Range Roll (D4 to A4)</button>
-  <button id="scaleBtn">Generate Minor Scale (C4 to C5)</button>
-
+  <div class="buttonBox">
+    <button id="basicBtn" class="btn">Generate Basic Roll</button>
+    <button id="rangeBtn" class="btn">Generate Range Roll (D4 to A4)</button>
+    <button id="scaleBtn" class="btn">Generate Minor Scale (C4 to C5)</button>
+  </div>
+  <a class="instructionText">Choose a key, then select a scale:</a>
+    <ul class="dropdown">
+      <li><a>C</a></li>
+      <li><a>C#</a></li>
+      <li><a>D</a></li>
+      <li><a>D#</a></li>
+      <li><a>E</a></li>
+      <li><a>F</a></li>
+      <li><a>F#</a></li>
+      <li><a>G</a></li>
+      <li><a>G#</a></li>
+      <li><a>A</a></li>
+      <li><a>A#</a></li>
+      <li><a>B</a></li>
+    </ul>
+    <div class="buttonBox">
+      <button id="bluesMinorBtn" class="btn">Minor Blues</button>
+      <button id="bluesMajorBtn" class="btn">Minor Blues</button>
+      <button id="mixolydianBtn" class="btn">Mixolydian</button>
+      <button id="dorianBtn" class="btn">Dorian</button>
+    </div>
   <script type="module">
     import { PianoRollGenerator } from "./dist/piano-roll-generator.js";
     import { Note } from "./dist/note.js";
@@ -64,6 +41,16 @@
     
     document.addEventListener("DOMContentLoaded", () => {
       const pianoRoll = new PianoRollGenerator("pianoRoll");
+      let selectedKey = null; // Stores the selected key
+
+      // Add event listeners to all <li> elements
+      const keyElements = document.querySelectorAll(".dropdown li");
+      keyElements.forEach((keyElement) => {
+          keyElement.addEventListener("click", (event) => {
+              selectedKey = event.target.textContent; // Save the clicked key's text
+              console.log("Selected Key:", selectedKey); // Debugging: Log the selected key
+          });
+      });
 
       document.getElementById("basicBtn").addEventListener("click", () => {
         pianoRoll.generateRollBasic();
@@ -84,6 +71,50 @@
           const start = new Note("C", 4);
           const end = new Note("C", 5);
           const scale = Scale.buildScale(start, Scale.minor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("bluesMinorBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.bluesMinor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("bluesMajorBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.bluesMajor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("mixolydianBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.mixolydian);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("dorianBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.dorian);
           pianoRoll.generateRollRangeWithHighlight(start, end, scale);
         } catch (error) {
           alert(error);
