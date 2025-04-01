@@ -179,3 +179,8 @@ button {
     overflow-x: auto;
     /* Optional: scroll if it overflows */
 }
+
+.back-button-container {
+    padding-left: 2rem;
+  }
+  
