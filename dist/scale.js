@@ -22,8 +22,8 @@ Scale.minor = [2, 1, 2, 2, 1, 2, 2];
 // pentatonic and blues scales
 Scale.pentatonicMajor = [2, 2, 3, 2, 3];
 Scale.pentatonicMinor = [3, 2, 2, 3, 2];
-Scale.bluesMajor = [3, 2, 1, 1, 3, 2];
-Scale.bluesMinor = [2, 1, 1, 3, 2, 3];
+Scale.bluesMajor = [2, 1, 1, 3, 2, 3];
+Scale.bluesMinor = [3, 2, 1, 1, 3, 2];
 // modes of the major scale
 Scale.ionian = Scale.major; // Same as major
 Scale.dorian = [2, 1, 2, 2, 2, 1, 2];

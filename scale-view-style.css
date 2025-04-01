@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Fjalla+One:wght@700&family=Libre+Franklin:wght@400&family=Rakkas&family=Hubot+Sans:wght@400&display=swap');
+
+body {
+    font-family: 'Libre Franklin';
+    /* or Hubot Sans, Rubik */
+    font-weight: 400;
+}
+  
+h1, h2, h3, h4, h5 {
+    font-family: 'Rakkas';
+    font-weight: 400;
+}
+
+#pianoRoll {
+    display: flex;
+    align-items: flex-start;
+    height: 180px;
+    margin: 20px auto; /* Center horizontally */
+    border: 1px solid #ccc;
+    max-width: 800px; /* Optional: Set a max-width for better layout control */
+}
+.key {
+    position: relative;
+    border: 1px solid #000;
+    text-align: center;
+    vertical-align: top;
+    font-size: 12px;
+    line-height: 1;
+}
+.white-key {
+    width: 40px;
+    height: 180px;
+    background-color: rgb(255, 255, 255);
+    margin-left: -1.5px;
+    margin-right: -1.5px;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.black-key {
+    width: 25px;
+    height: 100px;
+    background-color: rgb(0, 0, 0);
+    color: white;
+    margin-left: -12.5px;
+    margin-right: -12.5px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    align-self: flex-start;
+    flex-direction: column;
+    padding-bottom: 5px; /* Adjust the value as needed for spacing */
+}
+.highlight {
+    background-color: rgb(100, 189, 224) /*rgb(220, 170, 62)*/;
+}
+.btn {
+    padding: 10px;
+    background-color: rgb(42, 42, 42);
+    color: white;
+    align-items: center;
+}
+.buttonBox {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px; /* Space between piano roll and buttons */
+    gap: 10px; /* Space between buttons */
+    
+}
+.instructionText {
+    color: white;
+    font-size: 20px;
+    /* align text on center of page*/
+    text-align: center;
+    margin-top: 20px; /* Space between instruction text and buttons */
+}
+body {
+    background: radial-gradient(
+      circle at 90% 100%, 
+      #000000 0%, 
+      #282828 100%
+    );
+    min-height: 100vh; /* Full browser height */
+}
+
+h1 {
+    font-family: 'Rakkas', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem); /* Responsive sizing */
+    font-weight: 400;
+    color: white;
+    text-align: left;
+    margin-left: 2rem;     /* Creates the soft left padding look */
+    margin-bottom: 2rem;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}  
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+select,
+button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+#scaleGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.scaleBox {
+    background: rgba(255, 255, 255, 0.08); /* transparent glass feel */
+    border-radius: 1rem;
+    padding: 1rem;
+    /*border: 1px solid rgba(255, 255, 255, 0.2);*/
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* Safari support */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+  }
+  
+.scaleBox:hover {
+    transform: translateY(-4px);
+    }
+  
+
+.scaleLabel {
+    margin-top: 1rem;
+    text-align: center;
+    font-weight: bold;
+}
+
+.pianoRollInstance {
+    display: flex;
+    align-items: flex-start;
+    height: 180px;
+    border: 1px solid #ccc;
+    max-width: 800px;
+    overflow-x: auto;
+    /* Optional: scroll if it overflows */
+}

@@ -30,7 +30,7 @@
     </ul>
     <div class="buttonBox">
       <button id="bluesMinorBtn" class="btn">Minor Blues</button>
-      <button id="bluesMajorBtn" class="btn">Minor Blues</button>
+      <button id="bluesMajorBtn" class="btn">Major Blues</button>
       <button id="mixolydianBtn" class="btn">Mixolydian</button>
       <button id="dorianBtn" class="btn">Dorian</button>
     </div>
@@ -71,7 +71,7 @@
           const start = new Note("C", 4);
           const end = new Note("C", 5);
           const scale = Scale.buildScale(start, Scale.minor);
-          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
         } catch (error) {
           alert(error);
         }
@@ -82,7 +82,7 @@
           const start = new Note(selectedKey, 4);
           const end = new Note(selectedKey, 5);
           const scale = Scale.buildScale(start, Scale.bluesMinor);
-          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
         } catch (error) {
           alert(error);
         }
@@ -93,7 +93,7 @@
           const start = new Note(selectedKey, 4);
           const end = new Note(selectedKey, 5);
           const scale = Scale.buildScale(start, Scale.bluesMajor);
-          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
         } catch (error) {
           alert(error);
         }
@@ -104,7 +104,7 @@
           const start = new Note(selectedKey, 4);
           const end = new Note(selectedKey, 5);
           const scale = Scale.buildScale(start, Scale.mixolydian);
-          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
         } catch (error) {
           alert(error);
         }
@@ -115,7 +115,7 @@
           const start = new Note(selectedKey, 4);
           const end = new Note(selectedKey, 5);
           const scale = Scale.buildScale(start, Scale.dorian);
-          pianoRoll.generateRollRangeWithHighlight(start, end, scale);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, false);
         } catch (error) {
           alert(error);
         }

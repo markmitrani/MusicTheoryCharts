@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Scale View</title>
+    <link rel="stylesheet" href="scale-view-style.css" />
+</head>
+
+<body>
+
+    <h1>One Scale, 12 Keys</h1>
+
+    <div class="controls">
+        <label for="scaleDropdown">Choose a scale:</label>
+        <select id="scaleDropdown">
+            <option value="">--Select a scale--</option>
+            <option value="major">Major</option>
+            <option value="minor">Natural Minor</option>
+            <option value="ionian">Ionian</option>
+            <option value="dorian">Dorian</option>
+            <option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option>
+            <option value="mixolydian">Mixolydian</option>
+            <option value="aeolian">Aeolian</option>
+            <option value="locrian">Locrian</option>
+            <option value="pentatonicMajor">Major Pentatonic</option>
+            <option value="pentatonicMinor">Minor Pentatonic</option>
+            <option value="bluesMajor">Major Blues</option>
+            <option value="bluesMinor">Minor Blues</option>
+        </select>
+
+        <button id="generateBtn" class="btn">Generate</button>
+    </div>
+
+    <div id="scaleGrid"></div>
+
+    <a href="landing.html"><button class="btn">Back</button></a>
+
+    <script type="module">
+        import { PianoRollGenerator } from "./dist/piano-roll-generator.js";
+        import { Note } from "./dist/note.js";
+        import { Scale } from "./dist/scale.js";
+
+        const scaleDropdown = document.getElementById("scaleDropdown");
+        const scaleGrid = document.getElementById("scaleGrid");
+        const generateBtn = document.getElementById("generateBtn");
+
+        const keyNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+        const scaleMap = {
+            major: Scale.major,
+            minor: Scale.minor,
+            ionian: Scale.ionian,
+            dorian: Scale.dorian,
+            phrygian: Scale.phrygian,
+            lydian: Scale.lydian,
+            mixolydian: Scale.mixolydian,
+            aeolian: Scale.aeolian,
+            locrian: Scale.locrian,
+            pentatonicMajor: Scale.pentatonicMajor,
+            pentatonicMinor: Scale.pentatonicMinor,
+            bluesMajor: Scale.bluesMajor,
+            bluesMinor: Scale.bluesMinor,
+        };
+
+        generateBtn.addEventListener("click", () => {
+            const selectedScaleKey = scaleDropdown.value;
+            if (!selectedScaleKey || !scaleMap[selectedScaleKey]) {
+                alert("Please select a valid scale.");
+                return;
+            }
+
+            scaleGrid.innerHTML = ""; // Clear previous content
+
+            for (let i = 0; i < keyNames.length; i++) {
+                const key = keyNames[i];
+                const scaleBox = document.createElement("div");
+                scaleBox.className = "scaleBox";
+
+                const rollDiv = document.createElement("div");
+                const rollId = `pianoRoll_${key}_${selectedScaleKey}`;
+                rollDiv.className = "pianoRollInstance";
+                rollDiv.id = rollId;
+
+                const label = document.createElement("div");
+                label.className = "scaleLabel";
+                label.textContent = `${key} ${scaleDropdown.options[scaleDropdown.selectedIndex].text}`;
+
+                scaleBox.appendChild(rollDiv);
+                scaleBox.appendChild(label);
+                scaleGrid.appendChild(scaleBox);
+
+                // Generate piano roll with highlights
+                const roll = new PianoRollGenerator(rollId);
+                try {
+                    const start = new Note(key, 4);
+                    const end = new Note(key, 5);
+                    const scale = Scale.buildScale(start, scaleMap[selectedScaleKey]);
+                    roll.generateRollRangeWithHighlight(start, end, scale, false);
+                } catch (err) {
+                    console.error(`Failed to build scale for ${key}:`, err);
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>

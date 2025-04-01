@@ -12,8 +12,8 @@ export class Scale {
     // pentatonic and blues scales
     static pentatonicMajor = [2, 2, 3, 2, 3];
     static pentatonicMinor = [3, 2, 2, 3, 2];
-    static bluesMajor = [3, 2, 1, 1, 3, 2];
-    static bluesMinor = [2, 1, 1, 3, 2, 3];
+    static bluesMajor = [2, 1, 1, 3, 2, 3];
+    static bluesMinor = [3, 2, 1, 1, 3, 2];
 
     // modes of the major scale
     static ionian = Scale.major; // Same as major

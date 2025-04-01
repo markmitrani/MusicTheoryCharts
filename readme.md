@@ -14,3 +14,7 @@ Navigate to the repository directory and run ```live-server``` on the command li
 ```Serving ".../MusicTheoryCharts" at [IP_ADDRESS]```
 
 If the interface hasn't opened automatically, navigate to ```IP_ADDRESS``` on your favorite browser.
+
+## Acknowledgements
+The [Rakkas](https://fonts.google.com/specimen/Rakkas) font, designed by Zeynep Akay, was used to style headings.
+Landing page photo by [Kelly Sikkema on Unsplash](https://unsplash.com/@kellysikkema).

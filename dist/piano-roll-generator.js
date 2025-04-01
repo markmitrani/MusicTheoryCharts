@@ -14,8 +14,13 @@ export class PianoRollGenerator {
     clearContainer() {
         this.container.innerHTML = "";
     }
-    // Creates a visual key element for a given Note.
-    createKeyElement(note) {
+    /**
+     * Creates an HTML key element for a note.
+     * @param note Note to be represented.
+     * @param labeled If true, the note will be labeled with its name.
+     * @returns A key element for the note.
+     */
+    createKeyElement(note, label) {
         const keyEl = document.createElement("div");
         keyEl.classList.add("key");
         // Determine key color based on the note name.
@@ -25,7 +30,9 @@ export class PianoRollGenerator {
         else {
             keyEl.classList.add("white-key");
         }
-        keyEl.textContent = note.toString();
+        if (label) {
+            keyEl.textContent = note.toString();
+        }
         return keyEl;
     }
     /**
@@ -38,7 +45,7 @@ export class PianoRollGenerator {
         const endNote = new Note("C", 5);
         for (let semitones = startNote.totalSemitones; semitones <= endNote.totalSemitones; semitones++) {
             const note = Note.fromTotalSemitones(semitones);
-            const keyEl = this.createKeyElement(note);
+            const keyEl = this.createKeyElement(note, true);
             this.container.appendChild(keyEl);
         }
     }
@@ -53,21 +60,25 @@ export class PianoRollGenerator {
         this.clearContainer();
         for (let semitones = start.totalSemitones; semitones <= end.totalSemitones; semitones++) {
             const note = Note.fromTotalSemitones(semitones);
-            const keyEl = this.createKeyElement(note);
+            const keyEl = this.createKeyElement(note, true);
             this.container.appendChild(keyEl);
         }
     }
     /**
-     * Generates a piano roll for the given range with the listed notes highlighted.
+     * Generates a piano roll for the given range with highlighted notes.
+     * @param start Beginning note of the range.
+     * @param end Ending note of the range.
+     * @param highlightNotes List of notes to be highlighted.
+     * @param labels If true, notes will be labeled with their names.
      */
-    generateRollRangeWithHighlight(start, end, highlightNotes) {
+    generateRollRangeWithHighlight(start, end, highlightNotes, labels) {
         if (start.totalSemitones >= end.totalSemitones) {
             throw new Error("Start note must be lower than end note.");
         }
         this.clearContainer();
         for (let semitones = start.totalSemitones; semitones <= end.totalSemitones; semitones++) {
             const note = Note.fromTotalSemitones(semitones);
-            const keyEl = this.createKeyElement(note);
+            const keyEl = this.createKeyElement(note, labels);
             if (highlightNotes.some(n => n.totalSemitones === semitones)) {
                 keyEl.classList.add("highlight");
             }
