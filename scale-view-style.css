@@ -97,17 +97,42 @@ h1 {
 }  
 
 .controls {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin: 1.5rem 0;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center; /* This does the vertical alignment magic */
+  gap: 1rem;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+  padding-left: 2rem;
+}
+.controls label {
+    font-size: 1rem;
+    color: white;
+    margin-bottom: 0; /* Remove any default vertical spacing */
 }
 
 select,
 button {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1.2rem;
     font-size: 1rem;
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.fade-in {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeIn 1s ease-out forwards;
+}
+  
+@keyframes fadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
 }
 
 #scaleGrid {

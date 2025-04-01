@@ -14,7 +14,7 @@
     <div class="controls">
         <label for="scaleDropdown">Choose a scale:</label>
         <select id="scaleDropdown">
-            <option value="">--Select a scale--</option>
+            <option value=""> No scale selected </option>
             <option value="major">Major</option>
             <option value="minor">Natural Minor</option>
             <option value="ionian">Ionian</option>
@@ -76,7 +76,9 @@
             for (let i = 0; i < keyNames.length; i++) {
                 const key = keyNames[i];
                 const scaleBox = document.createElement("div");
-                scaleBox.className = "scaleBox";
+                
+                scaleBox.className = "scaleBox fade-in";
+                scaleBox.style.animationDelay = `${i * 0.05}s`;
 
                 const rollDiv = document.createElement("div");
                 const rollId = `pianoRoll_${key}_${selectedScaleKey}`;
