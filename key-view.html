@@ -3,31 +3,30 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Scale View</title>
+    <title>Key View</title>
     <link rel="stylesheet" href="scale-key-view-style.css" />
 </head>
 
 <body>
 
-    <h1>One Scale, 12 Keys</h1>
+    <h1>One Key, Various Scales</h1>
 
     <div class="controls">
-        <label for="scaleDropdown">Choose a scale:</label>
-        <select id="scaleDropdown">
-            <option value=""> No scale selected </option>
-            <option value="major">Major</option>
-            <option value="minor">Natural Minor</option>
-            <option value="ionian">Ionian</option>
-            <option value="dorian">Dorian</option>
-            <option value="phrygian">Phrygian</option>
-            <option value="lydian">Lydian</option>
-            <option value="mixolydian">Mixolydian</option>
-            <option value="aeolian">Aeolian</option>
-            <option value="locrian">Locrian</option>
-            <option value="pentatonicMajor">Major Pentatonic</option>
-            <option value="pentatonicMinor">Minor Pentatonic</option>
-            <option value="bluesMajor">Major Blues</option>
-            <option value="bluesMinor">Minor Blues</option>
+        <label for="keyDropdown">Choose a key:</label>
+        <select id="keyDropdown">
+            <option value=""> No key selected </option>
+            <option value="C"> C </option>
+            <option value="C#">D♭/C♯</option>
+            <option value="D">D</option>
+            <option value="D#">E♭/D♯</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="F#">G♭/F♯</option>
+            <option value="G">G</option>
+            <option value="G#">A♭/G♯</option>
+            <option value="A">A</option>
+            <option value="A#">B♭/A♯</option>
+            <option value="B">B</option>
         </select>
 
         <button id="generateBtn" class="btn">Generate</button>
@@ -50,6 +49,23 @@
 
         const keyNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
+        // object to convert scales' system names to display names
+        const scaleNames = {
+            major: "Major",
+            minor: "Minor",
+            ionian: "Ionian",
+            dorian: "Dorian",
+            phrygian: "Phrygian",
+            lydian: "Lydian",
+            mixolydian: "Mixolydian",
+            aeolian: "Aeolian",
+            locrian: "Locrian",
+            pentatonicMajor: "Major Pentatonic",
+            pentatonicMinor: "Minor Pentatonic",
+            bluesMajor: "Major Blues",
+            bluesMinor: "Minor Blues",
+        };
+
         const scaleMap = {
             major: Scale.major,
             minor: Scale.minor,
@@ -66,30 +82,35 @@
             bluesMinor: Scale.bluesMinor,
         };
 
+        // selectedScaleKey should be a valid key from dropdown, otherwise alert user
         generateBtn.addEventListener("click", () => {
-            const selectedScaleKey = scaleDropdown.value;
-            if (!selectedScaleKey || !scaleMap[selectedScaleKey]) {
-                alert("Please select a valid scale.");
+            const selectedKey = keyDropdown.value;
+            if (!selectedKey || !(keyNames.includes(selectedKey))) {
+                alert("Please select a valid key.");
                 return;
             }
 
             scaleGrid.innerHTML = ""; // Clear previous content
 
-            for (let i = 0; i < keyNames.length; i++) {
-                const key = keyNames[i];
+            const scalesList = Object.getOwnPropertyNames(scaleMap);
+            for (let i = 0; i < scalesList.length; i++) {
+                const scaleNameSystem = scalesList[i];                   // system name of scale (e.g bluesMajor)
+                const scaleNameDisplay = scaleNames[scaleNameSystem];    // display name of scale (e.g Major Blues)
+                console.log("chosen scale: "+scaleNameSystem);
+                console.log("scale name: "+scaleNames[scaleNameSystem]);
                 const scaleBox = document.createElement("div");
                 
                 scaleBox.className = "scaleBox fade-in";
                 scaleBox.style.animationDelay = `${i * 0.05}s`;
 
                 const rollDiv = document.createElement("div");
-                const rollId = `pianoRoll_${key}_${selectedScaleKey}`;
+                const rollId = `pianoRoll_${selectedKey}_${scaleNameSystem}`;
                 rollDiv.className = "pianoRollInstance";
                 rollDiv.id = rollId;
 
                 const label = document.createElement("div");
                 label.className = "scaleLabel";
-                label.textContent = `${key} ${scaleDropdown.options[scaleDropdown.selectedIndex].text}`;
+                label.textContent = `${selectedKey} ${scaleNameDisplay}`;
 
                 scaleBox.appendChild(rollDiv);
                 scaleBox.appendChild(label);
@@ -98,12 +119,12 @@
                 // Generate piano roll with highlights
                 const roll = new PianoRollGenerator(rollId);
                 try {
-                    const start = new Note(key, 4);
-                    const end = new Note(key, 5);
-                    const scale = Scale.buildScale(start, scaleMap[selectedScaleKey]);
+                    const start = new Note(selectedKey, 4);
+                    const end = new Note(selectedKey, 5);
+                    const scale = Scale.buildScale(start, scaleMap[scaleNameSystem]);
                     roll.generateRollRangeWithHighlight(start, end, scale, false);
                 } catch (err) {
-                    console.error(`Failed to build scale for ${key}:`, err);
+                    console.error(`Failed to build scale for ${selectedKey}:`, err);
                 }
             }
         });
