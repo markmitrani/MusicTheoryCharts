@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Piano Roll Prototype</title>
+  <link rel = "stylesheet" href = "style.css"/>
+</head>
+<body>
+  <h1>Piano Roll Prototype</h1>
+  <div id="pianoRoll"></div>
+  <div class="buttonBox">
+    <button id="basicBtn" class="btn">Generate Basic Roll</button>
+    <button id="rangeBtn" class="btn">Generate Range Roll (D4 to A4)</button>
+    <button id="scaleBtn" class="btn">Generate Minor Scale (C4 to C5)</button>
+  </div>
+  <a class="instructionText">Choose a key, then select a scale:</a>
+    <ul class="dropdown">
+      <li><a>C</a></li>
+      <li><a>C#</a></li>
+      <li><a>D</a></li>
+      <li><a>D#</a></li>
+      <li><a>E</a></li>
+      <li><a>F</a></li>
+      <li><a>F#</a></li>
+      <li><a>G</a></li>
+      <li><a>G#</a></li>
+      <li><a>A</a></li>
+      <li><a>A#</a></li>
+      <li><a>B</a></li>
+    </ul>
+    <div class="buttonBox">
+      <button id="bluesMinorBtn" class="btn">Minor Blues</button>
+      <button id="bluesMajorBtn" class="btn">Major Blues</button>
+      <button id="mixolydianBtn" class="btn">Mixolydian</button>
+      <button id="dorianBtn" class="btn">Dorian</button>
+    </div>
+  <script type="module">
+    import { PianoRollGenerator } from "./dist/piano-roll-generator.js";
+    import { Note } from "./dist/note.js";
+    import { Scale } from "./dist/scale.js";
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      const pianoRoll = new PianoRollGenerator("pianoRoll");
+      let selectedKey = null; // Stores the selected key
+
+      // Add event listeners to all <li> elements
+      const keyElements = document.querySelectorAll(".dropdown li");
+      keyElements.forEach((keyElement) => {
+          keyElement.addEventListener("click", (event) => {
+              selectedKey = event.target.textContent; // Save the clicked key's text
+              console.log("Selected Key:", selectedKey); // Debugging: Log the selected key
+          });
+      });
+
+      document.getElementById("basicBtn").addEventListener("click", () => {
+        pianoRoll.generateRollBasic();
+      });
+
+      document.getElementById("rangeBtn").addEventListener("click", () => {
+        try {
+          const start = new Note("D", 4);
+          const end = new Note("A", 4);
+          pianoRoll.generateRollRange(start, end);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("scaleBtn").addEventListener("click", () => {
+        try {
+          const start = new Note("C", 4);
+          const end = new Note("C", 5);
+          const scale = Scale.buildScale(start, Scale.minor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("bluesMinorBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.bluesMinor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("bluesMajorBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.bluesMajor);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("mixolydianBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.mixolydian);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, true);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      document.getElementById("dorianBtn").addEventListener("click", () => {
+        try {
+          const start = new Note(selectedKey, 4);
+          const end = new Note(selectedKey, 5);
+          const scale = Scale.buildScale(start, Scale.dorian);
+          pianoRoll.generateRollRangeWithHighlight(start, end, scale, false);
+        } catch (error) {
+          alert(error);
+        }
+      });
+
+      pianoRoll.generateRollBasic();
+    });
+  </script>
+</body>
+</html>
