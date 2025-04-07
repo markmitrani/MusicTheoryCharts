@@ -54,7 +54,8 @@ h1, h2, h3, h4, h5 {
     padding-bottom: 5px; /* Adjust the value as needed for spacing */
 }
 .highlight {
-    background-color: rgb(100, 189, 224) /*rgb(220, 170, 62)*/;
+    background-color: #AA6024;
+    /*rgb(220, 170, 62)*/;
 }
 .btn {
     padding: 10px;
