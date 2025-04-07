@@ -51,7 +51,7 @@ h1, h2, h3, h4, h5 {
     justify-content: flex-end;
     align-self: flex-start;
     flex-direction: column;
-    padding-bottom: 5px; /* Adjust the value as needed for spacing */
+    padding-bottom: 5px; /* black key height */
 }
 .highlight {
     background-color: #AA6024;
@@ -73,7 +73,6 @@ h1, h2, h3, h4, h5 {
 .instructionText {
     color: white;
     font-size: 20px;
-    /* align text on center of page*/
     text-align: center;
     margin-top: 20px; /* Space between instruction text and buttons */
 }
@@ -92,14 +91,14 @@ h1 {
     font-weight: 400;
     color: white;
     text-align: left;
-    margin-left: 2rem;     /* Creates the soft left padding look */
+    margin-left: 2rem;
     margin-bottom: 2rem;
     text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
 }  
 
 .controls {
   display: flex;
-  align-items: center; /* This does the vertical alignment magic */
+  align-items: center; /* Handle vertical alignment of control elements */
   gap: 1rem;
   margin: 2rem 0;
   flex-wrap: wrap;
@@ -108,7 +107,7 @@ h1 {
 .controls label {
     font-size: 1rem;
     color: white;
-    margin-bottom: 0; /* Remove any default vertical spacing */
+    margin-bottom: 0; /* No vertical spacing */
 }
 
 select,
@@ -146,7 +145,7 @@ button {
 }
 
 .scaleBox {
-    background: rgba(255, 255, 255, 0.08); /* transparent glass feel */
+    background: rgba(255, 255, 255, 0.08); /* for transparent glass effect */
     border-radius: 1rem;
     padding: 1rem;
     /*border: 1px solid rgba(255, 255, 255, 0.2);*/
@@ -177,8 +176,6 @@ button {
     height: 180px;
     border: 1px solid #ccc;
     max-width: 800px;
-    
-    /* Optional: scroll if it overflows */
 }
 
 .back-button-container {
