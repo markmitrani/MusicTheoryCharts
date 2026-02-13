@@ -69,13 +69,21 @@
         const scaleMap = {
             major: Scale.major,
             minor: Scale.minor,
-            ionian: Scale.ionian,
+            melodicMinor: Scale.melodicMinor,
+            harmonicMinor: Scale.harmonicMinor,
+            harmonicMajor: Scale.harmonicMajor,
             dorian: Scale.dorian,
             phrygian: Scale.phrygian,
             lydian: Scale.lydian,
             mixolydian: Scale.mixolydian,
-            aeolian: Scale.aeolian,
             locrian: Scale.locrian,
+            phrygianDominant: Scale.phrygianDominant,
+            halfWholeDiminished: Scale.halfWholeDiminished,
+            altered: Scale.altered,
+            mixolydianFlat6: Scale.mixolydianFlat6,
+            dominantBebop: Scale.dominantBebop,
+            majorBebop: Scale.majorBebop,
+            minorBebop: Scale.minorBebop,
             pentatonicMajor: Scale.pentatonicMajor,
             pentatonicMinor: Scale.pentatonicMinor,
             bluesMajor: Scale.bluesMajor,
@@ -122,7 +130,9 @@
                     const start = new Note(selectedKey, 4);
                     const end = new Note(selectedKey, 5);
                     const scale = Scale.buildScale(start, scaleMap[scaleNameSystem]);
-                    roll.generateRollRangeWithHighlight(start, end, scale, false);
+                    // Remove the last note (octave) from highlighting to avoid duplicate root
+                    const scaleToHighlight = scale.slice(0, -1);
+                    roll.generateRollRangeWithHighlight(start, end, scaleToHighlight, false);
                 } catch (err) {
                     console.error(`Failed to build scale for ${selectedKey}:`, err);
                 }

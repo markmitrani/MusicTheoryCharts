@@ -3,13 +3,13 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Harmony View</title>
+  <title>Chord View</title>
   <link rel="stylesheet" href="scale-key-view-style.css" />
 </head>
 
 <body>
 
-  <h1>Scale Triads</h1>
+  <h1>Scale Chords</h1>
 
   <div class="controls">
     <label for="keyDropdown">Choose a key:</label>
@@ -34,13 +34,21 @@
       <option value=""> No scale selected </option>
       <option value="major">Major</option>
       <option value="minor">Natural Minor</option>
-      <option value="ionian">Ionian</option>
+      <option value="melodicMinor">Melodic Minor</option>
+      <option value="harmonicMinor">Harmonic Minor</option>
+      <option value="harmonicMajor">Harmonic Major</option>
       <option value="dorian">Dorian</option>
       <option value="phrygian">Phrygian</option>
       <option value="lydian">Lydian</option>
       <option value="mixolydian">Mixolydian</option>
-      <option value="aeolian">Aeolian</option>
       <option value="locrian">Locrian</option>
+      <option value="phrygianDominant">Phrygian Dominant</option>
+      <option value="halfWholeDiminished">Half-Whole Diminished</option>
+      <option value="altered">Altered</option>
+      <option value="mixolydianFlat6">Mixolydian ♭6</option>
+      <option value="dominantBebop">Dominant Bebop</option>
+      <option value="majorBebop">Major Bebop</option>
+      <option value="minorBebop">Minor Bebop</option>
       <option value="pentatonicMajor">Major Pentatonic</option>
       <option value="pentatonicMinor">Minor Pentatonic</option>
       <option value="bluesMajor">Major Blues</option>
@@ -70,13 +78,21 @@
     const scaleMap = {
       major: Scale.major,
       minor: Scale.minor,
-      ionian: Scale.ionian,
+      melodicMinor: Scale.melodicMinor,
+      harmonicMinor: Scale.harmonicMinor,
+      harmonicMajor: Scale.harmonicMajor,
       dorian: Scale.dorian,
       phrygian: Scale.phrygian,
       lydian: Scale.lydian,
       mixolydian: Scale.mixolydian,
-      aeolian: Scale.aeolian,
       locrian: Scale.locrian,
+      phrygianDominant: Scale.phrygianDominant,
+      halfWholeDiminished: Scale.halfWholeDiminished,
+      altered: Scale.altered,
+      mixolydianFlat6: Scale.mixolydianFlat6,
+      dominantBebop: Scale.dominantBebop,
+      majorBebop: Scale.majorBebop,
+      minorBebop: Scale.minorBebop,
       pentatonicMajor: Scale.pentatonicMajor,
       pentatonicMinor: Scale.pentatonicMinor,
       bluesMajor: Scale.bluesMajor,

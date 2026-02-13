@@ -72,6 +72,15 @@ export class PianoRollGenerator {
             const keyEl = this.createKeyElement(note, true);
             this.container.appendChild(keyEl);
         }
+        // Check if we need to render a half-width trailing sharp
+        // (all white keys except B and E have a sharp after them)
+        const needsTrailingSharp = !end.name.includes("#") && end.name !== "B" && end.name !== "E";
+        if (needsTrailingSharp) {
+            const trailingSharp = Note.fromTotalSemitones(end.totalSemitones + 1);
+            const halfKeyEl = this.createKeyElement(trailingSharp, true);
+            halfKeyEl.classList.add("half-width-trailing");
+            this.container.appendChild(halfKeyEl);
+        }
     }
     /**
      * Generates a piano roll for the given range with highlighted notes.
@@ -104,6 +113,18 @@ export class PianoRollGenerator {
                 keyEl.classList.add("highlight");
             }
             this.container.appendChild(keyEl);
+        }
+        // Check if we need to render a half-width trailing sharp
+        // (all white keys except B and E have a sharp after them)
+        const needsTrailingSharp = !end.name.includes("#") && end.name !== "B" && end.name !== "E";
+        if (needsTrailingSharp) {
+            const trailingSharp = Note.fromTotalSemitones(end.totalSemitones + 1);
+            const halfKeyEl = this.createKeyElement(trailingSharp, labels);
+            halfKeyEl.classList.add("half-width-trailing");
+            if (highlightNotes.some(n => n.totalSemitones === trailingSharp.totalSemitones)) {
+                halfKeyEl.classList.add("highlight");
+            }
+            this.container.appendChild(halfKeyEl);
         }
     }
 }

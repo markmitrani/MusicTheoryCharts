@@ -17,13 +17,21 @@
             <option value=""> No scale selected </option>
             <option value="major">Major</option>
             <option value="minor">Natural Minor</option>
-            <option value="ionian">Ionian</option>
+            <option value="melodicMinor">Melodic Minor</option>
+            <option value="harmonicMinor">Harmonic Minor</option>
+            <option value="harmonicMajor">Harmonic Major</option>
             <option value="dorian">Dorian</option>
             <option value="phrygian">Phrygian</option>
             <option value="lydian">Lydian</option>
             <option value="mixolydian">Mixolydian</option>
-            <option value="aeolian">Aeolian</option>
             <option value="locrian">Locrian</option>
+            <option value="phrygianDominant">Phrygian Dominant</option>
+            <option value="halfWholeDiminished">Half-Whole Diminished</option>
+            <option value="altered">Altered</option>
+            <option value="mixolydianFlat6">Mixolydian ♭6</option>
+            <option value="dominantBebop">Dominant Bebop</option>
+            <option value="majorBebop">Major Bebop</option>
+            <option value="minorBebop">Minor Bebop</option>
             <option value="pentatonicMajor">Major Pentatonic</option>
             <option value="pentatonicMinor">Minor Pentatonic</option>
             <option value="bluesMajor">Major Blues</option>
@@ -53,13 +61,21 @@
         const scaleMap = {
             major: Scale.major,
             minor: Scale.minor,
-            ionian: Scale.ionian,
+            melodicMinor: Scale.melodicMinor,
+            harmonicMinor: Scale.harmonicMinor,
+            harmonicMajor: Scale.harmonicMajor,
             dorian: Scale.dorian,
             phrygian: Scale.phrygian,
             lydian: Scale.lydian,
             mixolydian: Scale.mixolydian,
-            aeolian: Scale.aeolian,
             locrian: Scale.locrian,
+            phrygianDominant: Scale.phrygianDominant,
+            halfWholeDiminished: Scale.halfWholeDiminished,
+            altered: Scale.altered,
+            mixolydianFlat6: Scale.mixolydianFlat6,
+            dominantBebop: Scale.dominantBebop,
+            majorBebop: Scale.majorBebop,
+            minorBebop: Scale.minorBebop,
             pentatonicMajor: Scale.pentatonicMajor,
             pentatonicMinor: Scale.pentatonicMinor,
             bluesMajor: Scale.bluesMajor,
@@ -101,7 +117,9 @@
                     const start = new Note(key, 4);
                     const end = new Note(key, 5);
                     const scale = Scale.buildScale(start, scaleMap[selectedScaleKey]);
-                    roll.generateRollRangeWithHighlight(start, end, scale, false);
+                    // Remove the last note (octave) from highlighting to avoid duplicate root
+                    const scaleToHighlight = scale.slice(0, -1);
+                    roll.generateRollRangeWithHighlight(start, end, scaleToHighlight, false);
                 } catch (err) {
                     console.error(`Failed to build scale for ${key}:`, err);
                 }

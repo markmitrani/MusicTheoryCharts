@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Theory Harmony Chart</title>
+    <link rel="stylesheet" href="harmony-chart-style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Harmony Chart</h1>
+        
+        <div class="view-toggle">
+            <button class="toggle-btn" id="scalesBtn">Scales</button>
+            <button class="toggle-btn active" id="harmoniesBtn">Harmonies</button>
+        </div>
+
+        <div id="scalesContent">
+            <!-- Piano rolls will be dynamically inserted here -->
+        </div>
+        
+        <div id="harmoniesContent" class="active">
+            <div id="scalesList"></div>
+        </div>
+
+        <div class="circle-section">
+            <div class="scale-title">Circle of Fifths</div>
+            <div class="circle-container">
+                <div class="position-marker"></div>
+                <div class="circle-wheel" id="circleWheel"></div>
+                <div class="center-circle" id="centerKey">C</div>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-btn" id="leftBtn">←</button>
+                <button class="nav-btn" id="rightBtn">→</button>
+            </div>
+            <div class="mode-controls" id="modeControls"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CircleOfFifths } from './dist/circle-of-fifths.js';
+        import { Note } from './dist/note.js';
+        import { Scale } from './dist/scale.js';
+        import { ScaleHarmonies } from './dist/scale-harmonies.js';
+        import { PianoRollGenerator } from './dist/piano-roll-generator.js';
+
+        let currentKeyIndex = 0;
+        let activePanels = []; // Array of {id, key, mode}
+        let nextPanelId = 0;
+        let currentRotation = 0;
+        let currentView = 'harmonies';
+        let draggedPanel = null;
+
+        function createCircle() {
+            const wheel = document.getElementById('circleWheel');
+            wheel.innerHTML = '';
+            
+            const radius = window.innerWidth <= 480 ? 133 : 158;
+            
+            CircleOfFifths.keys.forEach((key, index) => {
+                const angle = (index * 30);
+                const radian = ((angle - 90) * Math.PI) / 180;
+                
+                const segment = document.createElement('div');
+                segment.className = 'key-segment';
+                segment.dataset.index = index;
+                
+                const x = radius * Math.cos(radian);
+                const y = radius * Math.sin(radian);
+                segment.style.left = `calc(50% + ${x}px)`;
+                segment.style.top = `calc(50% + ${y}px)`;
+                
+                const content = document.createElement('div');
+                content.className = 'segment-content';
+                content.textContent = key;
+                
+                segment.appendChild(content);
+                wheel.appendChild(segment);
+            });
+        }
+
+        function createModeButtons() {
+            const controls = document.getElementById('modeControls');
+            controls.innerHTML = '';
+            
+            Object.keys(ScaleHarmonies.modeDefinitions).forEach(modeKey => {
+                const btn = document.createElement('button');
+                btn.className = 'mode-btn';
+                btn.textContent = ScaleHarmonies.modeDefinitions[modeKey].name;
+                btn.dataset.mode = modeKey;
+                btn.addEventListener('click', () => toggleMode(modeKey));
+                controls.appendChild(btn);
+            });
+        }
+
+        function moveLeft() {
+            currentKeyIndex = (currentKeyIndex - 1 + CircleOfFifths.keys.length) % CircleOfFifths.keys.length;
+            updateDisplay();
+        }
+
+        function moveRight() {
+            currentKeyIndex = (currentKeyIndex + 1) % CircleOfFifths.keys.length;
+            updateDisplay();
+        }
+
+        function toggleMode(mode) {
+            const currentKey = CircleOfFifths.keys[currentKeyIndex];
+            const panelId = nextPanelId++;
+            
+            // Add new panel
+            activePanels.push({
+                id: panelId,
+                key: currentKey,
+                mode: mode
+            });
+            
+            // Flash the button
+            const btn = document.querySelector(`[data-mode="${mode}"]`);
+            if (btn) {
+                btn.classList.add('flash');
+                setTimeout(() => btn.classList.remove('flash'), 600);
+            }
+            
+            updateDisplay();
+        }
+
+        function getNote(rootIndex, interval) {
+            const noteIndex = (rootIndex + interval) % 12;
+            let note = CircleOfFifths.chromaticScale[noteIndex];
+            const root = CircleOfFifths.keys[currentKeyIndex];
+            
+            if (note.includes('/')) {
+                const [sharp, flat] = note.split('/');
+                if (root.includes('♯') || ['G', 'D', 'A', 'E', 'B'].includes(root)) {
+                    note = sharp;
+                } else {
+                    note = flat;
+                }
+            }
+            return note;
+        }
+
+        function buildChord(note, quality) {
+            if (quality === 'm') return note + 'm';
+            if (quality === 'dim') return note + 'dim';
+            if (quality === 'aug') return note + '+';
+            return note;
+        }
+
+        function getChordType(quality) {
+            if (quality === 'm') return 'minor';
+            if (quality === 'dim') return 'diminished';
+            if (quality === 'aug') return 'augmented';
+            return 'major';
+        }
+
+        function generateChords(modeName) {
+            const mode = ScaleHarmonies.modeDefinitions[modeName];
+            const pattern = Scale.scalePatterns[modeName];
+            const root = CircleOfFifths.keys[currentKeyIndex];
+            
+            let rootIndex = CircleOfFifths.chromaticScale.findIndex(n => {
+                if (n.includes('/')) {
+                    return n.split('/').some(x => root.includes(x));
+                }
+                return n === root || root.includes(n);
+            });
+            
+            const chords = [];
+            for (let i = 0; i < 7; i++) {
+                const note = getNote(rootIndex, pattern[i]);
+                const chord = buildChord(note, mode.qualities[i]);
+                chords.push({
+                    name: chord,
+                    numeral: mode.numerals[i],
+                    type: getChordType(mode.qualities[i])
+                });
+            }
+            
+            return chords;
+        }
+
+        function updateDisplay() {
+            const currentKey = CircleOfFifths.keys[currentKeyIndex];
+            document.getElementById('centerKey').textContent = currentKey;
+            
+            const targetRotation = -(currentKeyIndex * 30);
+            let rotationDiff = targetRotation - currentRotation;
+            
+            while (rotationDiff > 180) rotationDiff -= 360;
+            while (rotationDiff < -180) rotationDiff += 360;
+            
+            currentRotation += rotationDiff;
+            
+            const wheel = document.getElementById('circleWheel');
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+            
+            document.querySelectorAll('.segment-content').forEach((content) => {
+                content.style.transform = `translate(-50%, -50%) rotate(${-currentRotation}deg)`;
+            });
+            
+            document.querySelectorAll('.key-segment').forEach((segment, index) => {
+                if (index === currentKeyIndex) {
+                    segment.classList.add('active');
+                } else {
+                    segment.classList.remove('active');
+                }
+            });
+            
+            if (currentView === 'harmonies') {
+                updateHarmoniesView();
+            } else {
+                updateScalesView();
+            }
+        }
+
+        function removePanel(panelId) {
+            activePanels = activePanels.filter(p => p.id !== panelId);
+            updateDisplay();
+        }
+
+        function updateHarmoniesView() {
+            const scalesList = document.getElementById('scalesList');
+            scalesList.innerHTML = '';
+            
+            activePanels.forEach((panel, index) => {
+                const modeInfo = ScaleHarmonies.modeDefinitions[panel.mode];
+                const chords = generateChordsForPanel(panel);
+                
+                const section = document.createElement('div');
+                section.className = 'scale-section';
+                section.draggable = true;
+                section.dataset.panelId = panel.id;
+                
+                // Drag handle
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'drag-handle';
+                dragHandle.textContent = '|||';
+                section.appendChild(dragHandle);
+                
+                // Close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-btn';
+                closeBtn.textContent = '×';
+                closeBtn.onclick = () => removePanel(panel.id);
+                section.appendChild(closeBtn);
+                
+                const title = document.createElement('div');
+                title.className = 'scale-title';
+                title.textContent = `${panel.key} ${modeInfo.name}`;
+                section.appendChild(title);
+                
+                const grid = document.createElement('div');
+                grid.className = 'chord-grid';
+                
+                chords.forEach(chord => {
+                    const box = document.createElement('div');
+                    box.className = `chord-box ${chord.type}`;
+                    box.innerHTML = `
+                        <div class="numeral">${chord.numeral}</div>
+                        <div class="chord-name">${chord.name}</div>
+                    `;
+                    grid.appendChild(box);
+                });
+                
+                section.appendChild(grid);
+                
+                // Drag events
+                section.addEventListener('dragstart', handleDragStart);
+                section.addEventListener('dragover', handleDragOver);
+                section.addEventListener('drop', handleDrop);
+                section.addEventListener('dragend', handleDragEnd);
+                
+                scalesList.appendChild(section);
+            });
+        }
+
+        function generateChordsForPanel(panel) {
+            const mode = ScaleHarmonies.modeDefinitions[panel.mode];
+            const pattern = Scale.scalePatterns[panel.mode];
+            
+            let rootIndex = CircleOfFifths.chromaticScale.findIndex(n => {
+                if (n.includes('/')) {
+                    return n.split('/').some(x => panel.key.includes(x));
+                }
+                return n === panel.key || panel.key.includes(n);
+            });
+            
+            const chords = [];
+            for (let i = 0; i < 7; i++) {
+                const note = getNoteFromIndex(rootIndex, pattern[i]);
+                const chord = buildChord(note, mode.qualities[i]);
+                chords.push({
+                    name: chord,
+                    numeral: mode.numerals[i],
+                    type: getChordType(mode.qualities[i])
+                });
+            }
+            
+            return chords;
+        }
+
+        function getNoteFromIndex(rootIndex, interval) {
+            const noteIndex = (rootIndex + interval) % 12;
+            let note = CircleOfFifths.chromaticScale[noteIndex];
+            
+            if (note.includes('/')) {
+                const [sharp, flat] = note.split('/');
+                // Default to sharp for now
+                note = sharp;
+            }
+            return note;
+        }
+
+        function updateScalesView() {
+            const scalesContent = document.getElementById('scalesContent');
+            scalesContent.innerHTML = '';
+            
+            activePanels.forEach((panel, index) => {
+                const modeInfo = ScaleHarmonies.modeDefinitions[panel.mode];
+                const pattern = Scale.scalePatterns[panel.mode];
+                
+                const section = document.createElement('div');
+                section.className = 'scale-section';
+                section.style.marginBottom = '24px';
+                section.draggable = true;
+                section.dataset.panelId = panel.id;
+                
+                // Drag handle
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'drag-handle';
+                dragHandle.textContent = '|||';
+                section.appendChild(dragHandle);
+                
+                // Close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-btn';
+                closeBtn.textContent = '×';
+                closeBtn.onclick = () => removePanel(panel.id);
+                section.appendChild(closeBtn);
+                
+                const title = document.createElement('div');
+                title.className = 'scale-title';
+                title.textContent = `${panel.key} ${modeInfo.name}`;
+                section.appendChild(title);
+                
+                const rollContainer = document.createElement('div');
+                const containerId = `pianoRoll-${panel.id}`;
+                rollContainer.id = containerId;
+                rollContainer.className = 'piano-roll-container';
+                section.appendChild(rollContainer);
+                
+                scalesContent.appendChild(section);
+                
+                // Drag events
+                section.addEventListener('dragstart', handleDragStart);
+                section.addEventListener('dragover', handleDragOver);
+                section.addEventListener('drop', handleDrop);
+                section.addEventListener('dragend', handleDragEnd);
+                
+                const pianoRollGenerator = new PianoRollGenerator(containerId);
+                
+                let rootNoteName = panel.key.split('/')[0];
+                rootNoteName = rootNoteName.replace('♯', '#').replace('♭', 'b');
+                
+                const rootNote = new Note(rootNoteName, 4);
+                
+                const intervals = [];
+                for (let i = 1; i < pattern.length; i++) {
+                    intervals.push(pattern[i] - pattern[i - 1]);
+                }
+                
+                const scaleNotes = Note.buildScaleFromIntervals(rootNote, intervals);
+                const startNote = scaleNotes[0];
+                const endNote = scaleNotes[scaleNotes.length - 1];
+                
+                // Remove the last note (octave) from highlighting to avoid duplicate root
+                const scaleToHighlight = scaleNotes.slice(0, -1);
+                pianoRollGenerator.generateRollRangeWithHighlight(startNote, endNote, scaleToHighlight, true);
+            });
+        }
+
+        // Drag and drop handlers
+        function handleDragStart(e) {
+            draggedPanel = parseInt(e.currentTarget.dataset.panelId);
+            e.currentTarget.style.opacity = '0.5';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            return false;
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            const targetPanelId = parseInt(e.currentTarget.dataset.panelId);
+            
+            if (draggedPanel !== targetPanelId) {
+                const draggedIndex = activePanels.findIndex(p => p.id === draggedPanel);
+                const targetIndex = activePanels.findIndex(p => p.id === targetPanelId);
+                
+                const [removed] = activePanels.splice(draggedIndex, 1);
+                activePanels.splice(targetIndex, 0, removed);
+                
+                updateDisplay();
+            }
+            
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.style.opacity = '1';
+        }
+
+        function switchView(view) {
+            currentView = view;
+            
+            const scalesBtn = document.getElementById('scalesBtn');
+            const harmoniesBtn = document.getElementById('harmoniesBtn');
+            const scalesContent = document.getElementById('scalesContent');
+            const harmoniesContent = document.getElementById('harmoniesContent');
+            
+            if (view === 'scales') {
+                scalesBtn.classList.add('active');
+                harmoniesBtn.classList.remove('active');
+                scalesContent.classList.add('active');
+                harmoniesContent.classList.remove('active');
+                updateScalesView();
+            } else {
+                scalesBtn.classList.remove('active');
+                harmoniesBtn.classList.add('active');
+                scalesContent.classList.remove('active');
+                harmoniesContent.classList.add('active');
+                updateHarmoniesView();
+            }
+        }
+
+        createCircle();
+        createModeButtons();
+        updateDisplay();
+        
+        document.getElementById('leftBtn').addEventListener('click', moveLeft);
+        document.getElementById('rightBtn').addEventListener('click', moveRight);
+        document.getElementById('scalesBtn').addEventListener('click', () => switchView('scales'));
+        document.getElementById('harmoniesBtn').addEventListener('click', () => switchView('harmonies'));
+        
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                createCircle();
+                updateDisplay();
+            }, 250);
+        });
+    </script>
+</body>
+</html>

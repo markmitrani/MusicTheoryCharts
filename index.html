@@ -5,63 +5,201 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Music Theory Explorer for Piano</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
+            font-family: 'Fraunces', serif;
             padding: 2rem;
-            max-width: 800px;
+            max-width: 1200px;
             margin: auto;
-            background-color: #f9f9f9;
-            color: #333;
+            background: #09090b;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         h1 {
             font-size: 2em;
             margin-bottom: 0.5em;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            text-align: center;
         }
 
-        p {
+        .intro {
             font-size: 1.1em;
             margin-bottom: 1.5em;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+        }
+
+        .content-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
         }
 
         img {
             max-width: 100%;
             height: auto;
             display: block;
-            margin: 1.5em 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            animation: breathingGlow 6s ease-in-out infinite;
+        }
+
+        @keyframes breathingGlow {
+            0%, 100% {
+                box-shadow: 
+                    0 4px 16px rgba(0, 0, 0, 0.4),
+                    0 0 40px rgba(190, 140, 90, 0.3),
+                    -20px -20px 60px rgba(166, 116, 74, 0.15);
+            }
+            25% {
+                box-shadow: 
+                    0 4px 16px rgba(0, 0, 0, 0.4),
+                    0 0 50px rgba(190, 140, 90, 0.4),
+                    20px -20px 70px rgba(166, 116, 74, 0.2);
+            }
+            50% {
+                box-shadow: 
+                    0 4px 16px rgba(0, 0, 0, 0.4),
+                    0 0 60px rgba(190, 140, 90, 0.5),
+                    20px 20px 80px rgba(166, 116, 74, 0.25);
+            }
+            75% {
+                box-shadow: 
+                    0 4px 16px rgba(0, 0, 0, 0.4),
+                    0 0 50px rgba(190, 140, 90, 0.4),
+                    -20px 20px 70px rgba(166, 116, 74, 0.2);
+            }
         }
 
         .button-group {
             display: flex;
             gap: 2rem;
             flex-wrap: wrap;
-            /* Optional: allows wrapping on small screens */
             justify-content: space-between;
+            width: 100%;
         }
 
         .section {
             flex: 1 1 40%;
-            /* Allows each section to take up nearly half the space */
-            background: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(255, 255, 255, 0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .section:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(255, 255, 255, 0.05);
+        }
+
+        .section p {
+            margin-bottom: 1em;
         }
 
         button {
             margin-top: 1rem;
             padding: 0.6rem 1.2rem;
             font-size: 1rem;
-            background-color: #A6744A;
-            color: #fff;
+            font-family: 'Fraunces', serif;
+            background: linear-gradient(135deg, rgb(140, 90, 50) 0%, rgb(166, 116, 74) 35%, rgb(190, 140, 90) 74%, rgb(220, 180, 130) 100%);
+            color: rgba(24, 24, 24, 0.95);
             border: none;
-            border-radius: 0.3rem;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            box-shadow: 
+                0 2px 8px rgba(166, 116, 74, 0.3),
+                0 0 20px rgba(190, 140, 90, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
 
         button:hover {
-            background-color: #AA6024;
+            transform: translateY(-2px);
+            box-shadow: 
+                0 4px 12px rgba(166, 116, 74, 0.4),
+                0 0 30px rgba(190, 140, 90, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Desktop layout with corners */
+        @media (min-width: 900px) {
+            .content-wrapper {
+                position: relative;
+                min-height: 700px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 4rem 2rem;
+            }
+
+            img {
+                position: relative;
+                max-width: 700px;
+                width: 100%;
+                z-index: 1;
+            }
+
+            .button-group {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                display: block;
+                pointer-events: none;
+            }
+
+            .section {
+                position: absolute;
+                flex: none;
+                max-width: 280px;
+                pointer-events: auto;
+                z-index: 2;
+            }
+
+            /* Top-left corner - overlaps 25% */
+            .section:nth-child(1) {
+                top: 10%;
+                left: 5%;
+            }
+
+            /* Top-right corner - overlaps 25% */
+            .section:nth-child(2) {
+                top: 10%;
+                right: 5%;
+            }
+
+            /* Bottom-left corner - overlaps 25% */
+            .section:nth-child(3) {
+                bottom: 10%;
+                left: 5%;
+            }
+
+            /* Bottom-right corner - overlaps 25% */
+            .section:nth-child(4) {
+                bottom: 10%;
+                right: 5%;
+            }
         }
     </style>
 </head>
@@ -69,23 +207,29 @@
 <body>
 
     <h1>Practice with confidence.</h1>
-    <p>Our interactive charts keep the theory at your fingertips<br>
+    <p class="intro">Our interactive charts keep the theory at your fingertips<br>
         so you can think less, and play more.</p>
 
-    <img src="landing-photo.jpg" alt="Musical chart or interface screenshot" />
+    <div class="content-wrapper">
+        <img src="landing-photo.jpg" alt="Musical chart or interface screenshot" />
 
-    <div class="button-group">
-        <div class="section">
-            <p>Ready to get started? Explore scales in all 12 keys.</p>
-            <a href="scale-view.html"><button>Go to scale view</button></a>
-        </div>
-        <div class="section">
-            <p>Prefer to focus on just one key? We've got something for that too.</p>
-            <a href="key-view.html"><button>Go to key view</button></a>
-        </div>
-        <div class="section">
-            <p>Curious about the chords of a scale? Check out the harmony view!</p>
-            <a href="harmony-view.html"><button>Go to harmony view</button></a>
+        <div class="button-group">
+            <div class="section">
+                <p>Ready to get started? Explore scales in all 12 keys.</p>
+                <a href="scale-view.html"><button>Go to scale view</button></a>
+            </div>
+            <div class="section">
+                <p>Prefer to focus on just one key? We've got something for that too.</p>
+                <a href="key-view.html"><button>Go to key view</button></a>
+            </div>
+            <div class="section">
+                <p>Curious about the chords of a scale? Check out the chord view!</p>
+                <a href="chord-view.html"><button>Go to chord view</button></a>
+            </div>
+            <div class="section">
+                <p>Explore the circle of fifths with interactive harmony charts.</p>
+                <a href="harmony-chart.html"><button>Go to harmony chart</button></a>
+            </div>
         </div>
     </div>
 
