@@ -53,6 +53,11 @@ h1, h2, h3, h4, h5 {
     flex-direction: column;
     padding-bottom: 5px; /* black key height */
 }
+.black-key.half-width {
+    width: 12.5px;
+    margin-left: 0;
+    margin-right: -12.5px;
+}
 .highlight {
     background-color: #AA6024;
     /*rgb(220, 170, 62)*/;
@@ -182,3 +187,45 @@ button {
     padding-left: 2rem;
   }
   
+/* --- Make panels size to piano-roll width + center last row --- */
+
+#scaleGrid {
+  /* switch from grid to wrapping flex so the last row centers naturally */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* centers incomplete last row */
+  gap: 2rem;
+
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.scaleBox {
+  /* don't stretch; size to content */
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  /* keep roll from visually escaping if it ever exceeds max-width */
+  overflow: hidden;
+}
+
+.pianoRollInstance {
+  /* size exactly to the generated keys */
+  width: max-content;
+  max-width: 100%;
+
+  box-sizing: border-box;
+  display: flex;
+
+  /* if the roll is wider than the card/screen, scroll instead of overflow */
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  height: 180px;
+  border: 1px solid #ccc;
+
+  align-items: flex-end;
+  -webkit-overflow-scrolling: touch;
+}

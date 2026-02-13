@@ -1,0 +1,25 @@
+{
+  "name": "musictheorycharts",
+  "version": "1.0.0",
+  "description": "A small webapp to streamline piano practice. The reactive interface displays scales for all 12 standard notes found in Western music. Features two separate views: - Scale view: Choose a scale and view it starting from all 12 notes, side by side. - Key view: Choose a starting note and view all available scales next to each other.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markmitrani/MusicTheoryCharts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/markmitrani/MusicTheoryCharts/issues"
+  },
+  "homepage": "https://github.com/markmitrani/MusicTheoryCharts#readme",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "typescript": "^5.9.3"
+  }
+}

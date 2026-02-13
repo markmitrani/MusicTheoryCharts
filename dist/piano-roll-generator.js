@@ -58,6 +58,15 @@ export class PianoRollGenerator {
             throw new Error("Start note must be lower than end note.");
         }
         this.clearContainer();
+        // Check if we need to render a half-width preceding sharp
+        // (all white keys except C and F have a sharp before them)
+        const needsPrecedingSharp = !start.name.includes("#") && start.name !== "C" && start.name !== "F";
+        if (needsPrecedingSharp) {
+            const precedingSharp = Note.fromTotalSemitones(start.totalSemitones - 1);
+            const halfKeyEl = this.createKeyElement(precedingSharp, true);
+            halfKeyEl.classList.add("half-width");
+            this.container.appendChild(halfKeyEl);
+        }
         for (let semitones = start.totalSemitones; semitones <= end.totalSemitones; semitones++) {
             const note = Note.fromTotalSemitones(semitones);
             const keyEl = this.createKeyElement(note, true);
@@ -76,6 +85,18 @@ export class PianoRollGenerator {
             throw new Error("Start note must be lower than end note.");
         }
         this.clearContainer();
+        // Check if we need to render a half-width preceding sharp
+        // (all white keys except C and F have a sharp before them)
+        const needsPrecedingSharp = !start.name.includes("#") && start.name !== "C" && start.name !== "F";
+        if (needsPrecedingSharp) {
+            const precedingSharp = Note.fromTotalSemitones(start.totalSemitones - 1);
+            const halfKeyEl = this.createKeyElement(precedingSharp, labels);
+            halfKeyEl.classList.add("half-width");
+            if (highlightNotes.some(n => n.totalSemitones === precedingSharp.totalSemitones)) {
+                halfKeyEl.classList.add("highlight");
+            }
+            this.container.appendChild(halfKeyEl);
+        }
         for (let semitones = start.totalSemitones; semitones <= end.totalSemitones; semitones++) {
             const note = Note.fromTotalSemitones(semitones);
             const keyEl = this.createKeyElement(note, labels);

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Harmony View</title>
+  <link rel="stylesheet" href="scale-key-view-style.css" />
+</head>
+
+<body>
+
+  <h1>Scale Triads</h1>
+
+  <div class="controls">
+    <label for="keyDropdown">Choose a key:</label>
+    <select id="keyDropdown">
+    <option value=""> No key selected </option>
+    <option value="C">C</option>
+    <option value="C#">C#</option>
+    <option value="D">D</option>
+    <option value="D#">D#</option>
+    <option value="E">E</option>
+    <option value="F">F</option>
+    <option value="F#">F#</option>
+    <option value="G">G</option>
+    <option value="G#">G#</option>
+    <option value="A">A</option>
+    <option value="A#">A#</option>
+    <option value="B">B</option>
+    </select>
+    
+    <label for="scaleDropdown">Choose a scale:</label>
+    <select id="scaleDropdown">
+      <option value=""> No scale selected </option>
+      <option value="major">Major</option>
+      <option value="minor">Natural Minor</option>
+      <option value="ionian">Ionian</option>
+      <option value="dorian">Dorian</option>
+      <option value="phrygian">Phrygian</option>
+      <option value="lydian">Lydian</option>
+      <option value="mixolydian">Mixolydian</option>
+      <option value="aeolian">Aeolian</option>
+      <option value="locrian">Locrian</option>
+      <option value="pentatonicMajor">Major Pentatonic</option>
+      <option value="pentatonicMinor">Minor Pentatonic</option>
+      <option value="bluesMajor">Major Blues</option>
+      <option value="bluesMinor">Minor Blues</option>
+    </select>
+
+    <button id="generateBtn" class="btn">Generate</button>
+  </div>
+
+  <div id="scaleGrid"></div>
+
+  <div class="back-button-container">
+    <a href="index.html"><button class="btn">Back</button></a>
+  </div>
+
+  <script type="module">
+    import { PianoRollGenerator } from "./dist/piano-roll-generator.js";
+    import { Note } from "./dist/note.js";
+    import { Scale } from "./dist/scale.js";
+    import { Chord } from "./dist/chord.js";
+
+    const keyDropdown = document.getElementById("keyDropdown");
+    const scaleDropdown = document.getElementById("scaleDropdown");
+    const scaleGrid = document.getElementById("scaleGrid");
+    const generateBtn = document.getElementById("generateBtn");
+
+    const scaleMap = {
+      major: Scale.major,
+      minor: Scale.minor,
+      ionian: Scale.ionian,
+      dorian: Scale.dorian,
+      phrygian: Scale.phrygian,
+      lydian: Scale.lydian,
+      mixolydian: Scale.mixolydian,
+      aeolian: Scale.aeolian,
+      locrian: Scale.locrian,
+      pentatonicMajor: Scale.pentatonicMajor,
+      pentatonicMinor: Scale.pentatonicMinor,
+      bluesMajor: Scale.bluesMajor,
+      bluesMinor: Scale.bluesMinor,
+    };
+
+    generateBtn.addEventListener("click", () => {
+        const selectedKeyName = keyDropdown.value;
+        const selectedScaleKey = scaleDropdown.value;
+
+      if (!selectedKeyName) {
+        alert("Please select a valid key.");
+        return;
+      }
+
+      if (!selectedScaleKey || !scaleMap[selectedScaleKey]) {
+        alert("Please select a valid scale.");
+        return;
+      }
+
+
+      scaleGrid.innerHTML = "";
+
+      // Rolls always start from the scale root and show 2 octaves, ending just before the next root.
+      const scaleRoot = new Note(selectedKeyName, 4);
+      const rollStart = scaleRoot;
+      const rollEnd = scaleRoot.move(24).move(-1);
+
+      // Build requested scale, then triads (1..N where N = number of scale degrees).
+      const scaleNotes = Scale.buildScale(scaleRoot, scaleMap[selectedScaleKey]);
+      const triads = Chord.buildTriadsFromScale(scaleNotes);
+
+      for (let i = 0; i < triads.length; i++) {
+        const chordNotes = triads[i];
+
+        const scaleBox = document.createElement("div");
+        scaleBox.className = "scaleBox fade-in";
+        scaleBox.style.animationDelay = `${i * 0.05}s`;
+
+        const rollDiv = document.createElement("div");
+        const rollId = `harmonyRoll_${selectedKeyName}_${selectedScaleKey}_${i + 1}`;
+        rollDiv.className = "pianoRollInstance";
+        rollDiv.id = rollId;
+
+        const label = document.createElement("div");
+        label.className = "scaleLabel";
+        label.textContent = `${i + 1}`;
+
+        scaleBox.appendChild(rollDiv);
+        scaleBox.appendChild(label);
+        scaleGrid.appendChild(scaleBox);
+
+        const roll = new PianoRollGenerator(rollId);
+        roll.generateRollRangeWithHighlight(rollStart, rollEnd, chordNotes, false);
+      }
+    });
+  </script>
+
+</body>
+
+</html>
