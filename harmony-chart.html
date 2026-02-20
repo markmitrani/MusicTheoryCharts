@@ -76,6 +76,13 @@
                 content.className = 'segment-content';
                 content.textContent = key;
                 
+                // Make segment clickable
+                segment.style.cursor = 'pointer';
+                segment.addEventListener('click', () => {
+                    currentKeyIndex = index;
+                    updateDisplay();
+                });
+                
                 segment.appendChild(content);
                 wheel.appendChild(segment);
             });
@@ -374,11 +381,11 @@
                 
                 const scaleNotes = Note.buildScaleFromIntervals(rootNote, intervals);
                 const startNote = scaleNotes[0];
-                const endNote = scaleNotes[scaleNotes.length - 1];
+                const endNote = scaleNotes[0].move(11);
                 
-                // Remove the last note (octave) from highlighting to avoid duplicate root
-                const scaleToHighlight = scaleNotes.slice(0, -1);
-                pianoRollGenerator.generateRollRangeWithHighlight(startNote, endNote, scaleToHighlight, true);
+                // TODO make the two scale formats consistent
+                const scaleToHighlight = scaleNotes;
+                pianoRollGenerator.generateRollRangeWithHighlight(startNote, endNote, scaleToHighlight, false);
             });
         }
 

@@ -228,6 +228,12 @@ h1 {
     transform: translate(-50%, -50%);
 }
 
+.key-segment:hover .segment-content {
+    background: linear-gradient(135deg, rgb(130, 130, 130) 0%, rgb(170, 170, 170) 100%);
+    color: rgba(255, 255, 255, 0.7);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
 .key-segment.active .segment-content {
     width: 80px;
     height: 80px;
