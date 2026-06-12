@@ -1,0 +1,109 @@
+// ============================================================
+// Music Theory Playground — design tokens
+// Source of truth: .claude/reference/figma-canvas-designs/infinite-canvas.svg
+// All component styles reference these tokens; never hardcode values.
+// Theme switching: add a new [data-theme="..."] block.
+// ============================================================
+
+:root,
+[data-theme='dark'] {
+  // surfaces
+  --canvas-bg: #0e0e0e;
+  --canvas-dot-grid: rgba(244, 240, 234, 0.07);
+  --element-fill: #2c1c20;
+  --element-fill-raised: #382227; // hover lift surface
+  --chrome-fill: rgba(20, 16, 15, 0.82); // toolbar / panels, glassy
+  --chrome-blur: 18px;
+
+  // strokes
+  --element-stroke: rgba(166, 116, 74, 0.45);
+  --element-stroke-hover: rgba(166, 116, 74, 0.8);
+  --element-stroke-selected: #f49119;
+  --hairline: rgba(244, 240, 234, 0.1);
+
+  // accents
+  --accent: #f49119;
+  --accent-soft: rgba(244, 145, 25, 0.16);
+  --accent-warm: #a6744a;
+  --accent-warm-soft: rgba(166, 116, 74, 0.25);
+
+  // piano
+  --key-white: #f4f0ea;
+  --key-black: #1a1416;
+  --key-highlight: #a6744a;
+  --key-lit: #f49119;
+
+  // text
+  --text-primary: #f4f0ea;
+  --text-secondary: #d9d9d9;
+  --text-muted: #787878;
+
+  // depth
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.45);
+  --glow-accent: 0 0 0 1px var(--element-stroke-selected), 0 0 18px rgba(244, 145, 25, 0.22);
+
+  // shape
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-key: 2.5px;
+
+  // type
+  --font-display: var(--font-fraunces), 'Fraunces', georgia, serif;
+  --font-body: var(--font-inter), 'Inter', -apple-system, sans-serif;
+  --text-xs: 0.6875rem; // 11px — micro labels
+  --text-sm: 0.8125rem; // 13px — UI labels
+  --text-md: 0.9375rem; // 15px — body
+  --text-lg: 1.25rem; // 20px — element titles
+  --text-xl: 1.75rem; // 28px — section headings
+  --text-2xl: 2.5rem; // 40px — app title
+  --weight-display: 560;
+  --weight-body: 400;
+  --weight-medium: 500;
+
+  // motion (GSAP uses its own eases; these cover pure-CSS transitions)
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-med: 260ms;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none; // canvas owns trackpad gestures
+}
+
+body {
+  background: var(--canvas-bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; // the canvas is the page
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.01em;
+}
