@@ -7,6 +7,7 @@ import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { loadImageFile, imageFilesFrom } from '@/lib/images';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
+import { UrlSync } from './UrlSync';
 import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
@@ -177,6 +178,7 @@ export function CanvasApp() {
   return (
     <>
       <AudioBoot />
+      <UrlSync />
       <Viewport camera={camera} onBackgroundPointerDown={onBackgroundPointerDown}>
         <div ref={contentAnimRef}>
           {sorted.map((el) => {
