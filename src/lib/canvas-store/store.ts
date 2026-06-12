@@ -2,6 +2,9 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { CanvasElement, Page, Tool } from './types';
 
+/** Omit that distributes over union members (plain Omit collapses the union). */
+type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
+
 let nextId = 0;
 const newId = () => `e${(++nextId).toString(36)}${Date.now().toString(36).slice(-4)}`;
 
@@ -23,7 +26,7 @@ export interface CanvasState extends DocState {
   setMuted(muted: boolean): void;
   setTempoMs(ms: number): void;
 
-  addElement(el: Omit<CanvasElement, 'id' | 'z'>): string;
+  addElement(el: DistributiveOmit<CanvasElement, 'id' | 'z'>): string;
   updateElement(id: string, patch: Partial<CanvasElement>, opts?: { commit?: boolean }): void;
   removeElements(ids: string[]): void;
   duplicateSelection(): void;

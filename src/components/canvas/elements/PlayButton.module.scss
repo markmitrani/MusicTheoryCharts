@@ -1,0 +1,30 @@
+.play {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--element-stroke);
+  color: var(--text-secondary);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out);
+
+  svg {
+    margin-left: 1.5px; // optical centering of the triangle
+  }
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--element-stroke-hover);
+  }
+
+  &[data-playing] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1a1109;
+    box-shadow: 0 0 14px rgba(244, 145, 25, 0.45);
+  }
+}
