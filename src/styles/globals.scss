@@ -14,6 +14,9 @@
   --element-fill-raised: #382227; // hover lift surface
   --chrome-fill: rgba(20, 16, 15, 0.82); // toolbar / panels, glassy
   --chrome-blur: 18px;
+  // stained-glass surface: 50% alpha at top-left fading −15% toward bottom-right
+  --glass-fill: linear-gradient(135deg, rgba(44, 28, 32, 0.5) 0%, rgba(44, 28, 32, 0.35) 100%);
+  --glass-blur: 10px;
 
   // strokes
   --element-stroke: rgba(166, 116, 74, 0.45);

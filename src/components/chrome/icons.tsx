@@ -103,6 +103,13 @@ export const CheckIcon = (p: IconProps) => (
   </svg>
 );
 
+export const LightbulbIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M9 18h6M10 21h4" />
+    <path d="M12 3a6 6 0 0 0-3.6 10.8c.7.55 1.1 1.3 1.2 2.2h4.8c.1-.9.5-1.65 1.2-2.2A6 6 0 0 0 12 3Z" />
+  </svg>
+);
+
 export const SeventhIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <text

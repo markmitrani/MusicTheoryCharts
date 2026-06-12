@@ -107,13 +107,15 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
         </>
       }
     >
-      <div ref={cardRef} className={styles.card} data-selected={selected || undefined} data-playing={playing || undefined}>
-        <div className={styles.keys}>
-          <PianoKeys baseC={baseC} octaves={octaves} highlighted={new Set(pitches)} lit={lit} />
-        </div>
-        <div className={styles.labelStrip}>
-          <span className={styles.name}>{name}</span>
+      <div ref={cardRef} className={styles.wrap} data-selected={selected || undefined} data-playing={playing || undefined}>
+        <div className={styles.header}>
+          <span className={styles.nameTab}>{name}</span>
           <PlayButton playing={playing} onClick={play} />
+        </div>
+        <div className={styles.card}>
+          <div className={styles.keys}>
+            <PianoKeys baseC={baseC} octaves={octaves} highlighted={new Set(pitches)} lit={lit} />
+          </div>
         </div>
       </div>
     </ElementShell>

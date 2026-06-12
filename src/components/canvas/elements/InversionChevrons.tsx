@@ -24,7 +24,7 @@ export function InversionChevrons({ onPrev, onNext }: { onPrev: () => void; onNe
   };
 
   return (
-    <div ref={ref} onPointerDown={(e) => e.stopPropagation()}>
+    <div ref={ref} className={styles.frame} onPointerDown={(e) => e.stopPropagation()}>
       <button
         className={`${styles.chevron} ${styles.left}`}
         aria-label="Previous inversion"

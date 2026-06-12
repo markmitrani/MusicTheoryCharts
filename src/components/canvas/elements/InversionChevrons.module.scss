@@ -1,3 +1,15 @@
+// Covers the card body only (below the 32px name-tab header) so the
+// chevrons center on the card, not the whole element.
+.frame {
+  position: absolute;
+  inset: 32px 0 0 0;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
 .chevron {
   position: absolute;
   top: 50%;

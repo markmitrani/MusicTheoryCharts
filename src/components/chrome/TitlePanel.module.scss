@@ -8,11 +8,34 @@
   padding: 28px 30px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background:
-    linear-gradient(160deg, rgba(166, 116, 74, 0.08), rgba(0, 0, 0, 0) 45%),
-    var(--element-fill);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--shadow-md);
   z-index: 90;
+}
+
+.bulb {
+  position: fixed;
+  top: 74px;
+  right: 26px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--element-stroke);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  color: var(--accent-warm);
+  box-shadow: var(--shadow-sm);
+  z-index: 90;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--element-stroke-hover);
+  }
 }
 
 .collapse {
