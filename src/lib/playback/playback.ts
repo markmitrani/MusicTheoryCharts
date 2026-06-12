@@ -19,6 +19,8 @@ interface PlaybackCallbacks {
 export interface AudioSink {
   triggerNote(pitch: number, durationMs: number, velocity?: number): void;
   triggerChord(pitches: number[], durationMs: number): void;
+  /** A new playback is taking over — release held notes so tails cross-fade. */
+  interrupt(): void;
 }
 
 let audioSink: AudioSink | null = null;
@@ -31,6 +33,7 @@ export function setAudioSink(sink: AudioSink | null) {
 /** Stop whatever is playing (audio engine cross-fades on its side). */
 function takeOver(cb: PlaybackCallbacks): gsap.core.Timeline {
   current?.cancel();
+  audioSink?.interrupt();
   const tl = gsap.timeline({
     onComplete: () => {
       cb.onLit(new Set());
