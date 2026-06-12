@@ -1,29 +1,31 @@
-# Music Theory Charts for Piano: Interactive Visualizer for Practicing Music Theory
+# Music Theory Playground
 
-## Intro
-A small webapp to streamline piano practice. The reactive interface displays scales for all 12 standard notes found in Western music. Features multiple views:
-- Scale view: Choose a scale and view it starting from all 12 notes, side by side.
-- Key view: Choose a starting note and view all available scales next to each other.
-- Chord view: Visualize the chords built from each scale degree.
-- Harmony chart: Explore the circle of fifths with interactive harmony visualization.
+An infinite-canvas webapp for arranging music theory tools — scales, chords, and reference images — however you think. Built for jazz learners who are tired of switching contexts between isolated theory tools.
 
-[Click here](https://markmitrani.github.io/MusicTheoryCharts/index.html) to visit the website.
+## Features
 
-## Installation
-The core logic is written in TypeScript under ```/src```. These files can be compiled into JavaScript using ```tsc```.
-It is possible to run the project using ```live-server```. To install ```live-server``` using npm, run ```npm install -g live-server```.
+- **Infinite canvas** with trackpad-native pan (two-finger drag), zoom (pinch or cmd+scroll), and space-hold panning
+- **Scales & chords** as draggable cards with piano visualizations — 22 scales (modes, bebop, blues, exotic) and the full jazz chord vocabulary (triads through altered extensions)
+- **Chord tools**: universal 7ths toggle, inversion cycling with proper naming ("Gmaj7 — 1st inversion")
+- **Playback**: warm pad synthesis via Tone.js — scales play legato note-by-note, chords sustain as a block, piano keys light up in sync
+- **Editing in place**: click any element's folder tab to change its root or type
+- **Multi-page canvas** with a vertical page rail — rename, reorder, delete
+- **Image uploads** via toolbar, drag-and-drop, or paste — aspect-locked resizing
+- **Shareable URLs**: the whole canvas state lives in a compact `#v1:` hash
 
-## Usage
-Navigate to the repository directory and run ```live-server``` on the command line. If everything went well, you should see a line like this in your terminal:
+## Development
 
-```Serving ".../MusicTheoryCharts" at [IP_ADDRESS]```
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm test         # vitest unit tests (theory core, store, URL codec)
+npm run build    # production build
+```
 
-If the interface hasn't opened automatically, navigate to ```IP_ADDRESS``` on your favorite browser.
+Stack: Next.js (App Router) + TypeScript, SCSS with design tokens in `src/styles/globals.scss`, GSAP for motion, Tone.js for audio, zustand for canvas state.
 
-## Planned Developments
-- Custom themes (variable accent colors, either key-based or user-selected)
-- Additional scale modes and exotic scales
+The previous HTML/CSS/JS implementation lives in [`legacy/`](legacy/) as reference material.
 
 ## Acknowledgements
-The [Rakkas](https://fonts.google.com/specimen/Rakkas) font was used to style headings.
-Landing page photo by [Kelly Sikkema on Unsplash](https://unsplash.com/@kellysikkema).
+
+Type set in [Fraunces](https://fonts.google.com/specimen/Fraunces) and [Inter](https://fonts.google.com/specimen/Inter).

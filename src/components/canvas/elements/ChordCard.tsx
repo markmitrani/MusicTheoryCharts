@@ -13,7 +13,7 @@ import {
 } from '@/lib/theory/chords';
 import type { ChordElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
-import { playChord } from '@/lib/playback/playback';
+import { playChord, uiTick } from '@/lib/playback/playback';
 import { ElementShell } from '../ElementShell';
 import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
@@ -62,6 +62,7 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
 
   const toggleSeventh = () => {
     if (!seventhMappable) return;
+    uiTick(el.seventh ? 1 : 3);
     const nextSeventh = !el.seventh;
     const nextQuality = nextSeventh ? withSeventh(el.quality) : el.quality;
     const clampedInversion = Math.min(el.inversion, inversionCount(nextQuality) - 1);

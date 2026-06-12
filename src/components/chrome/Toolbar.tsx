@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { gsap } from 'gsap';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { uiTick } from '@/lib/playback/playback';
 import type { Tool } from '@/lib/canvas-store/types';
 import { SelectIcon, MoveIcon, FrameIcon, UploadIcon, LayersIcon, PlusIcon } from './icons';
 import styles from './Toolbar.module.scss';
@@ -37,6 +38,7 @@ export function Toolbar({ onAddNew, onUpload }: ToolbarProps) {
 
   const handleClick = (def: ToolDef, e: React.MouseEvent<HTMLButtonElement>) => {
     press(e.currentTarget);
+    uiTick(TOOLS.findIndex((t) => t.id === def.id));
     if (def.id === 'add') {
       onAddNew();
       return;

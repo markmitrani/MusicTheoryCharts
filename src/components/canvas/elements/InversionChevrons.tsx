@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/chrome/icons';
+import { uiTick } from '@/lib/playback/playback';
 import styles from './InversionChevrons.module.scss';
 
 /** Inversion cyclers flanking a selected chord, outside the card frame. */
@@ -20,6 +21,7 @@ export function InversionChevrons({ onPrev, onNext }: { onPrev: () => void; onNe
   const press = (e: React.MouseEvent<HTMLButtonElement>, fn: () => void) => {
     e.stopPropagation();
     gsap.fromTo(e.currentTarget, { scale: 0.82 }, { scale: 1, duration: 0.4, ease: 'back.out(2.5)' });
+    uiTick(2);
     fn();
   };
 

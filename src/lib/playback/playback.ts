@@ -21,6 +21,13 @@ export interface AudioSink {
   triggerChord(pitches: number[], durationMs: number): void;
   /** A new playback is taking over — release held notes so tails cross-fade. */
   interrupt(): void;
+  /** Quiet UI pluck for chrome interactions, pitch cycled by step. */
+  uiTick(step: number): void;
+}
+
+/** Frame-synced UI sound for button presses; no-op until audio boots. */
+export function uiTick(step = 0) {
+  audioSink?.uiTick(step);
 }
 
 let audioSink: AudioSink | null = null;

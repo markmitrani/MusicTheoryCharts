@@ -26,6 +26,7 @@ class AudioEngine implements AudioSink {
   private chorus: Tone.Chorus;
   private pad: Tone.PolySynth<Tone.Synth>;
   private sub: Tone.Synth;
+  private pluck: Tone.Synth;
 
   constructor() {
     this.master = new Tone.Gain(this.volume);
@@ -55,6 +56,15 @@ class AudioEngine implements AudioSink {
     });
     this.sub.volume.value = -14;
     this.sub.connect(this.master);
+
+    // barely-there triangle pluck for chrome interactions (reference ui.js feel)
+    this.pluck = new Tone.Synth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.004, decay: 0.22, sustain: 0, release: 0.3 },
+    });
+    this.pluck.volume.value = -18;
+    this.pluck.connect(this.master);
+    this.pluck.connect(this.reverbSend);
   }
 
   /** Must resolve from a user gesture before any trigger makes sound. */
@@ -92,6 +102,13 @@ class AudioEngine implements AudioSink {
   triggerNote(pitch: number, durationMs: number, velocity = 0.7) {
     if (!this.started || this.muted) return;
     this.pad.triggerAttackRelease(toneNote(pitch), durationMs / 1000, Tone.now(), velocity);
+  }
+
+  uiTick(step: number) {
+    if (!this.started || this.muted) return;
+    // A-major pentatonic, like the reference interaction sounds
+    const notes = ['A4', 'B4', 'C#5', 'E5', 'F#5'];
+    this.pluck.triggerAttackRelease(notes[((step % 5) + 5) % 5], 0.12, Tone.now(), 0.35);
   }
 
   triggerChord(pitches: number[], durationMs: number) {

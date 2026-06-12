@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { uiTick } from '@/lib/playback/playback';
 import { PlusIcon } from './icons';
 import styles from './PageRail.module.scss';
 
@@ -67,7 +68,10 @@ export function PageRail() {
   const onBarPointerUp = (id: string) => {
     const wasDrag = drag.current?.moved;
     drag.current = null;
-    if (!wasDrag) canvasStore.getState().setActivePage(id);
+    if (!wasDrag && id !== canvasStore.getState().activePageId) {
+      uiTick(4);
+      canvasStore.getState().setActivePage(id);
+    }
   };
 
   return (
