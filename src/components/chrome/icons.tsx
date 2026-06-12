@@ -103,6 +103,22 @@ export const CheckIcon = (p: IconProps) => (
   </svg>
 );
 
+export const BringForwardIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 13V6a2 2 0 0 1 2-2h7" opacity="0.45" />
+    <path d="M14.5 11.5v8M14.5 11.5 11 15M14.5 11.5 18 15" transform="rotate(180 14.5 15.5)" />
+  </svg>
+);
+
+export const SendBackwardIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="9" y="9" width="11" height="11" rx="2" opacity="0.45" />
+    <path d="M5 13V6a2 2 0 0 1 2-2h7" />
+    <path d="M14.5 12v7M14.5 19 11 15.5M14.5 19l3.5-3.5" />
+  </svg>
+);
+
 export const LightbulbIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M9 18h6M10 21h4" />

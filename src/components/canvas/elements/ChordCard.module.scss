@@ -10,15 +10,30 @@
   height: 32px;
 }
 
+// Folder tab: right edge slants outward like a mac folder. clip-path clips
+// real borders, so the stroke is faked: outer = stroke color clipped to the
+// tab shape, inner = glass fill clipped to the same shape inset by 1px.
+$tab-slant: 14px;
+
 .nameTab {
+  position: relative;
   align-self: stretch;
+  margin-bottom: -1px; // fuse with the card's top stroke
+  padding: 1px 1px 0;
+  border: none;
+  border-radius: var(--radius-sm) 0 0 0;
+  clip-path: polygon(6px 0, calc(100% - #{$tab-slant}) 0, 100% 100%, 0 100%, 0 6px);
+  background: var(--element-stroke);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.nameTabInner {
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  margin-bottom: -1px; // fuse with the card's top stroke
-  border: 1px solid var(--element-stroke);
-  border-bottom: none;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  height: 100%;
+  padding: 0 26px 0 15px;
+  clip-path: polygon(6px 0, calc(100% - #{$tab-slant} + 0.5px) 0, 100% 100%, 0 100%, 0 6px);
   background: var(--glass-fill);
   backdrop-filter: blur(var(--glass-blur));
   font-size: var(--text-sm);
@@ -26,7 +41,16 @@
   color: var(--text-primary);
   letter-spacing: 0.01em;
   white-space: nowrap;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.nameTab:hover .nameTabInner {
+  color: var(--accent);
+}
+
+.nameTabInner[data-empty] {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .card {
@@ -44,26 +68,26 @@
 }
 
 .wrap:hover {
-  .card,
-  .nameTab {
-    border-color: var(--element-stroke-hover);
-  }
-
   .card {
+    border-color: var(--element-stroke-hover);
     box-shadow: var(--shadow-md);
     translate: 0 -2px;
+  }
+
+  .nameTab {
+    background: var(--element-stroke-hover);
   }
 }
 
 .wrap[data-selected] {
-  .card,
-  .nameTab {
-    border-color: var(--element-stroke-selected);
-  }
-
   .card {
+    border-color: var(--element-stroke-selected);
     box-shadow: var(--glow-accent), var(--shadow-md);
     translate: 0 -2px;
+  }
+
+  .nameTab {
+    background: var(--element-stroke-selected);
   }
 }
 

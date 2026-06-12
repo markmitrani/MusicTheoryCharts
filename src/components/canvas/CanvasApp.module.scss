@@ -1,0 +1,8 @@
+.marquee {
+  position: fixed;
+  z-index: 80;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 2px;
+  pointer-events: none;
+}

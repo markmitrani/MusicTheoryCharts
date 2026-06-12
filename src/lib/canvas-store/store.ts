@@ -27,6 +27,10 @@ export interface CanvasState extends DocState {
   setTempoMs(ms: number): void;
 
   addElement(el: DistributiveOmit<CanvasElement, 'id' | 'z'>): string;
+  /** Convert a filled-in stub to a real element in place (one undo step). */
+  confirmStub(id: string): void;
+  /** Drop unconfirmed stubs (click-away). Transient UI — not undoable. */
+  removeUnconfirmedStubs(): void;
   updateElement(id: string, patch: Partial<CanvasElement>, opts?: { commit?: boolean }): void;
   removeElements(ids: string[]): void;
   duplicateSelection(): void;
@@ -105,6 +109,28 @@ export function createCanvasStore() {
           elements: [...p.elements, { ...el, id, z: maxZ(p) + 1 } as CanvasElement],
         }));
         return id;
+      },
+
+      confirmStub(id) {
+        const stub = get().activePage().elements.find((e) => e.id === id);
+        if (!stub || stub.kind !== 'stub' || !stub.root || !stub.typeId) return;
+        snapshot();
+        const [kind, typeId] = stub.typeId.split(':');
+        const base = { id: stub.id, x: stub.x, y: stub.y, z: stub.z, root: stub.root, octave: 3 };
+        const real: CanvasElement =
+          kind === 'chord'
+            ? { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false }
+            : { ...base, kind: 'scale', scaleId: typeId };
+        mutatePage((p) => ({
+          ...p,
+          elements: p.elements.map((e) => (e.id === id ? real : e)),
+        }));
+        set({ selection: new Set([id]) });
+      },
+
+      removeUnconfirmedStubs() {
+        if (!get().activePage().elements.some((e) => e.kind === 'stub')) return;
+        mutatePage((p) => ({ ...p, elements: p.elements.filter((e) => e.kind !== 'stub') }));
       },
 
       updateElement(id, patch, opts) {
@@ -249,6 +275,15 @@ export function createCanvasStore() {
 
 /** Singleton store for the app (tests create their own via createCanvasStore). */
 export const canvasStore = createCanvasStore();
+
+declare global {
+  interface Window {
+    __canvasStore?: typeof canvasStore;
+  }
+}
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  window.__canvasStore = canvasStore;
+}
 
 export function useCanvas<T>(selector: (s: CanvasState) => T): T {
   return useStore(canvasStore, selector);

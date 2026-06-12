@@ -1,0 +1,62 @@
+.frame {
+  position: relative;
+  border-radius: var(--radius-sm);
+  outline: 1px solid transparent;
+  transition: outline-color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    outline-color: var(--element-stroke-hover);
+  }
+
+  &[data-selected] {
+    outline: 1.5px solid var(--element-stroke-selected);
+  }
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--element-stroke-selected);
+  background: var(--canvas-bg);
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    background: var(--accent);
+  }
+}
+
+.tl {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.tr {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.bl {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.br {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+}

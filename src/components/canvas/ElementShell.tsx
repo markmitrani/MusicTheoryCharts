@@ -4,6 +4,8 @@ import { useEffect, useRef, type ReactNode, type PointerEvent as ReactPointerEve
 import { gsap } from 'gsap';
 import { useCamera } from './Viewport';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { SettingsBar } from './elements/SettingsBar';
+import { BringForwardIcon, SendBackwardIcon } from '@/components/chrome/icons';
 import styles from './ElementShell.module.scss';
 
 /**
@@ -40,14 +42,16 @@ export function ElementShell({ id, x, y, z, selected, soloSelected, adornments, 
   }, []);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (tool !== 'select' || e.button !== 0) return;
+    if ((tool !== 'select' && tool !== 'layers') || e.button !== 0) return;
     e.stopPropagation();
     const s = canvasStore.getState();
+    s.removeUnconfirmedStubs();
     if (e.shiftKey) {
       s.toggleSelect(id);
       return;
     }
     if (!s.selection.has(id)) s.select([id]);
+    if (tool !== 'select') return; // layers tool selects but never drags
     drag.current = { startX: e.clientX, startY: e.clientY, elX: x, elY: y, moved: false };
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -82,13 +86,34 @@ export function ElementShell({ id, x, y, z, selected, soloSelected, adornments, 
       ref={ref}
       className={styles.shell}
       style={{ left: x, top: y, zIndex: z }}
+      data-element-id={id}
       data-selected={selected || undefined}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
       {children}
-      {selected && soloSelected && adornments}
+      {selected && soloSelected && tool === 'select' && adornments}
+      {selected && soloSelected && tool === 'layers' && (
+        <SettingsBar>
+          <button
+            className={styles.layerBtn}
+            aria-label="Send backward"
+            title="Send backward"
+            onClick={() => canvasStore.getState().sendBackward(id)}
+          >
+            <SendBackwardIcon width={18} height={18} />
+          </button>
+          <button
+            className={styles.layerBtn}
+            aria-label="Bring forward"
+            title="Bring forward"
+            onClick={() => canvasStore.getState().bringForward(id)}
+          >
+            <BringForwardIcon width={18} height={18} />
+          </button>
+        </SettingsBar>
+      )}
     </div>
   );
 }

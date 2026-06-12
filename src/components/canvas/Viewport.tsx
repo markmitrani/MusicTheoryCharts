@@ -22,16 +22,15 @@ export function useCamera(): CameraController {
 
 interface ViewportProps {
   children: ReactNode;
+  /** Owned by the app shell so chrome (toolbar, marquee) can use it too. */
+  camera: CameraController;
   /** Click landed on empty canvas (not on an element). Screen coords. */
   onBackgroundPointerDown?: (e: ReactPointerEvent<HTMLDivElement>) => void;
 }
 
-export function Viewport({ children, onBackgroundPointerDown }: ViewportProps) {
+export function Viewport({ children, camera, onBackgroundPointerDown }: ViewportProps) {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const cameraRef = useRef<CameraController | null>(null);
-  if (!cameraRef.current) cameraRef.current = new CameraController();
-  const camera = cameraRef.current;
 
   const tool = useCanvas((s) => s.tool);
   const spaceHeld = useRef(false);

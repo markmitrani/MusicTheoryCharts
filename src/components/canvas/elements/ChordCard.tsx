@@ -19,6 +19,7 @@ import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
 import { SettingsBar } from './SettingsBar';
 import { InversionChevrons } from './InversionChevrons';
+import { TypePicker } from './TypePicker';
 import styles from './ChordCard.module.scss';
 
 interface ChordCardProps {
@@ -31,6 +32,7 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [lit, setLit] = useState<ReadonlySet<number>>(new Set());
   const [playing, setPlaying] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const effectiveQuality = el.seventh ? withSeventh(el.quality) : el.quality;
   const { pitches, baseC, octaves, name } = useMemo(() => {
@@ -109,7 +111,17 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
     >
       <div ref={cardRef} className={styles.wrap} data-selected={selected || undefined} data-playing={playing || undefined}>
         <div className={styles.header}>
-          <span className={styles.nameTab}>{name}</span>
+          <button
+            className={styles.nameTab}
+            title="Change root or chord type"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing((v) => !v);
+            }}
+          >
+            <span className={styles.nameTabInner}>{name}</span>
+          </button>
           <PlayButton playing={playing} onClick={play} />
         </div>
         <div className={styles.card}>
@@ -117,6 +129,27 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
             <PianoKeys baseC={baseC} octaves={octaves} highlighted={new Set(pitches)} lit={lit} />
           </div>
         </div>
+        {editing && (
+          <TypePicker
+            kinds={['chord']}
+            root={el.root}
+            typeId={`chord:${el.quality}`}
+            onChange={(root, typeId) => {
+              const quality = typeId?.split(':')[1] ?? el.quality;
+              const effective = el.seventh ? withSeventh(quality) : quality;
+              canvasStore.getState().updateElement(
+                el.id,
+                {
+                  root: root ?? el.root,
+                  quality,
+                  inversion: Math.min(el.inversion, inversionCount(effective) - 1),
+                },
+                { commit: true },
+              );
+            }}
+            onClose={() => setEditing(false)}
+          />
+        )}
       </div>
     </ElementShell>
   );

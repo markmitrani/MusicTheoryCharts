@@ -75,6 +75,25 @@ describe('canvas store', () => {
     expect(store.getState().pages.length).toBe(1); // refuses to delete the last page
   });
 
+  it('reorders pages and converts stubs in place', () => {
+    const first = store.getState().pages[0].id;
+    const second = store.getState().addPage();
+    store.getState().reorderPage(second, 0);
+    expect(store.getState().pages.map((p) => p.id)).toEqual([second, first]);
+
+    const stubId = store.getState().addElement({
+      kind: 'stub',
+      x: 10,
+      y: 20,
+      root: 'C',
+      typeId: 'chord:maj7',
+    });
+    store.getState().confirmStub(stubId);
+    const el = store.getState().activePage().elements[0];
+    expect(el).toMatchObject({ id: stubId, kind: 'chord', root: 'C', quality: 'maj7', x: 10, y: 20 });
+    expect(store.getState().selection.has(stubId)).toBe(true);
+  });
+
   it('z-order: bring forward / send backward swap neighbors', () => {
     const a = store.getState().addElement(chord());
     const b = store.getState().addElement(chord({ x: 300 }));

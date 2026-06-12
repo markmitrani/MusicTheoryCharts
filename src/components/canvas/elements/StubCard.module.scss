@@ -1,0 +1,25 @@
+.body {
+  padding: 13px;
+  border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
+  border: 1px dashed var(--element-stroke-hover);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-sm);
+}
+
+.confirm {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #1a1109;
+  box-shadow: 0 0 14px rgba(244, 145, 25, 0.4);
+  transition: transform var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    transform: scale(1.08);
+  }
+}

@@ -9,6 +9,7 @@ import { playScale } from '@/lib/playback/playback';
 import { ElementShell } from '../ElementShell';
 import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
+import { TypePicker } from './TypePicker';
 import styles from './ChordCard.module.scss';
 
 interface ScaleCardProps {
@@ -20,6 +21,7 @@ interface ScaleCardProps {
 export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
   const [lit, setLit] = useState<ReadonlySet<number>>(new Set());
   const [playing, setPlaying] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const { pitches, highlighted, baseC, octaves, name } = useMemo(() => {
     const root = new Note(el.root, el.octave);
@@ -47,7 +49,17 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
     <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
       <div className={styles.wrap} data-selected={selected || undefined}>
         <div className={styles.header}>
-          <span className={styles.nameTab}>{name}</span>
+          <button
+            className={styles.nameTab}
+            title="Change root or scale type"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing((v) => !v);
+            }}
+          >
+            <span className={styles.nameTabInner}>{name}</span>
+          </button>
           <PlayButton playing={playing} onClick={play} />
         </div>
         <div className={styles.card}>
@@ -55,6 +67,21 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
             <PianoKeys baseC={baseC} octaves={octaves} highlighted={highlighted} lit={lit} />
           </div>
         </div>
+        {editing && (
+          <TypePicker
+            kinds={['scale']}
+            root={el.root}
+            typeId={`scale:${el.scaleId}`}
+            onChange={(root, typeId) => {
+              canvasStore.getState().updateElement(
+                el.id,
+                { root: root ?? el.root, scaleId: typeId?.split(':')[1] ?? el.scaleId },
+                { commit: true },
+              );
+            }}
+            onClose={() => setEditing(false)}
+          />
+        )}
       </div>
     </ElementShell>
   );
