@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { CameraController } from '@/lib/canvas-store/camera';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { loadImageFile, imageFilesFrom } from '@/lib/images';
+import { inversionCount, withSeventh } from '@/lib/theory/chords';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
 import { UrlSync } from './UrlSync';
@@ -88,6 +89,18 @@ export function CanvasApp() {
       if ((e.key === 'Delete' || e.key === 'Backspace') && s.selection.size > 0) {
         e.preventDefault();
         s.removeElements([...s.selection]);
+      } else if (cmd && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        s.selectAll();
+      } else if (cmd && e.key.toLowerCase() === 'c') {
+        // Defer to native copy when text is selected or nothing is on canvas.
+        if (s.selection.size === 0 || window.getSelection()?.toString()) return;
+        e.preventDefault();
+        s.copySelection();
+      } else if (cmd && e.key.toLowerCase() === 'x') {
+        if (s.selection.size === 0 || window.getSelection()?.toString()) return;
+        e.preventDefault();
+        s.cutSelection();
       } else if (cmd && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         s.duplicateSelection();
@@ -103,6 +116,25 @@ export function CanvasApp() {
         e.preventDefault();
         const fn = e.shiftKey ? s.sendToBack : s.sendBackward;
         s.selection.forEach((id) => fn(id));
+      } else if (!cmd && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        // Move up/down the page stack (the view), not the elements.
+        const idx = s.pages.findIndex((p) => p.id === s.activePageId);
+        const next = e.key === 'ArrowUp' ? idx - 1 : idx + 1;
+        if (next >= 0 && next < s.pages.length) {
+          e.preventDefault();
+          s.setActivePage(s.pages[next].id);
+        }
+      } else if (!cmd && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && s.selection.size === 1) {
+        // Cycle inversions of a single selected chord.
+        const el = s.activePage().elements.find((x) => s.selection.has(x.id));
+        if (el?.kind === 'chord') {
+          e.preventDefault();
+          const eff = el.seventh ? withSeventh(el.quality) : el.quality;
+          const count = inversionCount(eff);
+          const dir = e.key === 'ArrowRight' ? 1 : -1;
+          const inversion = (el.inversion + dir + count) % count;
+          s.updateElement(el.id, { inversion }, { commit: true });
+        }
       }
     };
 
@@ -112,7 +144,11 @@ export function CanvasApp() {
       if (files.length > 0) {
         e.preventDefault();
         spawnImages(files);
+        return;
       }
+      // No image in the OS clipboard → paste any copied canvas elements.
+      e.preventDefault();
+      canvasStore.getState().pasteClipboard();
     };
 
     const onDragOver = (e: DragEvent) => e.preventDefault();

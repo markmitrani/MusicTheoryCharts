@@ -8,6 +8,9 @@ type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : n
 let nextId = 0;
 const newId = () => `e${(++nextId).toString(36)}${Date.now().toString(36).slice(-4)}`;
 
+/** Session clipboard for copy/cut/paste — outside the doc, so never serialized. */
+let clipboard: CanvasElement[] = [];
+
 /** Deep-cloneable document slice that undo/redo snapshots. */
 interface DocState {
   pages: Page[];
@@ -40,6 +43,12 @@ export interface CanvasState extends DocState {
   select(ids: string[]): void;
   toggleSelect(id: string): void;
   clearSelection(): void;
+  selectAll(): void;
+
+  /** Session clipboard (copy/cut/paste); not part of the doc or URL state. */
+  copySelection(): void;
+  cutSelection(): void;
+  pasteClipboard(): void;
 
   bringForward(id: string): void;
   sendBackward(id: string): void;
@@ -199,6 +208,46 @@ export function createCanvasStore() {
         });
       },
       clearSelection: () => set({ selection: new Set() }),
+      selectAll() {
+        const ids = get()
+          .activePage()
+          .elements.filter((e) => e.kind !== 'stub')
+          .map((e) => e.id);
+        set({ selection: new Set(ids) });
+      },
+
+      copySelection() {
+        const s = get();
+        clipboard = s
+          .activePage()
+          .elements.filter((e) => s.selection.has(e.id) && e.kind !== 'stub')
+          .map((e) => structuredClone(e));
+      },
+
+      cutSelection() {
+        const s = get();
+        if (s.selection.size === 0) return;
+        s.copySelection();
+        s.removeElements([...s.selection]);
+      },
+
+      pasteClipboard() {
+        if (clipboard.length === 0) return;
+        snapshot();
+        const fresh: string[] = [];
+        mutatePage((p) => {
+          let z = maxZ(p);
+          const copies = clipboard.map((e) => {
+            const id = newId();
+            fresh.push(id);
+            return { ...structuredClone(e), id, x: e.x + 28, y: e.y + 28, z: ++z };
+          });
+          return { ...p, elements: [...p.elements, ...copies] };
+        });
+        // Cascade subsequent pastes so they don't stack on each other.
+        clipboard = clipboard.map((e) => ({ ...e, x: e.x + 28, y: e.y + 28 }));
+        set({ selection: new Set(fresh) });
+      },
 
       bringForward(id) {
         snapshot();

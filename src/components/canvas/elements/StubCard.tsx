@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { NoteName } from '@/lib/theory/note';
 import { scaleDisplayName } from '@/lib/theory/scales';
 import { chordDisplayName } from '@/lib/theory/chords';
@@ -43,8 +43,8 @@ export function StubCard({ el }: { el: StubElement }) {
   const [kind, setKind] = useState<StubKind>(
     (el.typeId?.split(':')[0] as StubKind) ?? (el.kindHint as StubKind) ?? 'scale',
   );
-  // Reveal the advanced group when its current kind is one of them.
-  const [showMore, setShowMore] = useState(() => isMoreKind(kind));
+  // Dropdown of advanced kinds, anchored to the ellipsis button.
+  const [moreOpen, setMoreOpen] = useState(false);
   const filled =
     kind === 'circle' ? el.typeId === 'circle:default' : el.root !== null && el.typeId !== null;
 
@@ -59,12 +59,21 @@ export function StubCard({ el }: { el: StubElement }) {
 
   const switchKind = (next: StubKind) => {
     setKind(next);
+    setMoreOpen(false);
     if (next === 'circle') {
       canvasStore.getState().updateElement(el.id, { typeId: 'circle:default' });
     } else if (el.typeId && !el.typeId.startsWith(`${next}:`)) {
       canvasStore.getState().updateElement(el.id, { typeId: null });
     }
   };
+
+  // Close the advanced dropdown on any click outside the stub body.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const close = () => setMoreOpen(false);
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, [moreOpen]);
 
   return (
     <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={false} soloSelected={false}>
@@ -104,33 +113,35 @@ export function StubCard({ el }: { el: StubElement }) {
                 {k.label}
               </button>
             ))}
-            <button
-              className={styles.more}
-              aria-label="More element types"
-              aria-expanded={showMore}
-              data-active={showMore || undefined}
-              title="More element types"
-              onClick={() => setShowMore((v) => !v)}
-            >
-              <EllipsisIcon width={18} height={18} />
-            </button>
-          </div>
-          {showMore && (
-            <div className={styles.moreKinds} role="tablist" aria-label="Advanced element kind">
-              {MORE_KINDS.map((k) => (
-                <button
-                  key={k.id}
-                  role="tab"
-                  aria-selected={kind === k.id}
-                  className={styles.kind}
-                  data-active={kind === k.id || undefined}
-                  onClick={() => switchKind(k.id)}
-                >
-                  {k.label}
-                </button>
-              ))}
+            <div className={styles.moreWrap}>
+              <button
+                className={styles.more}
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                aria-label="More element types"
+                data-active={moreOpen || isMoreKind(kind) || undefined}
+                title="More element types"
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                <EllipsisIcon width={18} height={18} />
+              </button>
+              {moreOpen && (
+                <div className={styles.moreMenu} role="menu" aria-label="Advanced element kind">
+                  {MORE_KINDS.map((k) => (
+                    <button
+                      key={k.id}
+                      role="menuitem"
+                      className={styles.moreItem}
+                      data-active={kind === k.id || undefined}
+                      onClick={() => switchKind(k.id)}
+                    >
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
           {kind === 'circle' ? (
             <p className={styles.circleNote}>
               An interactive circle of fifths — click a key on it to re-center, and spawn
