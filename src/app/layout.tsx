@@ -26,6 +26,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="dark" className={`${fraunces.variable} ${inter.variable}`}>
+      <head>
+        {/* Apply the saved theme before first paint to avoid a flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('mtp-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}",
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

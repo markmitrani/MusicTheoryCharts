@@ -3,8 +3,14 @@
   inset: 0;
   overflow: hidden;
   background-color: var(--canvas-bg);
-  background-image: radial-gradient(var(--canvas-dot-grid) 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
+  // dot grid (top layer) over the stained-glass atmosphere bleed, over the base colour
+  background-image:
+    radial-gradient(var(--canvas-dot-grid) 1.5px, transparent 1.5px),
+    var(--atmosphere);
+  background-size: 28px 28px, cover;
+  background-position: 0 0, bottom right;
+  background-repeat: repeat, no-repeat;
+  transition: background-color var(--dur-med) var(--ease-out);
   touch-action: none;
   cursor: default;
 

@@ -96,12 +96,31 @@
   accent-color: var(--accent);
 }
 
-.themeChip {
-  padding: 3px 10px;
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
   border-radius: 999px;
-  border: 1px solid var(--element-stroke);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.segment {
+  padding: 4px 12px;
+  border-radius: 999px;
   font-size: var(--text-xs);
   color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[data-active] {
+    background: var(--accent);
+    color: #fff;
+  }
 }
 
 .danger {

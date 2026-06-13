@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { getTheme, setTheme, type Theme } from '@/lib/theme';
 import { GearIcon, ShareIcon } from './icons';
 import styles from './SettingsPanel.module.scss';
 
@@ -12,8 +13,17 @@ import styles from './SettingsPanel.module.scss';
 export function CornerActions() {
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState(false);
+  const [theme, setThemeState] = useState<Theme>('dark');
   const muted = useCanvas((s) => s.muted);
   const tempoMs = useCanvas((s) => s.tempoMs);
+
+  // Sync from the DOM (set pre-paint by the no-flash script) on mount.
+  useEffect(() => setThemeState(getTheme()), []);
+
+  const chooseTheme = (next: Theme) => {
+    setTheme(next);
+    setThemeState(next);
+  };
 
   const share = async () => {
     await navigator.clipboard.writeText(window.location.href);
@@ -71,7 +81,20 @@ export function CornerActions() {
 
           <label className={styles.row}>
             <span>Theme</span>
-            <span className={styles.themeChip}>Dark</span>
+            <div className={styles.segmented} role="radiogroup" aria-label="Theme">
+              {(['dark', 'light'] as const).map((t) => (
+                <button
+                  key={t}
+                  role="radio"
+                  aria-checked={theme === t}
+                  className={styles.segment}
+                  data-active={theme === t || undefined}
+                  onClick={() => chooseTheme(t)}
+                >
+                  {t === 'dark' ? 'Dark' : 'Light'}
+                </button>
+              ))}
+            </div>
           </label>
 
           <button

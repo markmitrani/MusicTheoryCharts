@@ -17,6 +17,8 @@
   // stained-glass surface: 50% alpha at top-left fading −15% toward bottom-right
   --glass-fill: linear-gradient(135deg, rgba(44, 28, 32, 0.5) 0%, rgba(44, 28, 32, 0.35) 100%);
   --glass-blur: 10px;
+  // atmospheric bleed painted into the bottom-right of the canvas (stained glass)
+  --atmosphere: radial-gradient(120% 90% at 100% 100%, rgba(166, 116, 74, 0.06) 0%, transparent 55%);
 
   // strokes
   --element-stroke: rgba(166, 116, 74, 0.45);
@@ -77,6 +79,64 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 140ms;
   --dur-med: 260ms;
+}
+
+// ============================================================
+// Light theme — ice-blue / cyan over a cool neutral white, with a
+// stained-glass cyan bleed in the bottom-right corner.
+// Only colour/atmosphere tokens are overridden; shape/type/motion inherit.
+// ============================================================
+[data-theme='light'] {
+  // surfaces
+  --canvas-bg: #eef4f7;
+  --canvas-dot-grid: rgba(36, 78, 96, 0.1);
+  --element-fill: #f8fcfe;
+  --element-fill-raised: #ffffff;
+  --chrome-fill: rgba(255, 255, 255, 0.78);
+  --chrome-blur: 18px;
+  --glass-fill: linear-gradient(135deg, rgba(255, 255, 255, 0.74) 0%, rgba(221, 242, 248, 0.55) 100%);
+  --glass-blur: 12px;
+  --atmosphere: radial-gradient(
+    100% 78% at 100% 100%,
+    rgba(30, 188, 216, 0.38) 0%,
+    rgba(116, 204, 232, 0.17) 36%,
+    transparent 66%
+  );
+
+  // strokes
+  --element-stroke: rgba(40, 150, 175, 0.34);
+  --element-stroke-hover: rgba(28, 158, 188, 0.66);
+  --element-stroke-selected: #12aecb;
+  --hairline: rgba(22, 64, 80, 0.12);
+
+  // accents
+  --accent: #0fb0cc;
+  --accent-soft: rgba(15, 176, 204, 0.16);
+  --accent-warm: #3f8fa8;
+  --accent-warm-soft: rgba(63, 143, 168, 0.18);
+
+  // harmony degree chips (nudged darker/saturated to read on white)
+  --degree-major: #c5824f;
+  --degree-minor: #4a7aa6;
+  --degree-dim: #828c92;
+  --degree-aug: #9466bf;
+
+  // piano
+  --key-white: #ffffff;
+  --key-black: #233038;
+  --key-highlight: #3f8fa8;
+  --key-lit: #0fb0cc;
+
+  // text
+  --text-primary: #14323d;
+  --text-secondary: #3f5a66;
+  --text-muted: #87a0ab;
+
+  // depth (cooler, softer than dark)
+  --shadow-sm: 0 1px 2px rgba(36, 70, 85, 0.1), 0 2px 8px rgba(36, 70, 85, 0.06);
+  --shadow-md: 0 2px 6px rgba(36, 70, 85, 0.12), 0 10px 28px rgba(36, 70, 85, 0.1);
+  --shadow-lg: 0 4px 12px rgba(36, 70, 85, 0.14), 0 24px 56px rgba(36, 70, 85, 0.16);
+  --glow-accent: 0 0 0 1px var(--element-stroke-selected), 0 0 18px rgba(15, 176, 204, 0.22);
 }
 
 * {
