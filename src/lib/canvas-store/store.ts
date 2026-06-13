@@ -43,6 +43,8 @@ export interface CanvasState extends DocState {
 
   bringForward(id: string): void;
   sendBackward(id: string): void;
+  bringToFront(id: string): void;
+  sendToBack(id: string): void;
 
   addPage(): string;
   removePage(id: string): void;
@@ -221,6 +223,26 @@ export function createCanvasStore() {
           sorted[i] = { ...sorted[i], z: sorted[i - 1].z };
           sorted[i - 1] = { ...sorted[i - 1], z: a };
           return { ...p, elements: sorted };
+        });
+      },
+
+      bringToFront(id) {
+        snapshot();
+        mutatePage((p) => {
+          const max = p.elements.reduce((m, e) => Math.max(m, e.z), 0);
+          const target = p.elements.find((e) => e.id === id);
+          if (!target || target.z === max) return p;
+          return { ...p, elements: p.elements.map((e) => (e.id === id ? { ...e, z: max + 1 } : e)) };
+        });
+      },
+
+      sendToBack(id) {
+        snapshot();
+        mutatePage((p) => {
+          const min = p.elements.reduce((m, e) => Math.min(m, e.z), 0);
+          const target = p.elements.find((e) => e.id === id);
+          if (!target || target.z === min) return p;
+          return { ...p, elements: p.elements.map((e) => (e.id === id ? { ...e, z: min - 1 } : e)) };
         });
       },
 

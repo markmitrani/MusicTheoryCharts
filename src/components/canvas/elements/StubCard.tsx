@@ -8,22 +8,31 @@ import type { StubElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { ElementShell } from '../ElementShell';
 import { TypePicker } from './TypePicker';
-import { CheckIcon } from '@/components/chrome/icons';
+import { CheckIcon, EllipsisIcon } from '@/components/chrome/icons';
 import chordStyles from './ChordCard.module.scss';
 import styles from './StubCard.module.scss';
 
 /**
- * Element kinds offered by the spawn stub. Future canvas tools (circle of
- * fifths, Bartók pitch axis, …) slot in here as new entries.
+ * Everyday element kinds, shown directly in the spawn stub.
  */
-const STUB_KINDS = [
+const PRIMARY_KINDS = [
   { id: 'scale', label: 'Scale' },
   { id: 'chord', label: 'Chord' },
   { id: 'harmony', label: 'Harmony' },
-  { id: 'circle', label: 'Circle' },
 ] as const;
 
-type StubKind = (typeof STUB_KINDS)[number]['id'];
+/**
+ * Advanced/conceptual tools placed on the canvas less often. Tucked behind an
+ * ellipsis so the common kinds stay front-and-centre; future tools (Bartók
+ * pitch axis, …) join this group.
+ */
+const MORE_KINDS = [{ id: 'circle', label: 'Circle of Fifths' }] as const;
+
+type StubKind =
+  | (typeof PRIMARY_KINDS)[number]['id']
+  | (typeof MORE_KINDS)[number]['id'];
+
+const isMoreKind = (k: StubKind) => MORE_KINDS.some((m) => m.id === k);
 
 /**
  * Unconfirmed spawn stub: pick a kind, then root + type; the confirm icon
@@ -34,6 +43,8 @@ export function StubCard({ el }: { el: StubElement }) {
   const [kind, setKind] = useState<StubKind>(
     (el.typeId?.split(':')[0] as StubKind) ?? (el.kindHint as StubKind) ?? 'scale',
   );
+  // Reveal the advanced group when its current kind is one of them.
+  const [showMore, setShowMore] = useState(() => isMoreKind(kind));
   const filled =
     kind === 'circle' ? el.typeId === 'circle:default' : el.root !== null && el.typeId !== null;
 
@@ -81,7 +92,7 @@ export function StubCard({ el }: { el: StubElement }) {
         </div>
         <div className={styles.body} onPointerDown={(e) => e.stopPropagation()}>
           <div className={styles.kinds} role="tablist" aria-label="Element kind">
-            {STUB_KINDS.map((k) => (
+            {PRIMARY_KINDS.map((k) => (
               <button
                 key={k.id}
                 role="tab"
@@ -93,7 +104,33 @@ export function StubCard({ el }: { el: StubElement }) {
                 {k.label}
               </button>
             ))}
+            <button
+              className={styles.more}
+              aria-label="More element types"
+              aria-expanded={showMore}
+              data-active={showMore || undefined}
+              title="More element types"
+              onClick={() => setShowMore((v) => !v)}
+            >
+              <EllipsisIcon width={18} height={18} />
+            </button>
           </div>
+          {showMore && (
+            <div className={styles.moreKinds} role="tablist" aria-label="Advanced element kind">
+              {MORE_KINDS.map((k) => (
+                <button
+                  key={k.id}
+                  role="tab"
+                  aria-selected={kind === k.id}
+                  className={styles.kind}
+                  data-active={kind === k.id || undefined}
+                  onClick={() => switchKind(k.id)}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+          )}
           {kind === 'circle' ? (
             <p className={styles.circleNote}>
               An interactive circle of fifths — click a key on it to re-center, and spawn

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { CIRCLE_KEYS, circleIndexOf } from '@/lib/theory/circle';
+import { CIRCLE_KEYS, circleIndexOf, SHARP_STEPS, FLAT_STEPS } from '@/lib/theory/circle';
 import type { CircleElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { uiTick } from '@/lib/playback/playback';
@@ -17,53 +17,98 @@ interface CircleCardProps {
   soloSelected: boolean;
 }
 
-const SIZE = 360;
-const CX = SIZE / 2;
-const CY = SIZE / 2;
-const R_OUTER = 150;
-const R_INNER = 96;
-const R_MINOR = 62;
-const SIG_R = 166;
+// Ring geometry (SVG units, centred at CX/CY which depend on whether the
+// signature staves need outboard room).
+const RING_OUTER = 150;
+const RING_INNER = 96;
+const MID_R = (RING_OUTER + RING_INNER) / 2; // key name radius
+const MINOR_R = 76; // relative minor sits inside the ring
+const SIG_R = 190; // staff centre, outboard of the ring
+const HUB_R = 40;
+
+// Treble-staff metrics for the rendered key signatures.
+const STAFF_LS = 3; // line spacing
+const STAFF_HALF = STAFF_LS * 2; // top/bottom line offset from centre
+const STAFF_CLEF_W = 9;
+const STAFF_ACC_STEP = 4.4;
+/** Diatonic step above the bottom staff line (E4) → y offset from centre. */
+const stepToY = (step: number) => STAFF_HALF - step * (STAFF_LS / 2);
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
-const polar = (r: number, deg: number) => ({
-  x: CX + r * Math.cos(rad(deg)),
-  y: CY + r * Math.sin(rad(deg)),
+const polar = (cx: number, cy: number, r: number, deg: number) => ({
+  x: cx + r * Math.cos(rad(deg)),
+  y: cy + r * Math.sin(rad(deg)),
 });
 
-/** Ring-segment path for wedge i (30° each, index 0 centered at the top). */
-function wedgePath(i: number): string {
+/** Ring-segment path for wedge i (30° each, index 0 centred at the top). */
+function wedgePath(cx: number, cy: number, i: number): string {
   const a0 = i * 30 - 105;
   const a1 = i * 30 - 75;
-  const p1 = polar(R_OUTER, a0);
-  const p2 = polar(R_OUTER, a1);
-  const p3 = polar(R_INNER, a1);
-  const p4 = polar(R_INNER, a0);
+  const p1 = polar(cx, cy, RING_OUTER, a0);
+  const p2 = polar(cx, cy, RING_OUTER, a1);
+  const p3 = polar(cx, cy, RING_INNER, a1);
+  const p4 = polar(cx, cy, RING_INNER, a0);
   return [
     `M ${p1.x} ${p1.y}`,
-    `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p2.x} ${p2.y}`,
+    `A ${RING_OUTER} ${RING_OUTER} 0 0 1 ${p2.x} ${p2.y}`,
     `L ${p3.x} ${p3.y}`,
-    `A ${R_INNER} ${R_INNER} 0 0 0 ${p4.x} ${p4.y}`,
+    `A ${RING_INNER} ${RING_INNER} 0 0 0 ${p4.x} ${p4.y}`,
     'Z',
   ].join(' ');
 }
 
 /**
  * Circle of fifths (direction A): click a key to rotate it to the top and
- * make it the center; the focused wedge grows a "+" that fans out a radial
+ * make it the centre; the focused wedge grows a "+" that fans out a radial
  * Scale / Chord / Harmony menu spawning a pre-filled stub beside the circle.
- * Toggles (key signatures with treble clef, relative minor ring) live in a
- * popover behind the name tab.
+ *
+ * Labels (key names, relative minors, signature staves) live OUTSIDE the
+ * rotating wheel group and are positioned per-frame at their correct
+ * radius/angle and kept upright — so they never drift out of alignment as the
+ * wheel turns. The box grows outward when the signatures are shown.
  */
 export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
+  const showSig = el.showSignatures;
+  const showMinor = el.showRelativeMinor;
+
+  // Viewbox extent: leave outboard room for the staves only when shown.
+  const EXTENT = showSig ? 226 : 168;
+  const VIEW = EXTENT * 2;
+  const CX = EXTENT;
+  const CY = EXTENT;
+
   const wheelRef = useRef<SVGGElement>(null);
-  const labelRefs = useRef<Array<SVGGElement | null>>([]);
+  const keyRefs = useRef<Array<SVGGElement | null>>([]);
+  const sigRefs = useRef<Array<SVGGElement | null>>([]);
+  const minorRefs = useRef<Array<SVGGElement | null>>([]);
   const rotationRef = useRef({ value: -circleIndexOf(el.centerKey) * 30 });
   const [menuOpen, setMenuOpen] = useState(false);
   const [options, setOptions] = useState(false);
 
-  // Rotate the clicked key to the top via the shortest path; labels
-  // counter-rotate so they stay upright.
+  // Place the wheel + every upright label for a given rotation (degrees).
+  const applyRotation = (rot: number) => {
+    wheelRef.current?.setAttribute('transform', `rotate(${rot} ${CX} ${CY})`);
+    for (let i = 0; i < CIRCLE_KEYS.length; i++) {
+      const a = i * 30 - 90 + rot;
+      const place = (node: SVGGElement | null, r: number) => {
+        if (!node) return;
+        const p = polar(CX, CY, r, a);
+        node.setAttribute('transform', `translate(${p.x} ${p.y})`);
+      };
+      place(keyRefs.current[i], MID_R);
+      if (showSig) place(sigRefs.current[i], SIG_R);
+      if (showMinor) place(minorRefs.current[i], MINOR_R);
+    }
+  };
+
+  // Reposition immediately (before paint) on mount and whenever the toggles
+  // resize the box / reveal new label groups.
+  useLayoutEffect(() => {
+    applyRotation(rotationRef.current.value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSig, showMinor, VIEW]);
+
+  // Animate to a new centre key via the shortest path.
   useEffect(() => {
     const target = -circleIndexOf(el.centerKey) * 30;
     let diff = target - rotationRef.current.value;
@@ -74,16 +119,9 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
       value: end,
       duration: 0.7,
       ease: 'power3.inOut',
-      onUpdate: () => {
-        const rot = rotationRef.current.value;
-        wheelRef.current?.setAttribute('transform', `rotate(${rot} ${CX} ${CY})`);
-        labelRefs.current.forEach((node, i) => {
-          if (!node) return;
-          const pos = polar((R_OUTER + R_INNER) / 2, i * 30 - 90);
-          node.setAttribute('transform', `rotate(${-rot} ${pos.x} ${pos.y})`);
-        });
-      },
+      onUpdate: () => applyRotation(rotationRef.current.value),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [el.centerKey]);
 
   const recenter = (note: (typeof CIRCLE_KEYS)[number]['note']) => {
@@ -99,7 +137,7 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
     s.removeUnconfirmedStubs();
     s.addElement({
       kind: 'stub',
-      x: el.x + SIZE + 48,
+      x: el.x + 440,
       y: el.y + 40,
       root: el.centerKey,
       typeId: null,
@@ -111,9 +149,15 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
     canvasStore.getState().updateElement(el.id, patch, { commit: true });
   };
 
+  const rot0 = rotationRef.current.value;
+  const initialTransform = (i: number, r: number) => {
+    const p = polar(CX, CY, r, i * 30 - 90 + rot0);
+    return `translate(${p.x} ${p.y})`;
+  };
+
   return (
     <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
-      <div className={`${chordStyles.wrap} ${styles.square}`} data-selected={selected || undefined}>
+      <div className={`${chordStyles.wrap} ${showSig ? styles.squareWide : styles.square}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
           <button
             className={chordStyles.nameTab}
@@ -124,63 +168,82 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
               setOptions((v) => !v);
             }}
           >
-            <span className={chordStyles.nameTabInner}>Circle of Fifths — {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}</span>
+            <span className={chordStyles.nameTabInner}>
+              Circle of Fifths — {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}
+            </span>
           </button>
         </div>
         <div className={chordStyles.card}>
           <div className={styles.stage}>
-            <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width="100%" role="img" aria-label="Circle of fifths">
-              <g ref={wheelRef} transform={`rotate(${rotationRef.current.value} ${CX} ${CY})`}>
-                {CIRCLE_KEYS.map((key, i) => {
-                  const mid = polar((R_OUTER + R_INNER) / 2, i * 30 - 90);
-                  const minorPos = polar(R_MINOR + 16, i * 30 - 90);
-                  const sigPos = polar(SIG_R, i * 30 - 90);
-                  const active = key.note === el.centerKey;
-                  return (
-                    <g key={key.note}>
-                      <path
-                        className={styles.wedge}
-                        data-active={active || undefined}
-                        d={wedgePath(i)}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          recenter(key.note);
-                        }}
-                      />
-                      <g
-                        ref={(node) => {
-                          labelRefs.current[i] = node;
-                        }}
-                        transform={`rotate(${-rotationRef.current.value} ${mid.x} ${mid.y})`}
-                        pointerEvents="none"
-                      >
-                        <text className={styles.keyLabel} data-active={active || undefined} x={mid.x} y={mid.y + 5}>
-                          {key.label}
-                        </text>
-                        {el.showRelativeMinor && (
-                          <text
-                            className={styles.minorLabel}
-                            x={mid.x}
-                            y={mid.y + 4}
-                            dx={minorPos.x - mid.x}
-                            dy={minorPos.y - mid.y}
-                          >
-                            {key.relativeMinor}
-                          </text>
-                        )}
-                        {el.showSignatures && key.signature && (
-                          <text className={styles.sigLabel} dx={sigPos.x - mid.x} dy={sigPos.y - mid.y} x={mid.x} y={mid.y + 4}>
-                            {'\u{1D11E}'} {key.signature}
-                          </text>
-                        )}
-                      </g>
-                    </g>
-                  );
-                })}
+            <svg viewBox={`0 0 ${VIEW} ${VIEW}`} width="100%" role="img" aria-label="Circle of fifths">
+              {/* rotating wheel: wedge fills only */}
+              <g ref={wheelRef} transform={`rotate(${rot0} ${CX} ${CY})`}>
+                {CIRCLE_KEYS.map((key, i) => (
+                  <path
+                    key={key.note}
+                    className={styles.wedge}
+                    data-active={key.note === el.centerKey || undefined}
+                    d={wedgePath(CX, CY, i)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      recenter(key.note);
+                    }}
+                  />
+                ))}
               </g>
-              <circle cx={CX} cy={CY} r={40} className={styles.hub} />
-              <text className={styles.hubLabel} x={CX} y={CY + 7}>
+
+              {/* upright labels, positioned per-frame (never rotate) */}
+              <g pointerEvents="none">
+                {CIRCLE_KEYS.map((key, i) => (
+                  <g
+                    key={key.note}
+                    ref={(n) => {
+                      keyRefs.current[i] = n;
+                    }}
+                    transform={initialTransform(i, MID_R)}
+                  >
+                    <text
+                      className={styles.keyLabel}
+                      data-active={key.note === el.centerKey || undefined}
+                      dominantBaseline="central"
+                    >
+                      {key.label}
+                    </text>
+                  </g>
+                ))}
+
+                {showMinor &&
+                  CIRCLE_KEYS.map((key, i) => (
+                    <g
+                      key={key.note}
+                      ref={(n) => {
+                        minorRefs.current[i] = n;
+                      }}
+                      transform={initialTransform(i, MINOR_R)}
+                    >
+                      <text className={styles.minorLabel} dominantBaseline="central">
+                        {key.relativeMinor}
+                      </text>
+                    </g>
+                  ))}
+
+                {showSig &&
+                  CIRCLE_KEYS.map((key, i) => (
+                    <g
+                      key={key.note}
+                      ref={(n) => {
+                        sigRefs.current[i] = n;
+                      }}
+                      transform={initialTransform(i, SIG_R)}
+                    >
+                      <KeySignatureStaff count={key.accidentals} type={key.accidentalType} />
+                    </g>
+                  ))}
+              </g>
+
+              <circle cx={CX} cy={CY} r={HUB_R} className={styles.hub} />
+              <text className={styles.hubLabel} x={CX} y={CY} dominantBaseline="central">
                 {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}
               </text>
             </svg>
@@ -236,6 +299,39 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
         )}
       </div>
     </ElementShell>
+  );
+}
+
+/** A small treble staff drawn around the origin, with the key's accidentals. */
+function KeySignatureStaff({ count, type }: { count: number; type: 'sharp' | 'flat' | 'none' }) {
+  const steps = type === 'flat' ? FLAT_STEPS : SHARP_STEPS;
+  const glyph = type === 'flat' ? '♭' : '♯';
+  const width = STAFF_CLEF_W + count * STAFF_ACC_STEP + 4;
+  const left = -width / 2;
+
+  return (
+    <g className={styles.staff}>
+      {[0, 1, 2, 3, 4].map((k) => {
+        const y = -STAFF_HALF + k * STAFF_LS;
+        return <line key={k} className={styles.staffLine} x1={left} x2={left + width} y1={y} y2={y} />;
+      })}
+      <text className={styles.clef} x={left + 0.5} y={1} dominantBaseline="central">
+        {'\u{1D11E}'}
+      </text>
+      {type !== 'none' &&
+        Array.from({ length: count }).map((_, j) => (
+          <text
+            key={j}
+            className={styles.accidental}
+            x={left + STAFF_CLEF_W + j * STAFF_ACC_STEP}
+            y={stepToY(steps[j])}
+            dominantBaseline="central"
+            textAnchor="middle"
+          >
+            {glyph}
+          </text>
+        ))}
+    </g>
   );
 }
 

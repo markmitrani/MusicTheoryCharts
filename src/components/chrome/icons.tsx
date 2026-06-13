@@ -119,6 +119,30 @@ export const SendBackwardIcon = (p: IconProps) => (
   </svg>
 );
 
+export const BringToFrontIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="8" y="8" width="8" height="8" rx="2" />
+    <path d="M5 11V6a1 1 0 0 1 1-1h5" opacity="0.45" />
+    <path d="M13 19h5a1 1 0 0 0 1-1v-5" opacity="0.45" />
+  </svg>
+);
+
+export const SendToBackIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="8" y="8" width="8" height="8" rx="2" opacity="0.45" />
+    <path d="M5 11V6a1 1 0 0 1 1-1h5" />
+    <path d="M13 19h5a1 1 0 0 0 1-1v-5" />
+  </svg>
+);
+
+export const EllipsisIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 export const LightbulbIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M9 18h6M10 21h4" />

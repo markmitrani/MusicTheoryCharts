@@ -95,6 +95,14 @@ export function CanvasApp() {
         e.preventDefault();
         if (e.shiftKey) s.redo();
         else s.undo();
+      } else if (cmd && (e.key === ']' || e.key === '}') && s.selection.size > 0) {
+        e.preventDefault();
+        const fn = e.shiftKey ? s.bringToFront : s.bringForward;
+        s.selection.forEach((id) => fn(id));
+      } else if (cmd && (e.key === '[' || e.key === '{') && s.selection.size > 0) {
+        e.preventDefault();
+        const fn = e.shiftKey ? s.sendToBack : s.sendBackward;
+        s.selection.forEach((id) => fn(id));
       }
     };
 
