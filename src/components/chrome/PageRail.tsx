@@ -29,6 +29,8 @@ export function PageRail() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const drag = useRef<{ id: string; startY: number; fromIndex: number; moved: boolean } | null>(null);
+  // Live transform of the bar being carried; cleared on release so it snaps home.
+  const [dragView, setDragView] = useState<{ id: string; offset: number } | null>(null);
 
   useEffect(() => {
     if (renaming) inputRef.current?.select();
@@ -61,21 +63,31 @@ export function PageRail() {
     const d = drag.current;
     if (!d) return;
     const delta = e.clientY - d.startY;
-    if (!d.moved && Math.abs(delta) < ROW_HEIGHT / 2) return;
+    // Tiny threshold so a genuine click still reads as a tap, not a drag.
+    if (!d.moved && Math.abs(delta) < 4) return;
     d.moved = true;
+    // Read live order from the store: reorderPage may already have run this drag,
+    // and the `pages` closure value is stale within a synchronous handler.
+    const list = canvasStore.getState().pages;
+    const currentIndex = list.findIndex((p) => p.id === d.id);
     const toIndex = Math.max(
       0,
-      Math.min(pages.length - 1, d.fromIndex + Math.round(delta / ROW_HEIGHT)),
+      Math.min(list.length - 1, d.fromIndex + Math.round(delta / ROW_HEIGHT)),
     );
-    const currentIndex = pages.findIndex((p) => p.id === d.id);
     if (toIndex !== currentIndex) {
       canvasStore.getState().reorderPage(d.id, toIndex);
     }
+    // Keep the carried bar glued to the cursor regardless of how far the
+    // underlying order has shifted: compensate for slots already moved.
+    const liveIndex = canvasStore.getState().pages.findIndex((p) => p.id === d.id);
+    const offset = (d.fromIndex - liveIndex) * ROW_HEIGHT + delta;
+    setDragView({ id: d.id, offset });
   };
 
   const onBarPointerUp = (id: string) => {
     const wasDrag = drag.current?.moved;
     drag.current = null;
+    setDragView(null); // transform returns to 0 → CSS transition snaps it home
     if (!wasDrag && id !== canvasStore.getState().activePageId) {
       uiTick(4);
       canvasStore.getState().setActivePage(id);
@@ -95,13 +107,17 @@ export function PageRail() {
         <div key={page.id} className={styles.row}>
           <button
             className={styles.bar}
-            style={{
-              width: barWidth(
-                Math.abs(i - pages.findIndex((p) => p.id === activePageId)),
-                hovered === page.id,
-              ),
-            }}
+            style={
+              {
+                width: barWidth(
+                  Math.abs(i - pages.findIndex((p) => p.id === activePageId)),
+                  hovered === page.id,
+                ),
+                '--drag-offset': dragView?.id === page.id ? `${dragView.offset}px` : '0px',
+              } as React.CSSProperties
+            }
             data-active={page.id === activePageId || undefined}
+            data-dragging={dragView?.id === page.id || undefined}
             aria-label={page.name || `Page ${i + 1}`}
             aria-current={page.id === activePageId ? 'page' : undefined}
             onPointerDown={(e) => onBarPointerDown(page.id, i, e)}

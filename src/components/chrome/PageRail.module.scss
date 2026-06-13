@@ -37,10 +37,17 @@
   height: 9px;
   border-radius: 999px;
   background: rgba(244, 240, 234, 0.14);
+  cursor: grab;
+  touch-action: none; // pointer drag owns vertical movement, not page scroll
   // width comes from inline style (tapers with distance from the active page)
+  transform: translateY(var(--drag-offset, 0px));
+  // transform IS animated here → on release (data-dragging removed) the bar
+  // eases from its carried offset back to 0, snapping snugly into its slot.
   transition:
     background var(--dur-med) var(--ease-out),
-    width 0.35s var(--ease-out);
+    width 0.35s var(--ease-out),
+    transform var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: rgba(244, 240, 234, 0.35);
@@ -48,6 +55,21 @@
 
   &[data-active] {
     background: var(--text-secondary);
+  }
+
+  // Carried bar: lifted, brighter, floating above its neighbours, and glued
+  // 1:1 to the cursor (transform excluded from the transition while dragging).
+  &[data-dragging] {
+    position: relative;
+    z-index: 10;
+    cursor: grabbing;
+    background: var(--text-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(var(--drag-offset, 0px)) scale(1.14);
+    transition:
+      background var(--dur-med) var(--ease-out),
+      width 0.35s var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out);
   }
 }
 
