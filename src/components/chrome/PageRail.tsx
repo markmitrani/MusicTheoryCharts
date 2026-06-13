@@ -6,7 +6,7 @@ import { uiTick } from '@/lib/playback/playback';
 import { PlusIcon } from './icons';
 import styles from './PageRail.module.scss';
 
-const ROW_HEIGHT = 23; // bar 9px + gap 14px, used for drag-reorder math
+const ROW_HEIGHT = 13.75; // bar 6.75px + gap 7px, used for drag-reorder math
 
 /**
  * Vertical page rail (Direction A / page-navigation.png): "+" on top,
