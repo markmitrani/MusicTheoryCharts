@@ -37,6 +37,13 @@
   box-shadow: var(--shadow-sm);
 }
 
+.circleNote {
+  padding: 6px 4px 4px;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
 .confirm {
   display: grid;
   place-items: center;

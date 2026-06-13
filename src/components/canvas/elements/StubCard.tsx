@@ -20,6 +20,7 @@ const STUB_KINDS = [
   { id: 'scale', label: 'Scale' },
   { id: 'chord', label: 'Chord' },
   { id: 'harmony', label: 'Harmony' },
+  { id: 'circle', label: 'Circle' },
 ] as const;
 
 type StubKind = (typeof STUB_KINDS)[number]['id'];
@@ -31,12 +32,14 @@ type StubKind = (typeof STUB_KINDS)[number]['id'];
  */
 export function StubCard({ el }: { el: StubElement }) {
   const [kind, setKind] = useState<StubKind>(
-    (el.typeId?.split(':')[0] as StubKind) ?? 'scale',
+    (el.typeId?.split(':')[0] as StubKind) ?? (el.kindHint as StubKind) ?? 'scale',
   );
-  const filled = el.root !== null && el.typeId !== null;
+  const filled =
+    kind === 'circle' ? el.typeId === 'circle:default' : el.root !== null && el.typeId !== null;
 
   const previewName = (() => {
     if (!filled) return 'New element…';
+    if (kind === 'circle') return 'Circle of Fifths';
     const [k, typeId] = el.typeId!.split(':');
     if (k === 'chord') return chordDisplayName(el.root!, typeId, 0);
     if (k === 'harmony') return `${scaleDisplayName(el.root!, typeId)} Harmony`;
@@ -45,7 +48,9 @@ export function StubCard({ el }: { el: StubElement }) {
 
   const switchKind = (next: StubKind) => {
     setKind(next);
-    if (el.typeId && !el.typeId.startsWith(`${next}:`)) {
+    if (next === 'circle') {
+      canvasStore.getState().updateElement(el.id, { typeId: 'circle:default' });
+    } else if (el.typeId && !el.typeId.startsWith(`${next}:`)) {
       canvasStore.getState().updateElement(el.id, { typeId: null });
     }
   };
@@ -89,15 +94,22 @@ export function StubCard({ el }: { el: StubElement }) {
               </button>
             ))}
           </div>
-          <TypePicker
-            inline
-            kinds={[kind]}
-            root={el.root as NoteName | null}
-            typeId={el.typeId}
-            onChange={(root, typeId) =>
-              canvasStore.getState().updateElement(el.id, { root, typeId })
-            }
-          />
+          {kind === 'circle' ? (
+            <p className={styles.circleNote}>
+              An interactive circle of fifths — click a key on it to re-center, and spawn
+              scales, chords, or harmonies from any key. Confirm above to place it.
+            </p>
+          ) : (
+            <TypePicker
+              inline
+              kinds={[kind]}
+              root={el.root as NoteName | null}
+              typeId={el.typeId}
+              onChange={(root, typeId) =>
+                canvasStore.getState().updateElement(el.id, { root, typeId })
+              }
+            />
+          )}
         </div>
       </div>
     </ElementShell>

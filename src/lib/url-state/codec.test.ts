@@ -78,6 +78,21 @@ describe('url codec', () => {
     });
   });
 
+  it('round-trips circle of fifths with center and flags', () => {
+    const doc = {
+      activePageId: 'p-c',
+      pages: [
+        page('c', [
+          { id: 'a', kind: 'circle', x: 16, y: 16, z: 1, centerKey: 'A#', showSignatures: true, showRelativeMinor: false },
+        ]),
+      ],
+    } as const;
+    const decoded = decodeDoc(encodeDoc(doc))!;
+    expect(decoded.pages[0].elements[0]).toMatchObject({
+      kind: 'circle', centerKey: 'A#', showSignatures: true, showRelativeMinor: false,
+    });
+  });
+
   it('round-trips sections with names and dimensions', () => {
     const doc = {
       activePageId: 'p-s',

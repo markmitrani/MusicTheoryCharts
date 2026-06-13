@@ -9,6 +9,7 @@ import type { CanvasElement, Page } from '@/lib/canvas-store/types';
  *   scale   = s + root2 + type1 + x2 + y2            (8 chars)
  *   harmony = h + root2 + type1 + x2 + y2            (8 chars; type indexes SCALE_REGISTRY)
  *   chord   = c + root2 + type1 + pack1 + x2 + y2    (9 chars; pack = inv*2+seventh)
+ *   circle  = o + center1 + flags1 + x2 + y2         (7 chars; flags = sig + minor*2)
  *   section = f + x2 + y2 + w2 + h2 + escapedName    (9+ chars; name may be empty)
  *
  * root2 encodes (octave-1)*12 + pitchClass in 2 base36 chars. Positions are
@@ -65,8 +66,12 @@ export function encodeDoc(doc: DocSnapshot): string {
   const activeIdx = Math.max(0, doc.pages.findIndex((p) => p.id === doc.activePageId));
   const pages = doc.pages.map((page) => {
     const serializable = page.elements.filter(
-      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' | 'harmony' | 'section' }> =>
-        e.kind === 'scale' || e.kind === 'chord' || e.kind === 'harmony' || e.kind === 'section',
+      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'section' }> =>
+        e.kind === 'scale' ||
+        e.kind === 'chord' ||
+        e.kind === 'harmony' ||
+        e.kind === 'circle' ||
+        e.kind === 'section',
     );
     const minX = Math.min(...serializable.map((e) => e.x), 0);
     const minY = Math.min(...serializable.map((e) => e.y), 0);
@@ -79,6 +84,10 @@ export function encodeDoc(doc: DocSnapshot): string {
           const w = b36(Math.min(1295, e.width / BUCKET), 2);
           const h = b36(Math.min(1295, e.height / BUCKET), 2);
           return `f${x}${y}${w}${h}${escapeName(e.name)}`;
+        }
+        if (e.kind === 'circle') {
+          const flags = (e.showSignatures ? 1 : 0) + (e.showRelativeMinor ? 2 : 0);
+          return `o${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${b36(flags, 1)}${x}${y}`;
         }
         if (e.kind === 'scale' || e.kind === 'harmony') {
           const kindChar = e.kind === 'scale' ? 's' : 'h';
@@ -118,6 +127,18 @@ export function decodeDoc(encoded: string): DecodedDoc | null {
             y: parseInt(code.slice(3, 5), 36) * BUCKET,
             width: parseInt(code.slice(5, 7), 36) * BUCKET,
             height: parseInt(code.slice(7, 9), 36) * BUCKET,
+          };
+        }
+        if (kind === 'o' && code.length === 7) {
+          const center = NOTE_NAMES[parseInt(code[1], 36)];
+          const flags = parseInt(code[2], 36);
+          if (!center || Number.isNaN(flags)) throw new Error(`bad circle: ${code}`);
+          return {
+            id: freshId(), kind: 'circle', z: i + 1, centerKey: center,
+            showSignatures: (flags & 1) === 1,
+            showRelativeMinor: (flags & 2) === 2,
+            x: parseInt(code.slice(3, 5), 36) * BUCKET,
+            y: parseInt(code.slice(5, 7), 36) * BUCKET,
           };
         }
         const rootParsed = parseRoot(code.slice(1, 3));

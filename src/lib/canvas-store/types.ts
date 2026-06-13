@@ -34,6 +34,16 @@ export interface ImageElement extends ElementBase {
   aspectRatio: number;
 }
 
+/** Interactive circle of fifths; clicking a key rotates it to the top. */
+export interface CircleElement extends ElementBase {
+  kind: 'circle';
+  centerKey: NoteName;
+  /** Show each key's signature (♯/♭ count with treble clef) on an outer ring. */
+  showSignatures: boolean;
+  /** Show the relative minor of each key on an inner ring. */
+  showRelativeMinor: boolean;
+}
+
 /** The seven diatonic degree chords of a scale, as playable chips. */
 export interface HarmonyElement extends ElementBase {
   kind: 'harmony';
@@ -57,14 +67,17 @@ export interface SectionElement extends ElementBase {
 export interface StubElement extends ElementBase {
   kind: 'stub';
   root: NoteName | null;
-  /** 'scale:<id>' or 'chord:<id>' once chosen. */
+  /** 'scale:<id>', 'chord:<id>', 'harmony:<id>', or 'circle:default' once chosen. */
   typeId: string | null;
+  /** Pre-selects the kind tab (e.g. spawned from the circle's radial menu). */
+  kindHint?: string;
 }
 
 export type CanvasElement =
   | ScaleElement
   | ChordElement
   | HarmonyElement
+  | CircleElement
   | ImageElement
   | SectionElement
   | StubElement;
