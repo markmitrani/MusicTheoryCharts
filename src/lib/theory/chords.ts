@@ -114,8 +114,8 @@ export function hasInherentSeventh(qualityId: string): boolean {
 
 const ORDINALS = ['root position', '1st inversion', '2nd inversion', '3rd inversion', '4th inversion', '5th inversion'];
 
-/** "Gmaj7 — 1st inversion"; root position has no suffix; never slash notation. */
+/** "Gmaj7 (1st inversion)"; root position has no suffix; never slash notation. */
 export function chordDisplayName(root: NoteName | string, qualityId: string, inversion: number): string {
   const base = `${root}${getChordDef(qualityId).label}`;
-  return inversion === 0 ? base : `${base} — ${ORDINALS[inversion]}`;
+  return inversion === 0 ? base : `${base} (${ORDINALS[inversion]})`;
 }

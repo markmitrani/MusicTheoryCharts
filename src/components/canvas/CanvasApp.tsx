@@ -12,6 +12,7 @@ import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
 import { ImageCard } from './elements/ImageCard';
+import { SectionCard } from './elements/SectionCard';
 import { StubCard } from './elements/StubCard';
 import { Toolbar } from '@/components/chrome/Toolbar';
 import { PageRail } from '@/components/chrome/PageRail';
@@ -19,7 +20,8 @@ import { TitlePanel } from '@/components/chrome/TitlePanel';
 import { CornerActions } from '@/components/chrome/SettingsPanel';
 import styles from './CanvasApp.module.scss';
 
-interface Marquee {
+interface DragRect {
+  mode: 'marquee' | 'frame';
   x0: number;
   y0: number;
   x1: number;
@@ -36,7 +38,7 @@ export function CanvasApp() {
   if (!cameraRef.current) cameraRef.current = new CameraController();
   const camera = cameraRef.current;
 
-  const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const [dragRect, setDragRect] = useState<DragRect | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentAnimRef = useRef<HTMLDivElement>(null);
 
@@ -136,24 +138,27 @@ export function CanvasApp() {
     );
   }, [page.id]);
 
-  // ---- marquee selection (select tool, drag on empty canvas) ----
+  // ---- background drags: marquee selection (select tool) or section drawing (frame tool) ----
 
   const onBackgroundPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const s = canvasStore.getState();
     s.removeUnconfirmedStubs();
     if (!e.shiftKey) s.clearSelection();
-    if (s.tool !== 'select' || e.button !== 0) return;
+    if (e.button !== 0 || (s.tool !== 'select' && s.tool !== 'frame')) return;
 
+    const mode = s.tool === 'select' ? 'marquee' : 'frame';
     const start = { x: e.clientX, y: e.clientY };
-    setMarquee({ x0: start.x, y0: start.y, x1: start.x, y1: start.y });
+    setDragRect({ mode, x0: start.x, y0: start.y, x1: start.x, y1: start.y });
+    let last = start;
 
     const onMove = (me: PointerEvent) => {
-      const box = { x0: start.x, y0: start.y, x1: me.clientX, y1: me.clientY };
-      setMarquee(box);
-      const left = Math.min(box.x0, box.x1);
-      const right = Math.max(box.x0, box.x1);
-      const top = Math.min(box.y0, box.y1);
-      const bottom = Math.max(box.y0, box.y1);
+      last = { x: me.clientX, y: me.clientY };
+      setDragRect({ mode, x0: start.x, y0: start.y, x1: last.x, y1: last.y });
+      if (mode !== 'marquee') return;
+      const left = Math.min(start.x, last.x);
+      const right = Math.max(start.x, last.x);
+      const top = Math.min(start.y, last.y);
+      const bottom = Math.max(start.y, last.y);
       const hits: string[] = [];
       document.querySelectorAll<HTMLElement>('[data-element-id]').forEach((node) => {
         const r = node.getBoundingClientRect();
@@ -164,9 +169,18 @@ export function CanvasApp() {
       canvasStore.getState().select(hits);
     };
     const onUp = () => {
-      setMarquee(null);
+      setDragRect(null);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
+      if (mode !== 'frame') return;
+      const a = camera.screenToCanvas(Math.min(start.x, last.x), Math.min(start.y, last.y));
+      const b = camera.screenToCanvas(Math.max(start.x, last.x), Math.max(start.y, last.y));
+      const width = Math.max(160, b.x - a.x);
+      const height = Math.max(100, b.y - a.y);
+      const store = canvasStore.getState();
+      const id = store.addElement({ kind: 'section', x: a.x, y: a.y, width, height, name: '' });
+      store.setTool('select');
+      store.select([id]);
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -174,6 +188,8 @@ export function CanvasApp() {
 
   const soloSelected = selection.size === 1;
   const sorted = [...page.elements].sort((a, b) => a.z - b.z);
+  const sections = sorted.filter((el) => el.kind === 'section');
+  const others = sorted.filter((el) => el.kind !== 'section');
 
   return (
     <>
@@ -181,7 +197,10 @@ export function CanvasApp() {
       <UrlSync />
       <Viewport camera={camera} onBackgroundPointerDown={onBackgroundPointerDown}>
         <div ref={contentAnimRef}>
-          {sorted.map((el) => {
+          {sections.map((el) => (
+            <SectionCard key={el.id} el={el} selected={selection.has(el.id)} />
+          ))}
+          {others.map((el) => {
             const common = { selected: selection.has(el.id), soloSelected };
             switch (el.kind) {
               case 'chord':
@@ -192,19 +211,22 @@ export function CanvasApp() {
                 return <ImageCard key={el.id} el={el} {...common} />;
               case 'stub':
                 return <StubCard key={el.id} el={el} />;
+              default:
+                return null;
             }
           })}
         </div>
       </Viewport>
 
-      {marquee && (
+      {dragRect && (
         <div
           className={styles.marquee}
+          data-mode={dragRect.mode}
           style={{
-            left: Math.min(marquee.x0, marquee.x1),
-            top: Math.min(marquee.y0, marquee.y1),
-            width: Math.abs(marquee.x1 - marquee.x0),
-            height: Math.abs(marquee.y1 - marquee.y0),
+            left: Math.min(dragRect.x0, dragRect.x1),
+            top: Math.min(dragRect.y0, dragRect.y1),
+            width: Math.abs(dragRect.x1 - dragRect.x0),
+            height: Math.abs(dragRect.y1 - dragRect.y0),
           }}
         />
       )}

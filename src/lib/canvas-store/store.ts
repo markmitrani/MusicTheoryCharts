@@ -32,6 +32,8 @@ export interface CanvasState extends DocState {
   /** Drop unconfirmed stubs (click-away). Transient UI — not undoable. */
   removeUnconfirmedStubs(): void;
   updateElement(id: string, patch: Partial<CanvasElement>, opts?: { commit?: boolean }): void;
+  /** Reposition several elements in one store update (section group drag). */
+  moveElements(positions: Array<{ id: string; x: number; y: number }>): void;
   removeElements(ids: string[]): void;
   duplicateSelection(): void;
 
@@ -138,6 +140,17 @@ export function createCanvasStore() {
         mutatePage((p) => ({
           ...p,
           elements: p.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as CanvasElement) : e)),
+        }));
+      },
+
+      moveElements(positions) {
+        const byId = new Map(positions.map((p) => [p.id, p]));
+        mutatePage((p) => ({
+          ...p,
+          elements: p.elements.map((e) => {
+            const m = byId.get(e.id);
+            return m ? { ...e, x: m.x, y: m.y } : e;
+          }),
         }));
       },
 

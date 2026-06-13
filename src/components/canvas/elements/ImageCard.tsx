@@ -24,15 +24,6 @@ const CORNERS: Corner[] = ['tl', 'tr', 'bl', 'br'];
 export function ImageCard({ el, selected, soloSelected }: ImageCardProps) {
   const camera = useCamera();
   const height = el.width / el.aspectRatio;
-  const resize = useRef<{
-    corner: Corner;
-    anchorX: number;
-    anchorY: number;
-    startDist: number;
-    startW: number;
-    startX: number;
-    startY: number;
-  } | null>(null);
 
   const onHandleDown = (corner: Corner) => (e: ReactPointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -45,40 +36,27 @@ export function ImageCard({ el, selected, soloSelected }: ImageCardProps) {
     };
     const anchor = corners[{ tl: 'br', tr: 'bl', bl: 'tr', br: 'tl' }[corner] as Corner];
     const start = corners[corner];
+    const startDist = Math.hypot(start.x - anchor.x, start.y - anchor.y);
+    const { width: startW, x: startX, y: startY } = el;
     canvasStore.getState().commit(); // one undo step per resize
-    resize.current = {
-      corner,
-      anchorX: anchor.x,
-      anchorY: anchor.y,
-      startDist: Math.hypot(start.x - anchor.x, start.y - anchor.y),
-      startW: el.width,
-      startX: el.x,
-      startY: el.y,
+
+    const onMove = (me: PointerEvent) => {
+      const p = camera.screenToCanvas(me.clientX, me.clientY);
+      const dist = Math.hypot(p.x - anchor.x, p.y - anchor.y);
+      const scale = Math.max(0.1, dist / startDist);
+      const w = Math.max(60, startW * scale);
+      const hNew = w / el.aspectRatio;
+      const startH = startW / el.aspectRatio;
+      const x = corner === 'tl' || corner === 'bl' ? startX + (startW - w) : startX;
+      const y = corner === 'tl' || corner === 'tr' ? startY + (startH - hNew) : startY;
+      canvasStore.getState().updateElement(el.id, { x, y, width: w });
     };
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {
-      // synthetic events have no active pointer
-    }
-  };
-
-  const onHandleMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const r = resize.current;
-    if (!r) return;
-    e.stopPropagation();
-    const p = camera.screenToCanvas(e.clientX, e.clientY);
-    const dist = Math.hypot(p.x - r.anchorX, p.y - r.anchorY);
-    const scale = Math.max(0.1, dist / r.startDist);
-    const w = Math.max(60, r.startW * scale);
-    const h = w / el.aspectRatio;
-    const startH = r.startW / el.aspectRatio;
-    const x = r.corner === 'tl' || r.corner === 'bl' ? r.startX + (r.startW - w) : r.startX;
-    const y = r.corner === 'tl' || r.corner === 'tr' ? r.startY + (startH - h) : r.startY;
-    canvasStore.getState().updateElement(el.id, { x, y, width: w });
-  };
-
-  const onHandleUp = () => {
-    resize.current = null;
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   return (
@@ -97,8 +75,6 @@ export function ImageCard({ el, selected, soloSelected }: ImageCardProps) {
               key={corner}
               className={`${styles.handle} ${styles[corner]}`}
               onPointerDown={onHandleDown(corner)}
-              onPointerMove={onHandleMove}
-              onPointerUp={onHandleUp}
             />
           ))}
       </div>

@@ -1,6 +1,6 @@
 import type { NoteName } from '@/lib/theory/note';
 
-export type Tool = 'select' | 'move' | 'frame' | 'upload' | 'layers';
+export type Tool = 'select' | 'move' | 'frame' | 'upload';
 
 interface ElementBase {
   id: string;
@@ -34,6 +34,17 @@ export interface ImageElement extends ElementBase {
   aspectRatio: number;
 }
 
+/**
+ * Named region drawn with the frame tool. Acts as a group: dragging it
+ * moves every element fully enclosed in its area. Renders beneath elements.
+ */
+export interface SectionElement extends ElementBase {
+  kind: 'section';
+  name: string;
+  width: number;
+  height: number;
+}
+
 /** Unconfirmed spawn stub: dropdowns shown, vanishes if clicked away unfilled. */
 export interface StubElement extends ElementBase {
   kind: 'stub';
@@ -42,7 +53,12 @@ export interface StubElement extends ElementBase {
   typeId: string | null;
 }
 
-export type CanvasElement = ScaleElement | ChordElement | ImageElement | StubElement;
+export type CanvasElement =
+  | ScaleElement
+  | ChordElement
+  | ImageElement
+  | SectionElement
+  | StubElement;
 
 export interface Page {
   id: string;

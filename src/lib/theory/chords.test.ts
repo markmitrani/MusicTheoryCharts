@@ -57,11 +57,12 @@ describe('chord catalog', () => {
     expect(hasInherentSeventh('maj')).toBe(false);
   });
 
-  it('names chords with inversion ordinals, never slash notation', () => {
-    expect(chordDisplayName('G', 'maj7', 1)).toBe('Gmaj7 — 1st inversion');
+  it('names chords with parenthesized inversion ordinals, never slash notation', () => {
+    expect(chordDisplayName('G', 'maj7', 1)).toBe('Gmaj7 (1st inversion)');
     expect(chordDisplayName('C', 'maj', 0)).toBe('C');
-    expect(chordDisplayName('D', 'min', 2)).toBe('Dm — 2nd inversion');
-    expect(chordDisplayName('F', '7s9', 3)).toBe('F7♯9 — 3rd inversion');
+    expect(chordDisplayName('D', 'min', 2)).toBe('Dm (2nd inversion)');
+    expect(chordDisplayName('G', 'sus2', 2)).toBe('Gsus2 (2nd inversion)');
+    expect(chordDisplayName('F', '7s9', 3)).toBe('F7♯9 (3rd inversion)');
     expect(chordDisplayName('B', 'm7b5', 0)).toBe('Bm7♭5');
   });
 });

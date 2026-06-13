@@ -1,0 +1,46 @@
+.shell {
+  position: absolute;
+  z-index: 0; // sections always sit beneath regular elements
+
+  &:hover {
+    --tab-stroke: var(--element-stroke-hover);
+  }
+
+  &[data-selected] {
+    --tab-stroke: var(--element-stroke-selected);
+  }
+}
+
+.area {
+  border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(135deg, rgba(166, 116, 74, 0.07) 0%, rgba(166, 116, 74, 0.02) 100%);
+  cursor: grab;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-med) var(--ease-out);
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  .shell:hover & {
+    border-color: var(--element-stroke);
+  }
+
+  .shell[data-selected] & {
+    border-color: var(--element-stroke-selected);
+  }
+}
+
+.renameInput {
+  width: 130px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+  user-select: text;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}

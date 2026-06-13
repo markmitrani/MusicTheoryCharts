@@ -23,7 +23,7 @@ $tab-slant: 14px;
   border: none;
   border-radius: var(--radius-sm) 0 0 0;
   clip-path: polygon(6px 0, calc(100% - #{$tab-slant}) 0, 100% 100%, 0 100%, 0 6px);
-  background: var(--element-stroke);
+  background: var(--tab-stroke, var(--element-stroke));
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 }
@@ -68,26 +68,22 @@ $tab-slant: 14px;
 }
 
 .wrap:hover {
+  --tab-stroke: var(--element-stroke-hover);
+
   .card {
     border-color: var(--element-stroke-hover);
     box-shadow: var(--shadow-md);
     translate: 0 -2px;
   }
-
-  .nameTab {
-    background: var(--element-stroke-hover);
-  }
 }
 
 .wrap[data-selected] {
+  --tab-stroke: var(--element-stroke-selected);
+
   .card {
     border-color: var(--element-stroke-selected);
     box-shadow: var(--glow-accent), var(--shadow-md);
     translate: 0 -2px;
-  }
-
-  .nameTab {
-    background: var(--element-stroke-selected);
   }
 }
 
@@ -98,35 +94,3 @@ $tab-slant: 14px;
   padding: 8px 8px 0;
 }
 
-.seventhToggle {
-  padding: 5px 13px;
-  border-radius: 999px;
-  border: 1px solid var(--element-stroke);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  color: var(--text-secondary);
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-
-  &:hover:not([data-disabled]) {
-    border-color: var(--element-stroke-hover);
-    color: var(--text-primary);
-  }
-
-  &[data-on] {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #1a1109;
-  }
-
-  &[data-disabled] {
-    opacity: 0.4;
-    cursor: not-allowed;
-
-    &[data-on] {
-      opacity: 0.75; // inherent 7th: shown on, inert
-    }
-  }
-}

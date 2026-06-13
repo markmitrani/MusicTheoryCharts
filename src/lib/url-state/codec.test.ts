@@ -63,6 +63,21 @@ describe('url codec', () => {
     expect(decoded.pages[0].name).toBe('a~b;c,d:e');
   });
 
+  it('round-trips sections with names and dimensions', () => {
+    const doc = {
+      activePageId: 'p-s',
+      pages: [
+        page('s', [
+          { id: 'a', kind: 'section', x: 64, y: 32, z: 1, name: 'ii–V–I drills', width: 800, height: 480 },
+          { id: 'b', kind: 'scale', x: 100, y: 100, z: 2, root: 'C', octave: 3, scaleId: 'major' },
+        ]),
+      ],
+    } as const;
+    const decoded = decodeDoc(encodeDoc(doc))!;
+    const section = decoded.pages[0].elements.find((e) => e.kind === 'section')!;
+    expect(section).toMatchObject({ kind: 'section', name: 'ii–V–I drills', width: 800, height: 480 });
+  });
+
   it('skips images and stubs', () => {
     const doc = {
       activePageId: 'p-m',

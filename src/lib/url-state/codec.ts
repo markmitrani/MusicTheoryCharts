@@ -8,6 +8,7 @@ import type { CanvasElement, Page } from '@/lib/canvas-store/types';
  *   page    = <escapedName>~<el>,<el>...
  *   scale   = s + root2 + type1 + x2 + y2            (8 chars)
  *   chord   = c + root2 + type1 + pack1 + x2 + y2    (9 chars; pack = inv*2+seventh)
+ *   section = f + x2 + y2 + w2 + h2 + escapedName    (9+ chars; name may be empty)
  *
  * root2 encodes (octave-1)*12 + pitchClass in 2 base36 chars. Positions are
  * normalized per page (min → 0) and quantized to 16px buckets, 2 base36
@@ -63,8 +64,8 @@ export function encodeDoc(doc: DocSnapshot): string {
   const activeIdx = Math.max(0, doc.pages.findIndex((p) => p.id === doc.activePageId));
   const pages = doc.pages.map((page) => {
     const serializable = page.elements.filter(
-      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' }> =>
-        e.kind === 'scale' || e.kind === 'chord',
+      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' | 'section' }> =>
+        e.kind === 'scale' || e.kind === 'chord' || e.kind === 'section',
     );
     const minX = Math.min(...serializable.map((e) => e.x), 0);
     const minY = Math.min(...serializable.map((e) => e.y), 0);
@@ -73,6 +74,11 @@ export function encodeDoc(doc: DocSnapshot): string {
       .map((e) => {
         const x = b36(Math.min(1295, (e.x - minX) / BUCKET), 2);
         const y = b36(Math.min(1295, (e.y - minY) / BUCKET), 2);
+        if (e.kind === 'section') {
+          const w = b36(Math.min(1295, e.width / BUCKET), 2);
+          const h = b36(Math.min(1295, e.height / BUCKET), 2);
+          return `f${x}${y}${w}${h}${escapeName(e.name)}`;
+        }
         if (e.kind === 'scale') {
           return `s${rootCode(e.root, e.octave)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
         }
@@ -102,6 +108,16 @@ export function decodeDoc(encoded: string): DecodedDoc | null {
       const elsRaw = raw.slice(tilde + 1);
       const elements: CanvasElement[] = (elsRaw === '' ? [] : elsRaw.split(',')).map((code, i) => {
         const kind = code[0];
+        if (kind === 'f' && code.length >= 9) {
+          return {
+            id: freshId(), kind: 'section', z: i + 1,
+            name: decodeURIComponent(code.slice(9)),
+            x: parseInt(code.slice(1, 3), 36) * BUCKET,
+            y: parseInt(code.slice(3, 5), 36) * BUCKET,
+            width: parseInt(code.slice(5, 7), 36) * BUCKET,
+            height: parseInt(code.slice(7, 9), 36) * BUCKET,
+          };
+        }
         const rootParsed = parseRoot(code.slice(1, 3));
         if (!rootParsed) throw new Error(`bad root: ${code}`);
         const { root, octave } = rootParsed;

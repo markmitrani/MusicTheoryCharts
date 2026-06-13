@@ -3,21 +3,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Note } from '@/lib/theory/note';
-import {
-  buildChord,
-  invert,
-  inversionCount,
-  withSeventh,
-  hasInherentSeventh,
-  chordDisplayName,
-} from '@/lib/theory/chords';
+import { buildChord, invert, inversionCount, withSeventh, chordDisplayName } from '@/lib/theory/chords';
 import type { ChordElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
-import { playChord, uiTick } from '@/lib/playback/playback';
+import { playChord } from '@/lib/playback/playback';
 import { ElementShell } from '../ElementShell';
 import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
-import { SettingsBar } from './SettingsBar';
 import { InversionChevrons } from './InversionChevrons';
 import { TypePicker } from './TypePicker';
 import styles from './ChordCard.module.scss';
@@ -57,22 +49,6 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
     );
   };
 
-  const seventhMappable = withSeventh(el.quality) !== el.quality;
-  const seventhOn = el.seventh || hasInherentSeventh(el.quality);
-
-  const toggleSeventh = () => {
-    if (!seventhMappable) return;
-    uiTick(el.seventh ? 1 : 3);
-    const nextSeventh = !el.seventh;
-    const nextQuality = nextSeventh ? withSeventh(el.quality) : el.quality;
-    const clampedInversion = Math.min(el.inversion, inversionCount(nextQuality) - 1);
-    canvasStore.getState().updateElement(
-      el.id,
-      { seventh: nextSeventh, inversion: clampedInversion },
-      { commit: true },
-    );
-  };
-
   const play = () => {
     setPlaying(true);
     playChord(pitches, {
@@ -90,24 +66,7 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
       selected={selected}
       soloSelected={soloSelected}
       adornments={
-        <>
-          <SettingsBar>
-            <button
-              className={styles.seventhToggle}
-              data-on={seventhOn || undefined}
-              data-disabled={!seventhMappable || undefined}
-              aria-pressed={seventhOn}
-              aria-label="Toggle seventh"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSeventh();
-              }}
-            >
-              7ths
-            </button>
-          </SettingsBar>
-          <InversionChevrons onPrev={() => cycleInversion(-1)} onNext={() => cycleInversion(1)} />
-        </>
+        <InversionChevrons onPrev={() => cycleInversion(-1)} onNext={() => cycleInversion(1)} />
       }
     >
       <div ref={cardRef} className={styles.wrap} data-selected={selected || undefined} data-playing={playing || undefined}>

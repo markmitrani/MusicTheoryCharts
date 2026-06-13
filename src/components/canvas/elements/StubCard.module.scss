@@ -1,3 +1,33 @@
+.kinds {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.kind {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[data-active] {
+    background: var(--accent);
+    color: #1a1109;
+  }
+}
+
 .body {
   padding: 13px;
   border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);

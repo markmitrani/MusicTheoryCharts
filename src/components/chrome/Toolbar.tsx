@@ -5,7 +5,7 @@ import { gsap } from 'gsap';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { uiTick } from '@/lib/playback/playback';
 import type { Tool } from '@/lib/canvas-store/types';
-import { SelectIcon, MoveIcon, FrameIcon, UploadIcon, LayersIcon, PlusIcon } from './icons';
+import { SelectIcon, MoveIcon, FrameIcon, UploadIcon, PlusIcon } from './icons';
 import styles from './Toolbar.module.scss';
 
 interface ToolDef {
@@ -19,7 +19,6 @@ const TOOLS: ToolDef[] = [
   { id: 'move', label: 'Move', icon: <MoveIcon /> },
   { id: 'frame', label: 'Section', icon: <FrameIcon /> },
   { id: 'upload', label: 'Upload', icon: <UploadIcon /> },
-  { id: 'layers', label: 'Layers', icon: <LayersIcon /> },
   { id: 'add', label: 'Add new', icon: <PlusIcon /> },
 ];
 

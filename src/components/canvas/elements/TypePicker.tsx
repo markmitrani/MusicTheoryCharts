@@ -33,6 +33,15 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
     );
   }, []);
 
+  // Scrolling the type list must not pan the canvas. The viewport's wheel
+  // handler is a native listener on an ancestor, so stop propagation natively.
+  useEffect(() => {
+    const node = ref.current!;
+    const isolate = (e: WheelEvent) => e.stopPropagation();
+    node.addEventListener('wheel', isolate);
+    return () => node.removeEventListener('wheel', isolate);
+  }, []);
+
   // close on outside click
   useEffect(() => {
     if (!onClose) return;

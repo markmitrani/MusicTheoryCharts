@@ -5,4 +5,10 @@
   background: var(--accent-soft);
   border-radius: 2px;
   pointer-events: none;
+
+  &[data-mode='frame'] {
+    border: 1px dashed var(--accent-warm);
+    background: var(--accent-warm-soft);
+    border-radius: var(--radius-sm);
+  }
 }

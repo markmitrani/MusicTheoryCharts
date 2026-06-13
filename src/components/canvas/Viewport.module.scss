@@ -11,6 +11,10 @@
   &[data-tool='move'] {
     cursor: grab;
   }
+
+  &[data-tool='frame'] {
+    cursor: crosshair;
+  }
 }
 
 .grabbable {
