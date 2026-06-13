@@ -17,6 +17,17 @@
   // stained-glass surface: 50% alpha at top-left fading −15% toward bottom-right
   --glass-fill: linear-gradient(135deg, rgba(44, 28, 32, 0.5) 0%, rgba(44, 28, 32, 0.35) 100%);
   --glass-blur: 10px;
+  // accent-tinted sheen layered over a card, fading to transparent (the
+  // "beautiful" alpha gradient — sits on top of --glass-fill)
+  --card-sheen: linear-gradient(168deg, rgba(166, 116, 74, 0.13) 0%, rgba(0, 0, 0, 0) 56%);
+  // glass-mode gloss: a faint lighter point in the top-left at a ~60° axis,
+  // added over a surface's own colour (never darkens it)
+  --glass-sheen: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0.06) 32%,
+    rgba(255, 255, 255, 0) 60%
+  );
   // atmospheric bleed painted into the bottom-right of the canvas (stained glass)
   --atmosphere: radial-gradient(120% 90% at 100% 100%, rgba(166, 116, 74, 0.06) 0%, transparent 55%);
 
@@ -34,9 +45,9 @@
   --on-accent: #1a1109; // text/icon colour on a filled-accent surface
   --accent-glow: rgba(244, 145, 25, 0.4); // soft halo under accent buttons
 
-  // harmony degree chips (legacy harmony chart color language)
-  --degree-major: #d4a27f;
-  --degree-minor: #6f93b4;
+  // harmony degree chips (legacy harmony chart tones: teal major, coral minor)
+  --degree-major: #3fb3d4;
+  --degree-minor: #da7e57;
   --degree-dim: #9e9e9e;
   --degree-aug: #b08bc9;
 
@@ -99,6 +110,13 @@
   // icy stained-glass sheen on cards: white → soft cyan toward bottom-right
   --glass-fill: linear-gradient(150deg, rgba(255, 255, 255, 0.92) 0%, rgba(204, 240, 248, 0.72) 100%);
   --glass-blur: 12px;
+  --card-sheen: linear-gradient(168deg, rgba(26, 196, 222, 0.14) 0%, rgba(255, 255, 255, 0) 58%);
+  --glass-sheen: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.12) 32%,
+    rgba(255, 255, 255, 0) 60%
+  );
   // the splash: a defined icy-cyan bleed concentrated in the bottom-right corner
   --atmosphere: radial-gradient(
     70% 58% at 103% 104%,
@@ -121,10 +139,10 @@
   --on-accent: #053039; // deep teal-ink reads cleanly on bright cyan
   --accent-glow: rgba(26, 196, 222, 0.4);
 
-  // harmony degree chips (saturated to read on white)
-  --degree-major: #c5824f;
-  --degree-minor: #4a7aa6;
-  --degree-dim: #828c92;
+  // harmony degree chips (legacy tones: teal major, coral minor, on white)
+  --degree-major: #2e9fc2;
+  --degree-minor: #cf7150;
+  --degree-dim: #8a9298;
   --degree-aug: #9466bf;
 
   // piano

@@ -58,7 +58,8 @@ $tab-slant: 14px;
   // top-left square: the name tab connects there
   border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
   border: 1px solid var(--element-stroke);
-  background: var(--glass-fill);
+  // accent sheen (alpha fading to transparent) layered over the glass fill
+  background: var(--card-sheen), var(--glass-fill);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--shadow-sm);
   transition:

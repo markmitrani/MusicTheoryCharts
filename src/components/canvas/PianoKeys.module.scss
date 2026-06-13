@@ -1,0 +1,27 @@
+// Key fills are class-driven (not inline) so the Glass surface mode can swap
+// highlighted/lit keys to an SVG gradient purely in CSS — no React re-render.
+.white {
+  fill: var(--key-white);
+}
+
+.black {
+  fill: var(--key-black);
+}
+
+.hi {
+  fill: var(--key-highlight);
+}
+
+.lit {
+  fill: var(--key-lit);
+}
+
+:global([data-surfaces='glass']) {
+  .hi {
+    fill: url(#mtp-key-hi);
+  }
+
+  .lit {
+    fill: url(#mtp-key-lit);
+  }
+}

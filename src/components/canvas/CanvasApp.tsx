@@ -9,6 +9,7 @@ import { inversionCount, withSeventh } from '@/lib/theory/chords';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
 import { UrlSync } from './UrlSync';
+import { GlassDefs } from './GlassDefs';
 import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
@@ -241,6 +242,7 @@ export function CanvasApp() {
     <>
       <AudioBoot />
       <UrlSync />
+      <GlassDefs />
       <Viewport camera={camera} onBackgroundPointerDown={onBackgroundPointerDown}>
         <div ref={contentAnimRef}>
           {sections.map((el) => (

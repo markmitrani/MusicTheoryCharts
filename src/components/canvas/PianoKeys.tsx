@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import styles from './PianoKeys.module.scss';
 
 /**
  * Piano keyboard SVG in the reference style: cream whites, dark blacks,
@@ -48,10 +49,10 @@ export const PianoKeys = memo(function PianoKeys({ baseC, octaves, highlighted, 
   }
 
   const width = octaves * OCTAVE_W;
-  const fillFor = (pitch: number, isBlack: boolean) => {
-    if (lit?.has(pitch)) return 'var(--key-lit)';
-    if (highlighted.has(pitch)) return 'var(--key-highlight)';
-    return isBlack ? 'var(--key-black)' : 'var(--key-white)';
+  const classFor = (pitch: number, isBlack: boolean) => {
+    if (lit?.has(pitch)) return styles.lit;
+    if (highlighted.has(pitch)) return styles.hi;
+    return isBlack ? styles.black : styles.white;
   };
 
   return (
@@ -70,7 +71,7 @@ export const PianoKeys = memo(function PianoKeys({ baseC, octaves, highlighted, 
           width={WHITE_W - 1.5}
           height={WHITE_H}
           rx={2.5}
-          fill={fillFor(pitch, false)}
+          className={classFor(pitch, false)}
           style={{ transition: 'fill 120ms ease-out' }}
         />
       ))}
@@ -82,7 +83,7 @@ export const PianoKeys = memo(function PianoKeys({ baseC, octaves, highlighted, 
           width={BLACK_W}
           height={BLACK_H}
           rx={2.5}
-          fill={fillFor(pitch, true)}
+          className={classFor(pitch, true)}
           stroke="rgba(0,0,0,0.55)"
           strokeWidth={0.5}
           style={{ transition: 'fill 120ms ease-out' }}

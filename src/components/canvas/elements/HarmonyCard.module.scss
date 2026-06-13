@@ -64,6 +64,23 @@
   }
 }
 
+// On white, the same gradient reads heavier — ease it a smidge lighter.
+:global([data-theme='light'][data-surfaces='glass']) .chip {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--chip-color) 26%, transparent) 0%,
+    color-mix(in srgb, var(--chip-color) 7%, transparent) 100%
+  );
+
+  &[data-active] {
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--chip-color) 46%, transparent) 0%,
+      color-mix(in srgb, var(--chip-color) 20%, transparent) 100%
+    );
+  }
+}
+
 .numeral {
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
