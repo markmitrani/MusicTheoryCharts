@@ -1,0 +1,130 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 8, 7, 0.55);
+  backdrop-filter: blur(4px);
+  animation: fade var(--dur-fast) var(--ease-out);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  width: min(680px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 22px 26px 26px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: var(--chrome-fill);
+  backdrop-filter: blur(var(--chrome-blur));
+  box-shadow: var(--shadow-lg);
+  animation: pop var(--dur-med) var(--ease-out);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 560;
+    color: var(--text-primary);
+  }
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    background: var(--accent-warm-soft);
+    color: var(--text-primary);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 30px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.group {
+  break-inside: avoid;
+
+  h3 {
+    margin: 8px 0 6px;
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.keys {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--element-stroke);
+  background: var(--element-fill);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}

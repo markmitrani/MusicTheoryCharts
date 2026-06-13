@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { CloseIcon, LightbulbIcon } from './icons';
+import { CloseIcon, LightbulbIcon, KeyboardIcon } from './icons';
+import { KeyboardShortcuts } from './KeyboardShortcuts';
 import styles from './TitlePanel.module.scss';
 
 /**
@@ -11,6 +12,7 @@ import styles from './TitlePanel.module.scss';
  */
 export function TitlePanel() {
   const [open, setOpen] = useState(true);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const bulbRef = useRef<HTMLButtonElement>(null);
 
@@ -96,7 +98,12 @@ export function TitlePanel() {
           <li>Upload reference scores or charts alongside your tools</li>
           <li>Arrange everything however <i>you</i> think; no forced structure</li>
         </ul>
+        <button className={styles.shortcutsBtn} onClick={() => setShortcutsOpen(true)}>
+          <KeyboardIcon width={17} height={17} />
+          Keyboard shortcuts
+        </button>
       </div>
+      {shortcutsOpen && <KeyboardShortcuts onClose={() => setShortcutsOpen(false)} />}
     </aside>
   );
 }

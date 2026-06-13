@@ -143,6 +143,21 @@ export const EllipsisIcon = (p: IconProps) => (
   </svg>
 );
 
+export const InfoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5" />
+    <circle cx="12" cy="7.8" r="0.4" fill="currentColor" stroke="currentColor" />
+  </svg>
+);
+
+export const KeyboardIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3" y="6" width="18" height="12" rx="2" />
+    <path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8" />
+  </svg>
+);
+
 export const LightbulbIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M9 18h6M10 21h4" />

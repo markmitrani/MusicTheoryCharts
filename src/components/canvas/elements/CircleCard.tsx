@@ -7,7 +7,7 @@ import type { CircleElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { uiTick } from '@/lib/playback/playback';
 import { ElementShell } from '../ElementShell';
-import { PlusIcon } from '@/components/chrome/icons';
+import { PlusIcon, InfoIcon } from '@/components/chrome/icons';
 import chordStyles from './ChordCard.module.scss';
 import styles from './CircleCard.module.scss';
 
@@ -29,8 +29,12 @@ const HUB_R = 40;
 // Treble-staff metrics for the rendered key signatures.
 const STAFF_LS = 3; // line spacing
 const STAFF_HALF = STAFF_LS * 2; // top/bottom line offset from centre
-const STAFF_CLEF_W = 9;
-const STAFF_ACC_STEP = 4.4;
+const STAFF_CLEF_W = 13; // horizontal room reserved for the (large) clef
+const STAFF_ACC_STEP = 4.2;
+// Large treble clef: its body curls around the G line (2nd from the bottom,
+// y = +STAFF_LS), per engraving convention. Sized ~2.2× the staff height.
+const STAFF_CLEF_SIZE = 27;
+const STAFF_CLEF_Y = STAFF_LS; // central-baseline y → seats the curl on the G line
 /** Diatonic step above the bottom staff line (E4) → y offset from centre. */
 const stepToY = (step: number) => STAFF_HALF - step * (STAFF_LS / 2);
 
@@ -83,7 +87,8 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
   const minorRefs = useRef<Array<SVGGElement | null>>([]);
   const rotationRef = useRef({ value: -circleIndexOf(el.centerKey) * 30 });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [options, setOptions] = useState(false);
+  // One panel behind the header at a time: 'options' (toggles) or 'info'.
+  const [panel, setPanel] = useState<'none' | 'options' | 'info'>('none');
 
   // Place the wheel + every upright label for a given rotation (degrees).
   const applyRotation = (rot: number) => {
@@ -165,12 +170,26 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
-              setOptions((v) => !v);
+              setPanel((p) => (p === 'options' ? 'none' : 'options'));
             }}
           >
             <span className={chordStyles.nameTabInner}>
               Circle of Fifths — {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}
             </span>
+          </button>
+          <button
+            className={styles.infoBtn}
+            aria-label="About the circle of fifths"
+            aria-expanded={panel === 'info'}
+            title="About the circle of fifths"
+            data-active={panel === 'info' || undefined}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setPanel((p) => (p === 'info' ? 'none' : 'info'));
+            }}
+          >
+            <InfoIcon width={17} height={17} />
           </button>
         </div>
         <div className={chordStyles.card}>
@@ -269,7 +288,26 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
           </div>
         </div>
 
-        {options && (
+        {panel === 'info' && (
+          <div className={styles.info} onPointerDown={(e) => e.stopPropagation()}>
+            <h4>Circle of Fifths</h4>
+            <p>
+              The twelve keys ordered by perfect fifths. Each step clockwise adds one sharp; each
+              step counter-clockwise adds one flat. Neighbouring keys share every note but one.
+            </p>
+            <p>
+              <strong>Composing.</strong> Adjacent keys modulate smoothly — only a single note
+              changes. The ii–V–I that drives jazz is three neighbours in a row.
+            </p>
+            <p>
+              <strong>Tension &amp; resolution.</strong> Moving clockwise, toward the dominant,
+              tightens; moving counter-clockwise, toward the subdominant, relaxes. A falling fifth,
+              V→I, is the strongest resolution in tonal music — the circle makes that pull visible.
+            </p>
+          </div>
+        )}
+
+        {panel === 'options' && (
           <div className={styles.options} onPointerDown={(e) => e.stopPropagation()}>
             <label className={styles.optionRow}>
               <span>Key signatures {'\u{1D11E}'}</span>
@@ -315,7 +353,13 @@ function KeySignatureStaff({ count, type }: { count: number; type: 'sharp' | 'fl
         const y = -STAFF_HALF + k * STAFF_LS;
         return <line key={k} className={styles.staffLine} x1={left} x2={left + width} y1={y} y2={y} />;
       })}
-      <text className={styles.clef} x={left + 0.5} y={1} dominantBaseline="central">
+      <text
+        className={styles.clef}
+        x={left}
+        y={STAFF_CLEF_Y}
+        style={{ fontSize: STAFF_CLEF_SIZE }}
+        dominantBaseline="central"
+      >
         {'\u{1D11E}'}
       </text>
       {type !== 'none' &&
