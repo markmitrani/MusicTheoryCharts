@@ -24,7 +24,7 @@
   &[data-playing] {
     background: var(--accent);
     border-color: var(--accent);
-    color: #1a1109;
-    box-shadow: 0 0 14px rgba(244, 145, 25, 0.45);
+    color: var(--on-accent);
+    box-shadow: 0 0 14px var(--accent-glow);
   }
 }

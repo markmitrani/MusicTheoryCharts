@@ -49,7 +49,7 @@
   &[data-active] {
     background: var(--accent);
     border-color: var(--accent);
-    color: #1a1109;
+    color: var(--on-accent);
   }
 }
 

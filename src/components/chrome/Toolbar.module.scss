@@ -33,8 +33,8 @@
 
   &[data-active] {
     background: var(--accent);
-    color: #1a1109;
-    box-shadow: 0 2px 10px rgba(244, 145, 25, 0.35);
+    color: var(--on-accent);
+    box-shadow: 0 2px 10px var(--accent-glow);
   }
 
   &[data-round] {

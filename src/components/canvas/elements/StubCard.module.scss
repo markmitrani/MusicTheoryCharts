@@ -101,7 +101,7 @@ $kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
 
   &[data-active] {
     background: var(--accent);
-    color: #1a1109;
+    color: var(--on-accent);
   }
 }
 
@@ -122,7 +122,7 @@ $kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
 
   &[data-active] {
     background: var(--accent);
-    color: #1a1109;
+    color: var(--on-accent);
   }
 }
 
@@ -151,7 +151,7 @@ $kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
   border: 1px solid var(--accent);
   background: var(--accent);
   color: #1a1109;
-  box-shadow: 0 0 14px rgba(244, 145, 25, 0.4);
+  box-shadow: 0 0 14px var(--accent-glow);
   transition: transform var(--dur-fast) var(--ease-out);
 
   &:hover {

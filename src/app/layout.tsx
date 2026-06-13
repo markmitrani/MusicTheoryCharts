@@ -25,13 +25,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="dark" className={`${fraunces.variable} ${inter.variable}`}>
+    <html
+      lang="en"
+      data-theme="dark"
+      data-surfaces="flat"
+      suppressHydrationWarning
+      className={`${fraunces.variable} ${inter.variable}`}
+    >
       <head>
-        {/* Apply the saved theme before first paint to avoid a flash. */}
+        {/* Apply saved theme + surfaces before first paint to avoid a flash. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('mtp-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}",
+              "try{var d=document.documentElement.dataset,t=localStorage.getItem('mtp-theme'),s=localStorage.getItem('mtp-surfaces');if(t)d.theme=t;if(s)d.surfaces=s;}catch(e){}",
           }}
         />
       </head>

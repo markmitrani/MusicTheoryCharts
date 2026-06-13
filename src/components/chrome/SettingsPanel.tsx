@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
-import { getTheme, setTheme, type Theme } from '@/lib/theme';
+import {
+  getTheme,
+  setTheme,
+  getSurfaces,
+  setSurfaces,
+  type Theme,
+  type Surfaces,
+} from '@/lib/theme';
 import { GearIcon, ShareIcon } from './icons';
 import styles from './SettingsPanel.module.scss';
 
@@ -14,15 +21,24 @@ export function CornerActions() {
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState(false);
   const [theme, setThemeState] = useState<Theme>('dark');
+  const [surfaces, setSurfacesState] = useState<Surfaces>('flat');
   const muted = useCanvas((s) => s.muted);
   const tempoMs = useCanvas((s) => s.tempoMs);
 
   // Sync from the DOM (set pre-paint by the no-flash script) on mount.
-  useEffect(() => setThemeState(getTheme()), []);
+  useEffect(() => {
+    setThemeState(getTheme());
+    setSurfacesState(getSurfaces());
+  }, []);
 
   const chooseTheme = (next: Theme) => {
     setTheme(next);
     setThemeState(next);
+  };
+
+  const chooseSurfaces = (next: Surfaces) => {
+    setSurfaces(next);
+    setSurfacesState(next);
   };
 
   const share = async () => {
@@ -92,6 +108,24 @@ export function CornerActions() {
                   onClick={() => chooseTheme(t)}
                 >
                   {t === 'dark' ? 'Dark' : 'Light'}
+                </button>
+              ))}
+            </div>
+          </label>
+
+          <label className={styles.row}>
+            <span>Surfaces</span>
+            <div className={styles.segmented} role="radiogroup" aria-label="Surfaces">
+              {(['flat', 'glass'] as const).map((s) => (
+                <button
+                  key={s}
+                  role="radio"
+                  aria-checked={surfaces === s}
+                  className={styles.segment}
+                  data-active={surfaces === s || undefined}
+                  onClick={() => chooseSurfaces(s)}
+                >
+                  {s === 'flat' ? 'Flat' : 'Glass'}
                 </button>
               ))}
             </div>

@@ -20,3 +20,27 @@ export function setTheme(theme: Theme): void {
     // private mode / storage disabled — theme still applies for this session
   }
 }
+
+/**
+ * Surface treatment, toggled independently of the colour theme so flat vs
+ * gradient ("glass") surfaces can be A/B compared. Components stay flat by
+ * default and opt into gradients under `[data-surfaces='glass']` — the token
+ * architecture keeps this a one-attribute switch, no per-component plumbing.
+ */
+export type Surfaces = 'flat' | 'glass';
+
+const SURFACES_KEY = 'mtp-surfaces';
+
+export function getSurfaces(): Surfaces {
+  if (typeof document === 'undefined') return 'flat';
+  return (document.documentElement.dataset.surfaces as Surfaces) || 'flat';
+}
+
+export function setSurfaces(surfaces: Surfaces): void {
+  document.documentElement.dataset.surfaces = surfaces;
+  try {
+    localStorage.setItem(SURFACES_KEY, surfaces);
+  } catch {
+    // storage disabled — still applies for this session
+  }
+}
