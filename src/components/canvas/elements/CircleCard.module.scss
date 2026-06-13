@@ -143,14 +143,19 @@
   }
 }
 
-// (i) button in the header — sits where chord cards keep their play button.
+// (i) button overlaid in the component's top-right corner.
 .infoBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 15;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 1px solid var(--element-stroke);
+  background: var(--element-fill);
   color: var(--text-secondary);
   transition:
     color var(--dur-fast) var(--ease-out),
@@ -185,10 +190,10 @@
 
 .info {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  top: 0;
+  left: calc(100% + 12px); // opens to the right of the component
   z-index: 20;
-  width: 320px;
+  width: 300px;
   padding: 16px 18px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);

@@ -177,23 +177,23 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
               Circle of Fifths — {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}
             </span>
           </button>
-          <button
-            className={styles.infoBtn}
-            aria-label="About the circle of fifths"
-            aria-expanded={panel === 'info'}
-            title="About the circle of fifths"
-            data-active={panel === 'info' || undefined}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              setPanel((p) => (p === 'info' ? 'none' : 'info'));
-            }}
-          >
-            <InfoIcon width={17} height={17} />
-          </button>
         </div>
         <div className={chordStyles.card}>
           <div className={styles.stage}>
+            <button
+              className={styles.infoBtn}
+              aria-label="About the circle of fifths"
+              aria-expanded={panel === 'info'}
+              title="About the circle of fifths"
+              data-active={panel === 'info' || undefined}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPanel((p) => (p === 'info' ? 'none' : 'info'));
+              }}
+            >
+              <InfoIcon width={16} height={16} />
+            </button>
             <svg viewBox={`0 0 ${VIEW} ${VIEW}`} width="100%" role="img" aria-label="Circle of fifths">
               {/* rotating wheel: wedge fills only */}
               <g ref={wheelRef} transform={`rotate(${rot0} ${CX} ${CY})`}>
@@ -390,17 +390,21 @@ function RadialMenu({ onPick }: { onPick: (kind: 'scale' | 'chord' | 'harmony') 
     );
   }, []);
 
+  // Larger radius + a fairly upright fan: enough separation between the
+  // variable-width labels while keeping the side items high enough to clear
+  // the name tab below.
+  const RADIUS = 116;
   const ITEMS: Array<{ kind: 'scale' | 'chord' | 'harmony'; label: string; angle: number }> = [
-    { kind: 'scale', label: 'Scale', angle: -135 },
+    { kind: 'scale', label: 'Scale', angle: -126 },
     { kind: 'chord', label: 'Chord', angle: -90 },
-    { kind: 'harmony', label: 'Harmony', angle: -45 },
+    { kind: 'harmony', label: 'Harmony', angle: -54 },
   ];
 
   return (
     <div ref={ref} className={styles.radial}>
       {ITEMS.map(({ kind, label, angle }) => {
-        const x = 64 * Math.cos(rad(angle));
-        const y = 64 * Math.sin(rad(angle));
+        const x = RADIUS * Math.cos(rad(angle));
+        const y = RADIUS * Math.sin(rad(angle));
         return (
           <button
             key={kind}
