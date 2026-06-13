@@ -31,6 +31,44 @@
   }
 }
 
+.handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--element-stroke-selected);
+  background: var(--canvas-bg);
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    background: var(--accent);
+  }
+}
+
+.tl {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.tr {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.bl {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.br {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+}
+
 .renameInput {
   width: 130px;
   border: none;

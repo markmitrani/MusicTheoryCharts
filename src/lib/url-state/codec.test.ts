@@ -63,6 +63,21 @@ describe('url codec', () => {
     expect(decoded.pages[0].name).toBe('a~b;c,d:e');
   });
 
+  it('round-trips harmony elements', () => {
+    const doc = {
+      activePageId: 'p-h',
+      pages: [
+        page('h', [
+          { id: 'a', kind: 'harmony', x: 32, y: 32, z: 1, root: 'D', octave: 3, scaleId: 'dorian' },
+        ]),
+      ],
+    } as const;
+    const decoded = decodeDoc(encodeDoc(doc))!;
+    expect(decoded.pages[0].elements[0]).toMatchObject({
+      kind: 'harmony', root: 'D', octave: 3, scaleId: 'dorian',
+    });
+  });
+
   it('round-trips sections with names and dimensions', () => {
     const doc = {
       activePageId: 'p-s',

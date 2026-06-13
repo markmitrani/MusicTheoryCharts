@@ -19,6 +19,7 @@ import styles from './StubCard.module.scss';
 const STUB_KINDS = [
   { id: 'scale', label: 'Scale' },
   { id: 'chord', label: 'Chord' },
+  { id: 'harmony', label: 'Harmony' },
 ] as const;
 
 type StubKind = (typeof STUB_KINDS)[number]['id'];
@@ -37,9 +38,9 @@ export function StubCard({ el }: { el: StubElement }) {
   const previewName = (() => {
     if (!filled) return 'New element…';
     const [k, typeId] = el.typeId!.split(':');
-    return k === 'chord'
-      ? chordDisplayName(el.root!, typeId, 0)
-      : scaleDisplayName(el.root!, typeId);
+    if (k === 'chord') return chordDisplayName(el.root!, typeId, 0);
+    if (k === 'harmony') return `${scaleDisplayName(el.root!, typeId)} Harmony`;
+    return scaleDisplayName(el.root!, typeId);
   })();
 
   const switchKind = (next: StubKind) => {

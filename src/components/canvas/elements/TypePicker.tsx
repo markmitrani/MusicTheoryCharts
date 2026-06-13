@@ -5,15 +5,16 @@ import { gsap } from 'gsap';
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import { SCALE_GROUPS } from '@/lib/theory/scales';
 import { CHORD_GROUPS } from '@/lib/theory/chords';
+import { hasHarmony } from '@/lib/theory/harmony';
 import styles from './TypePicker.module.scss';
 
 /**
  * Root + type picker, shared by the spawn stub and the name-tab editor.
- * Type ids are namespaced: 'scale:<scaleId>' or 'chord:<qualityId>'.
+ * Type ids are namespaced: 'scale:<id>', 'chord:<id>', or 'harmony:<scaleId>'.
  * `kinds` limits which sections show (editing keeps the element's kind).
  */
 interface TypePickerProps {
-  kinds: Array<'scale' | 'chord'>;
+  kinds: Array<'scale' | 'chord' | 'harmony'>;
   root: NoteName | null;
   typeId: string | null;
   onChange(root: NoteName | null, typeId: string | null): void;
@@ -67,6 +68,16 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
         label: kinds.length > 1 ? `Chords — ${g.label}` : g.label,
         items: g.chords.map((c) => ({ id: `chord:${c.id}`, label: c.label || 'maj' })),
       });
+    }
+  }
+  if (kinds.includes('harmony')) {
+    for (const g of SCALE_GROUPS) {
+      const items = g.scales
+        .filter((s) => hasHarmony(s.id))
+        .map((s) => ({ id: `harmony:${s.id}`, label: s.label }));
+      if (items.length > 0) {
+        sections.push({ label: kinds.length > 1 ? `Harmony — ${g.label}` : g.label, items });
+      }
     }
   }
 

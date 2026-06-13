@@ -7,6 +7,7 @@ import type { CanvasElement, Page } from '@/lib/canvas-store/types';
  *   v1:<activeIdx>;<page>;<page>...
  *   page    = <escapedName>~<el>,<el>...
  *   scale   = s + root2 + type1 + x2 + y2            (8 chars)
+ *   harmony = h + root2 + type1 + x2 + y2            (8 chars; type indexes SCALE_REGISTRY)
  *   chord   = c + root2 + type1 + pack1 + x2 + y2    (9 chars; pack = inv*2+seventh)
  *   section = f + x2 + y2 + w2 + h2 + escapedName    (9+ chars; name may be empty)
  *
@@ -64,8 +65,8 @@ export function encodeDoc(doc: DocSnapshot): string {
   const activeIdx = Math.max(0, doc.pages.findIndex((p) => p.id === doc.activePageId));
   const pages = doc.pages.map((page) => {
     const serializable = page.elements.filter(
-      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' | 'section' }> =>
-        e.kind === 'scale' || e.kind === 'chord' || e.kind === 'section',
+      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' | 'harmony' | 'section' }> =>
+        e.kind === 'scale' || e.kind === 'chord' || e.kind === 'harmony' || e.kind === 'section',
     );
     const minX = Math.min(...serializable.map((e) => e.x), 0);
     const minY = Math.min(...serializable.map((e) => e.y), 0);
@@ -79,8 +80,9 @@ export function encodeDoc(doc: DocSnapshot): string {
           const h = b36(Math.min(1295, e.height / BUCKET), 2);
           return `f${x}${y}${w}${h}${escapeName(e.name)}`;
         }
-        if (e.kind === 'scale') {
-          return `s${rootCode(e.root, e.octave)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
+        if (e.kind === 'scale' || e.kind === 'harmony') {
+          const kindChar = e.kind === 'scale' ? 's' : 'h';
+          return `${kindChar}${rootCode(e.root, e.octave)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
         }
         const pack = b36(e.inversion * 2 + (e.seventh ? 1 : 0), 1);
         return `c${rootCode(e.root, e.octave)}${b36(CHORD_REGISTRY.indexOf(e.quality), 1)}${pack}${x}${y}`;
@@ -121,11 +123,11 @@ export function decodeDoc(encoded: string): DecodedDoc | null {
         const rootParsed = parseRoot(code.slice(1, 3));
         if (!rootParsed) throw new Error(`bad root: ${code}`);
         const { root, octave } = rootParsed;
-        if (kind === 's' && code.length === 8) {
+        if ((kind === 's' || kind === 'h') && code.length === 8) {
           const scaleId = SCALE_REGISTRY[parseInt(code[3], 36)];
           if (!scaleId) throw new Error(`bad scale: ${code}`);
           return {
-            id: freshId(), kind: 'scale', z: i + 1, root, octave, scaleId,
+            id: freshId(), kind: kind === 's' ? 'scale' : 'harmony', z: i + 1, root, octave, scaleId,
             x: parseInt(code.slice(4, 6), 36) * BUCKET,
             y: parseInt(code.slice(6, 8), 36) * BUCKET,
           };

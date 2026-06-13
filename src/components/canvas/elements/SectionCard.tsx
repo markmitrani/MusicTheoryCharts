@@ -28,6 +28,34 @@ export function SectionCard({ el, selected }: { el: SectionElement; selected: bo
     setRenaming(false);
   };
 
+  const onHandleDown = (corner: 'tl' | 'tr' | 'bl' | 'br') => (e: ReactPointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const start = { px: e.clientX, py: e.clientY, x: el.x, y: el.y, w: el.width, h: el.height };
+    canvasStore.getState().commit(); // one undo step per resize
+
+    const onMove = (me: PointerEvent) => {
+      const k = camera.camera.k;
+      const dx = (me.clientX - start.px) / k;
+      const dy = (me.clientY - start.py) / k;
+      const fromLeft = corner === 'tl' || corner === 'bl';
+      const fromTop = corner === 'tl' || corner === 'tr';
+      const w = Math.max(160, fromLeft ? start.w - dx : start.w + dx);
+      const h = Math.max(100, fromTop ? start.h - dy : start.h + dy);
+      canvasStore.getState().updateElement(el.id, {
+        x: fromLeft ? start.x + (start.w - w) : start.x,
+        y: fromTop ? start.y + (start.h - h) : start.y,
+        width: w,
+        height: h,
+      });
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
   const onBodyPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (tool !== 'select' || e.button !== 0) return;
     e.stopPropagation();
@@ -122,7 +150,16 @@ export function SectionCard({ el, selected }: { el: SectionElement; selected: bo
         className={styles.area}
         style={{ width: el.width, height: el.height }}
         onPointerDown={onBodyPointerDown}
-      />
+      >
+        {selected &&
+          (['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
+            <div
+              key={corner}
+              className={`${styles.handle} ${styles[corner]}`}
+              onPointerDown={onHandleDown(corner)}
+            />
+          ))}
+      </div>
     </div>
   );
 }

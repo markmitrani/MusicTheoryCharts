@@ -14,12 +14,19 @@ const ROW_HEIGHT = 23; // bar 9px + gap 14px, used for drag-reorder math
  * double-click renames inline, right-click offers delete (disabled at one
  * page), dragging a bar vertically reorders.
  */
+/** Bars taper as they get further from the active page (reference design). */
+const barWidth = (distance: number, hovered: boolean) => {
+  const base = distance === 0 ? 56 : Math.max(22, 48 - 8 * distance);
+  return hovered && distance !== 0 ? base + 12 : base;
+};
+
 export function PageRail() {
   const pages = useCanvas((s) => s.pages);
   const activePageId = useCanvas((s) => s.activePageId);
   const [hovered, setHovered] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const drag = useRef<{ id: string; startY: number; fromIndex: number; moved: boolean } | null>(null);
 
@@ -28,6 +35,7 @@ export function PageRail() {
   }, [renaming]);
 
   useEffect(() => {
+    setConfirmingDelete(false);
     if (!menuFor) return;
     const close = () => setMenuFor(null);
     window.addEventListener('pointerdown', close);
@@ -87,6 +95,12 @@ export function PageRail() {
         <div key={page.id} className={styles.row}>
           <button
             className={styles.bar}
+            style={{
+              width: barWidth(
+                Math.abs(i - pages.findIndex((p) => p.id === activePageId)),
+                hovered === page.id,
+              ),
+            }}
             data-active={page.id === activePageId || undefined}
             aria-label={page.name || `Page ${i + 1}`}
             aria-current={page.id === activePageId ? 'page' : undefined}
@@ -128,16 +142,6 @@ export function PageRail() {
             <div className={styles.menu} onPointerDown={(e) => e.stopPropagation()}>
               <button
                 className={styles.menuItem}
-                disabled={pages.length <= 1}
-                onClick={() => {
-                  canvasStore.getState().removePage(page.id);
-                  setMenuFor(null);
-                }}
-              >
-                Delete page
-              </button>
-              <button
-                className={styles.menuItem}
                 onClick={() => {
                   setMenuFor(null);
                   setRenaming(page.id);
@@ -145,6 +149,31 @@ export function PageRail() {
               >
                 Rename
               </button>
+              {confirmingDelete ? (
+                <div className={styles.confirmRow}>
+                  <span>Delete page?</span>
+                  <button
+                    className={styles.confirmDelete}
+                    onClick={() => {
+                      canvasStore.getState().removePage(page.id);
+                      setMenuFor(null);
+                    }}
+                  >
+                    Delete
+                  </button>
+                  <button className={styles.confirmCancel} onClick={() => setConfirmingDelete(false)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className={styles.menuItem}
+                  disabled={pages.length <= 1}
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Delete page…
+                </button>
+              )}
             </div>
           )}
         </div>

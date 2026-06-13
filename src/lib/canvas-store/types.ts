@@ -34,6 +34,14 @@ export interface ImageElement extends ElementBase {
   aspectRatio: number;
 }
 
+/** The seven diatonic degree chords of a scale, as playable chips. */
+export interface HarmonyElement extends ElementBase {
+  kind: 'harmony';
+  root: NoteName;
+  octave: number;
+  scaleId: string;
+}
+
 /**
  * Named region drawn with the frame tool. Acts as a group: dragging it
  * moves every element fully enclosed in its area. Renders beneath elements.
@@ -56,6 +64,7 @@ export interface StubElement extends ElementBase {
 export type CanvasElement =
   | ScaleElement
   | ChordElement
+  | HarmonyElement
   | ImageElement
   | SectionElement
   | StubElement;

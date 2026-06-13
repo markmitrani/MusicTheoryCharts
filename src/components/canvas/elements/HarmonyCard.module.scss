@@ -1,0 +1,61 @@
+.wide {
+  width: 520px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--chip-color) 16%, transparent);
+  --chip-color: var(--degree-major);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+
+  &[data-quality='min'] {
+    --chip-color: var(--degree-minor);
+  }
+
+  &[data-quality='dim'] {
+    --chip-color: var(--degree-dim);
+  }
+
+  &[data-quality='aug'] {
+    --chip-color: var(--degree-aug);
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--chip-color) 60%, transparent);
+    transform: translateY(-1px);
+  }
+
+  &[data-active] {
+    background: color-mix(in srgb, var(--chip-color) 38%, transparent);
+    border-color: var(--chip-color);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--chip-color) 35%, transparent);
+  }
+}
+
+.numeral {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--chip-color);
+  letter-spacing: 0.02em;
+}
+
+.chordName {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}

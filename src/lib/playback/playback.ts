@@ -75,6 +75,31 @@ export function playChord(pitches: number[], cb: PlaybackCallbacks, sustainMs = 
  * ending on the octave root above the last note even though it isn't
  * highlighted on the element.
  */
+/**
+ * Sequential chord progression (harmony element's card play): each chord
+ * sustains slightly past the next one's attack for a connected feel.
+ * onStep receives the current chord index, -1 when finished.
+ */
+export function playProgression(
+  chords: number[][],
+  cb: { onStep(index: number): void; onDone(): void },
+  stepMs = 700,
+): PlaybackHandle {
+  const tl = takeOver({ onLit: () => {}, onDone: cb.onDone });
+  chords.forEach((pitches, i) => {
+    tl.call(
+      () => {
+        cb.onStep(i);
+        audioSink?.triggerChord(pitches, stepMs * 1.3);
+      },
+      [],
+      (i * stepMs) / 1000,
+    );
+  });
+  tl.call(() => cb.onStep(-1), [], (chords.length * stepMs + 300) / 1000);
+  return { stop: () => current?.cancel() };
+}
+
 export function playScale(pitches: number[], cb: PlaybackCallbacks, stepMs = 180): PlaybackHandle {
   const tl = takeOver(cb);
   const noteMs = stepMs * 1.35; // legato: each note overlaps the next slightly

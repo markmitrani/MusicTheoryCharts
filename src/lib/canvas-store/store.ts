@@ -122,7 +122,9 @@ export function createCanvasStore() {
         const real: CanvasElement =
           kind === 'chord'
             ? { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false }
-            : { ...base, kind: 'scale', scaleId: typeId };
+            : kind === 'harmony'
+              ? { ...base, kind: 'harmony', scaleId: typeId }
+              : { ...base, kind: 'scale', scaleId: typeId };
         mutatePage((p) => ({
           ...p,
           elements: p.elements.map((e) => (e.id === id ? real : e)),

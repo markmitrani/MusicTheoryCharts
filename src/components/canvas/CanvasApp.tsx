@@ -11,6 +11,7 @@ import { UrlSync } from './UrlSync';
 import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
+import { HarmonyCard } from './elements/HarmonyCard';
 import { ImageCard } from './elements/ImageCard';
 import { SectionCard } from './elements/SectionCard';
 import { StubCard } from './elements/StubCard';
@@ -207,6 +208,8 @@ export function CanvasApp() {
                 return <ChordCard key={el.id} el={el} {...common} />;
               case 'scale':
                 return <ScaleCard key={el.id} el={el} {...common} />;
+              case 'harmony':
+                return <HarmonyCard key={el.id} el={el} {...common} />;
               case 'image':
                 return <ImageCard key={el.id} el={el} {...common} />;
               case 'stub':
