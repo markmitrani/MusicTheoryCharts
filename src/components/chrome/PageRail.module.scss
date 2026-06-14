@@ -37,7 +37,7 @@
 .bar {
   height: 6.75px;
   border-radius: 999px;
-  background: rgba(244, 240, 234, 0.14);
+  background: var(--rail-bar);
   cursor: grab;
   touch-action: none; // pointer drag owns vertical movement, not page scroll
   // width comes from inline style (tapers with distance from the active page)
@@ -51,7 +51,7 @@
     box-shadow var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(244, 240, 234, 0.35);
+    background: var(--rail-bar-hover);
   }
 
   &[data-active] {
