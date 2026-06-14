@@ -26,13 +26,33 @@ const PRIMARY_KINDS = [
  * ellipsis so the common kinds stay front-and-centre; future tools (Bartók
  * pitch axis, …) join this group.
  */
-const MORE_KINDS = [{ id: 'circle', label: 'Circle of Fifths' }] as const;
+const MORE_KINDS = [
+  { id: 'circle', label: 'Circle of Fifths' },
+  { id: 'pitchaxis', label: 'Pitch Axis' },
+] as const;
 
 type StubKind =
   | (typeof PRIMARY_KINDS)[number]['id']
   | (typeof MORE_KINDS)[number]['id'];
 
 const isMoreKind = (k: StubKind) => MORE_KINDS.some((m) => m.id === k);
+
+// "Instant" kinds need no root/type choice — confirm spawns them as-is.
+const INSTANT_KINDS = ['circle', 'pitchaxis'] as const;
+const isInstantKind = (k: StubKind): k is (typeof INSTANT_KINDS)[number] =>
+  (INSTANT_KINDS as readonly string[]).includes(k);
+
+const INSTANT_LABEL: Record<string, string> = {
+  circle: 'Circle of Fifths',
+  pitchaxis: 'Pitch Axis',
+};
+
+const INSTANT_NOTE: Record<string, string> = {
+  circle:
+    'An interactive circle of fifths — click a key on it to re-center, and spawn scales, chords, or harmonies from any key. Confirm above to place it.',
+  pitchaxis:
+    "Bartók's pitch axis — the 12 notes grouped into tonic, subdominant and dominant functions, independent of mode. Confirm above to place it.",
+};
 
 /**
  * Unconfirmed spawn stub: pick a kind, then root + type; the confirm icon
@@ -45,12 +65,13 @@ export function StubCard({ el }: { el: StubElement }) {
   );
   // Dropdown of advanced kinds, anchored to the ellipsis button.
   const [moreOpen, setMoreOpen] = useState(false);
-  const filled =
-    kind === 'circle' ? el.typeId === 'circle:default' : el.root !== null && el.typeId !== null;
+  const filled = isInstantKind(kind)
+    ? el.typeId === `${kind}:default`
+    : el.root !== null && el.typeId !== null;
 
   const previewName = (() => {
     if (!filled) return 'New element…';
-    if (kind === 'circle') return 'Circle of Fifths';
+    if (isInstantKind(kind)) return INSTANT_LABEL[kind];
     const [k, typeId] = el.typeId!.split(':');
     if (k === 'chord') return chordDisplayName(el.root!, typeId, 0);
     if (k === 'harmony') return `${scaleDisplayName(el.root!, typeId)} Harmony`;
@@ -60,8 +81,8 @@ export function StubCard({ el }: { el: StubElement }) {
   const switchKind = (next: StubKind) => {
     setKind(next);
     setMoreOpen(false);
-    if (next === 'circle') {
-      canvasStore.getState().updateElement(el.id, { typeId: 'circle:default' });
+    if (isInstantKind(next)) {
+      canvasStore.getState().updateElement(el.id, { typeId: `${next}:default` });
     } else if (el.typeId && !el.typeId.startsWith(`${next}:`)) {
       canvasStore.getState().updateElement(el.id, { typeId: null });
     }
@@ -142,11 +163,8 @@ export function StubCard({ el }: { el: StubElement }) {
               )}
             </div>
           </div>
-          {kind === 'circle' ? (
-            <p className={styles.circleNote}>
-              An interactive circle of fifths — click a key on it to re-center, and spawn
-              scales, chords, or harmonies from any key. Confirm above to place it.
-            </p>
+          {isInstantKind(kind) ? (
+            <p className={styles.circleNote}>{INSTANT_NOTE[kind]}</p>
           ) : (
             <TypePicker
               inline

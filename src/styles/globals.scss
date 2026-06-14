@@ -51,6 +51,11 @@
   --degree-dim: #9e9e9e;
   --degree-aug: #b08bc9;
 
+  // Bartók pitch-axis functions (semantic: tonic=home, subdom=motion, dom=tension)
+  --axis-tonic: #4f9ed6;
+  --axis-subdominant: #5bb083;
+  --axis-dominant: #e06b4f;
+
   // piano
   --key-white: #f4f0ea;
   --key-black: #1a1416;
@@ -148,6 +153,11 @@
   --degree-minor: #cf7150;
   --degree-dim: #8a9298;
   --degree-aug: #9466bf;
+
+  // Bartók pitch-axis functions
+  --axis-tonic: #3f8fce;
+  --axis-subdominant: #46a275;
+  --axis-dominant: #d65c41;
 
   // piano
   --key-white: #ffffff;

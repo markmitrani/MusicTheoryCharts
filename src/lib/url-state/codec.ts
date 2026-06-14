@@ -10,6 +10,7 @@ import type { CanvasElement, Page } from '@/lib/canvas-store/types';
  *   harmony = h + root2 + type1 + x2 + y2            (8 chars; type indexes SCALE_REGISTRY)
  *   chord   = c + root2 + type1 + pack1 + x2 + y2    (9 chars; pack = inv*2+seventh)
  *   circle  = o + center1 + flags1 + x2 + y2         (7 chars; flags = sig + minor*2)
+ *   pitchax = p + center1 + x2 + y2                  (6 chars)
  *   section = f + x2 + y2 + w2 + h2 + escapedName    (9+ chars; name may be empty)
  *
  * root2 encodes (octave-1)*12 + pitchClass in 2 base36 chars. Positions are
@@ -66,11 +67,17 @@ export function encodeDoc(doc: DocSnapshot): string {
   const activeIdx = Math.max(0, doc.pages.findIndex((p) => p.id === doc.activePageId));
   const pages = doc.pages.map((page) => {
     const serializable = page.elements.filter(
-      (e): e is Extract<CanvasElement, { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'section' }> =>
+      (
+        e,
+      ): e is Extract<
+        CanvasElement,
+        { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'pitchaxis' | 'section' }
+      > =>
         e.kind === 'scale' ||
         e.kind === 'chord' ||
         e.kind === 'harmony' ||
         e.kind === 'circle' ||
+        e.kind === 'pitchaxis' ||
         e.kind === 'section',
     );
     const minX = Math.min(...serializable.map((e) => e.x), 0);
@@ -88,6 +95,9 @@ export function encodeDoc(doc: DocSnapshot): string {
         if (e.kind === 'circle') {
           const flags = (e.showSignatures ? 1 : 0) + (e.showRelativeMinor ? 2 : 0);
           return `o${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${b36(flags, 1)}${x}${y}`;
+        }
+        if (e.kind === 'pitchaxis') {
+          return `p${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${x}${y}`;
         }
         if (e.kind === 'scale' || e.kind === 'harmony') {
           const kindChar = e.kind === 'scale' ? 's' : 'h';
@@ -139,6 +149,15 @@ export function decodeDoc(encoded: string): DecodedDoc | null {
             showRelativeMinor: (flags & 2) === 2,
             x: parseInt(code.slice(3, 5), 36) * BUCKET,
             y: parseInt(code.slice(5, 7), 36) * BUCKET,
+          };
+        }
+        if (kind === 'p' && code.length === 6) {
+          const center = NOTE_NAMES[parseInt(code[1], 36)];
+          if (!center) throw new Error(`bad pitch axis: ${code}`);
+          return {
+            id: freshId(), kind: 'pitchaxis', z: i + 1, centerKey: center,
+            x: parseInt(code.slice(2, 4), 36) * BUCKET,
+            y: parseInt(code.slice(4, 6), 36) * BUCKET,
           };
         }
         const rootParsed = parseRoot(code.slice(1, 3));

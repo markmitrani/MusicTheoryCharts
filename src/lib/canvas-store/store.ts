@@ -128,18 +128,21 @@ export function createCanvasStore() {
         const stub = get().activePage().elements.find((e) => e.id === id);
         if (!stub || stub.kind !== 'stub' || !stub.typeId) return;
         const [kind, typeId] = stub.typeId.split(':');
-        if (kind !== 'circle' && !stub.root) return; // circle needs no root
+        const rootless = kind === 'circle' || kind === 'pitchaxis';
+        if (!rootless && !stub.root) return; // circle / pitch axis need no root
         snapshot();
         const pos = { id: stub.id, x: stub.x, y: stub.y, z: stub.z };
         const base = { ...pos, root: stub.root!, octave: 3 };
         const real: CanvasElement =
           kind === 'circle'
             ? { ...pos, kind: 'circle', centerKey: 'C', showSignatures: false, showRelativeMinor: false }
-            : kind === 'chord'
-              ? { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false }
-              : kind === 'harmony'
-                ? { ...base, kind: 'harmony', scaleId: typeId }
-                : { ...base, kind: 'scale', scaleId: typeId };
+            : kind === 'pitchaxis'
+              ? { ...pos, kind: 'pitchaxis', centerKey: 'C' }
+              : kind === 'chord'
+                ? { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false }
+                : kind === 'harmony'
+                  ? { ...base, kind: 'harmony', scaleId: typeId }
+                  : { ...base, kind: 'scale', scaleId: typeId };
         mutatePage((p) => ({
           ...p,
           elements: p.elements.map((e) => (e.id === id ? real : e)),

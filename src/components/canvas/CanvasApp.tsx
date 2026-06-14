@@ -15,6 +15,7 @@ import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
 import { HarmonyCard } from './elements/HarmonyCard';
 import { CircleCard } from './elements/CircleCard';
+import { PitchAxisCard } from './elements/PitchAxisCard';
 import { ImageCard } from './elements/ImageCard';
 import { SectionCard } from './elements/SectionCard';
 import { StubCard } from './elements/StubCard';
@@ -259,6 +260,8 @@ export function CanvasApp() {
                 return <HarmonyCard key={el.id} el={el} {...common} />;
               case 'circle':
                 return <CircleCard key={el.id} el={el} {...common} />;
+              case 'pitchaxis':
+                return <PitchAxisCard key={el.id} el={el} {...common} />;
               case 'image':
                 return <ImageCard key={el.id} el={el} {...common} />;
               case 'stub':

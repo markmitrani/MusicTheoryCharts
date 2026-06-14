@@ -16,6 +16,8 @@ export interface ScaleElement extends ElementBase {
   root: NoteName;
   octave: number;
   scaleId: string;
+  /** Highlight-colour preset index (0 = theme default); cycled with R. */
+  highlightColor?: number;
 }
 
 export interface ChordElement extends ElementBase {
@@ -25,6 +27,8 @@ export interface ChordElement extends ElementBase {
   quality: string;
   inversion: number;
   seventh: boolean;
+  /** Highlight-colour preset index (0 = theme default); cycled with R. */
+  highlightColor?: number;
 }
 
 export interface ImageElement extends ElementBase {
@@ -50,6 +54,19 @@ export interface HarmonyElement extends ElementBase {
   root: NoteName;
   octave: number;
   scaleId: string;
+  /** Highlight-colour preset index (0 = theme default); cycled with R. */
+  highlightColor?: number;
+}
+
+/**
+ * Bartók/Lendvai pitch axis: the 12 chromatic notes grouped into three
+ * functional axes (tonic / subdominant / dominant), each a diminished-seventh
+ * "cross". The grouping is fixed by the key centre and independent of mode.
+ * v1 is static with C on top.
+ */
+export interface PitchAxisElement extends ElementBase {
+  kind: 'pitchaxis';
+  centerKey: NoteName;
 }
 
 /**
@@ -78,6 +95,7 @@ export type CanvasElement =
   | ChordElement
   | HarmonyElement
   | CircleElement
+  | PitchAxisElement
   | ImageElement
   | SectionElement
   | StubElement;

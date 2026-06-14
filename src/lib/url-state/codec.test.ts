@@ -93,6 +93,17 @@ describe('url codec', () => {
     });
   });
 
+  it('round-trips a pitch axis with its center key', () => {
+    const doc = {
+      activePageId: 'p-pa',
+      pages: [
+        page('pa', [{ id: 'a', kind: 'pitchaxis', x: 48, y: 16, z: 1, centerKey: 'C' }]),
+      ],
+    } as const;
+    const decoded = decodeDoc(encodeDoc(doc))!;
+    expect(decoded.pages[0].elements[0]).toMatchObject({ kind: 'pitchaxis', centerKey: 'C' });
+  });
+
   it('round-trips sections with names and dimensions', () => {
     const doc = {
       activePageId: 'p-s',
