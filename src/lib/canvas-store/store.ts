@@ -1,5 +1,6 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
+import { Note, type NoteName } from '@/lib/theory/note';
 import type { CanvasElement, Page, Tool } from './types';
 
 /** Omit that distributes over union members (plain Omit collapses the union). */
@@ -37,6 +38,8 @@ export interface CanvasState extends DocState {
   updateElement(id: string, patch: Partial<CanvasElement>, opts?: { commit?: boolean }): void;
   /** Reposition several elements in one store update (section group drag). */
   moveElements(positions: Array<{ id: string; x: number; y: number }>): void;
+  /** Transpose pitched elements (scale/chord/harmony) by N semitones. */
+  transposeElements(ids: string[], semitones: number): void;
   removeElements(ids: string[]): void;
   duplicateSelection(): void;
 
@@ -170,6 +173,29 @@ export function createCanvasStore() {
           elements: p.elements.map((e) => {
             const m = byId.get(e.id);
             return m ? { ...e, x: m.x, y: m.y } : e;
+          }),
+        }));
+      },
+
+      transposeElements(ids, semitones) {
+        const set = new Set(ids);
+        const pitched = (e: CanvasElement) =>
+          e.kind === 'scale' || e.kind === 'chord' || e.kind === 'harmony';
+        const targets = get().activePage().elements.filter((e) => set.has(e.id) && pitched(e));
+        if (targets.length === 0) return;
+        snapshot();
+        mutatePage((p) => ({
+          ...p,
+          elements: p.elements.map((e) => {
+            if (!set.has(e.id) || !pitched(e)) return e;
+            try {
+              const moved = new Note((e as { root: NoteName }).root, (e as { octave: number }).octave).move(
+                semitones,
+              );
+              return { ...e, root: moved.name as NoteName, octave: moved.octave };
+            } catch {
+              return e; // out of the valid C1–B8 range; leave unchanged
+            }
           }),
         }));
       },

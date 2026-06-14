@@ -10,6 +10,7 @@ import { ElementShell } from '../ElementShell';
 import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
 import { TypePicker } from './TypePicker';
+import { TransposeControl } from './TransposeControl';
 import styles from './ChordCard.module.scss';
 
 interface ScaleCardProps {
@@ -65,6 +66,7 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
         <div className={styles.card}>
           <div className={styles.keys}>
             <PianoKeys baseC={baseC} octaves={octaves} highlighted={highlighted} lit={lit} />
+            <TransposeControl id={el.id} />
           </div>
         </div>
         {editing && (

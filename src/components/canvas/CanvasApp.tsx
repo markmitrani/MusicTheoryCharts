@@ -119,12 +119,24 @@ export function CanvasApp() {
         const fn = e.shiftKey ? s.sendToBack : s.sendBackward;
         s.selection.forEach((id) => fn(id));
       } else if (!cmd && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-        // Move up/down the page stack (the view), not the elements.
-        const idx = s.pages.findIndex((p) => p.id === s.activePageId);
-        const next = e.key === 'ArrowUp' ? idx - 1 : idx + 1;
-        if (next >= 0 && next < s.pages.length) {
+        const dir = e.key === 'ArrowUp' ? 1 : -1;
+        const pitched = s.activePage().elements.some(
+          (el) =>
+            s.selection.has(el.id) &&
+            (el.kind === 'scale' || el.kind === 'chord' || el.kind === 'harmony'),
+        );
+        if (pitched) {
+          // Transpose the selection: ±1 semitone, or ±a fifth with Shift.
           e.preventDefault();
-          s.setActivePage(s.pages[next].id);
+          s.transposeElements([...s.selection], dir * (e.shiftKey ? 7 : 1));
+        } else {
+          // Nothing pitched selected → move up/down the page stack (the view).
+          const idx = s.pages.findIndex((p) => p.id === s.activePageId);
+          const next = e.key === 'ArrowUp' ? idx - 1 : idx + 1;
+          if (next >= 0 && next < s.pages.length) {
+            e.preventDefault();
+            s.setActivePage(s.pages[next].id);
+          }
         }
       } else if (!cmd && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && s.selection.size === 1) {
         // Cycle inversions of a single selected chord.

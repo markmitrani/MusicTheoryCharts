@@ -12,6 +12,7 @@ import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
 import { InversionChevrons } from './InversionChevrons';
 import { TypePicker } from './TypePicker';
+import { TransposeControl } from './TransposeControl';
 import styles from './ChordCard.module.scss';
 
 interface ChordCardProps {
@@ -87,6 +88,7 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
         <div className={styles.card}>
           <div className={styles.keys}>
             <PianoKeys baseC={baseC} octaves={octaves} highlighted={new Set(pitches)} lit={lit} />
+            <TransposeControl id={el.id} />
           </div>
         </div>
         {editing && (

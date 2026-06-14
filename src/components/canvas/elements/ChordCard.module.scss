@@ -89,6 +89,7 @@ $tab-slant: 14px;
 }
 
 .keys {
+  position: relative;
   border-radius: var(--radius-sm);
   overflow: hidden;
   background: rgba(0, 0, 0, 0.3);

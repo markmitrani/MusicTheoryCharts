@@ -1,0 +1,32 @@
+// Sits in the top-right of the piano grid; subtle until hovered.
+.control {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.btn {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid var(--element-stroke);
+  background: color-mix(in srgb, var(--element-fill) 78%, transparent);
+  color: var(--text-muted);
+  opacity: 0.75;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    opacity: 1;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
