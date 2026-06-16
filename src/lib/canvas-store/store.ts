@@ -21,11 +21,14 @@ interface DocState {
 export interface CanvasState extends DocState {
   selection: Set<string>;
   tool: Tool;
+  /** Holding space temporarily pans; mirrors the move tool's hover suppression. */
+  spacePanning: boolean;
   /** Audio + settings (panel state lives with the doc store for URL encoding later). */
   muted: boolean;
   tempoMs: number;
 
   activePage(): Page;
+  setSpacePanning(on: boolean): void;
   setTool(tool: Tool): void;
   setMuted(muted: boolean): void;
   setTempoMs(ms: number): void;
@@ -105,6 +108,7 @@ export function createCanvasStore() {
       activePageId: firstPage.id,
       selection: new Set<string>(),
       tool: 'select',
+      spacePanning: false,
       muted: false,
       tempoMs: 180,
 
@@ -113,6 +117,7 @@ export function createCanvasStore() {
         return s.pages.find((p) => p.id === s.activePageId)!;
       },
 
+      setSpacePanning: (on) => set((s) => (s.spacePanning === on ? s : { spacePanning: on })),
       setTool: (tool) => set({ tool }),
       setMuted: (muted) => set({ muted }),
       setTempoMs: (tempoMs) => set({ tempoMs }),

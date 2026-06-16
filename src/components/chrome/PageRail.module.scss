@@ -35,18 +35,19 @@
 }
 
 .bar {
-  height: 6.75px;
   border-radius: 999px;
   background: var(--rail-bar);
   cursor: grab;
   touch-action: none; // pointer drag owns vertical movement, not page scroll
-  // width comes from inline style (tapers with distance from the active page)
+  // width + height come from inline style (taper + proximity magnification)
   transform: translateY(var(--drag-offset, 0px));
   // transform IS animated here → on release (data-dragging removed) the bar
   // eases from its carried offset back to 0, snapping snugly into its slot.
+  // width/height are kept snappy so the proximity magnification tracks closely.
   transition:
     background var(--dur-med) var(--ease-out),
-    width 0.35s var(--ease-out),
+    width 0.11s var(--ease-out),
+    height 0.11s var(--ease-out),
     transform var(--dur-med) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
 

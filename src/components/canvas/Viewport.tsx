@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { CameraController } from '@/lib/canvas-store/camera';
-import { useCanvas } from '@/lib/canvas-store/store';
+import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import styles from './Viewport.module.scss';
 
 const CameraContext = createContext<CameraController | null>(null);
@@ -58,6 +58,7 @@ export function Viewport({ children, camera, onBackgroundPointerDown }: Viewport
         if (!spaceHeld.current) {
           spaceHeld.current = true;
           surface.classList.add(styles.grabbable);
+          canvasStore.getState().setSpacePanning(true);
         }
         e.preventDefault();
       }
@@ -66,6 +67,7 @@ export function Viewport({ children, camera, onBackgroundPointerDown }: Viewport
       if (e.code === 'Space') {
         spaceHeld.current = false;
         surface.classList.remove(styles.grabbable);
+        canvasStore.getState().setSpacePanning(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
