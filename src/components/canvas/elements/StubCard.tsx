@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { gsap } from 'gsap';
 import type { NoteName } from '@/lib/theory/note';
 import { scaleDisplayName } from '@/lib/theory/scales';
 import { chordDisplayName } from '@/lib/theory/chords';
@@ -65,6 +66,41 @@ export function StubCard({ el }: { el: StubElement }) {
   );
   // Dropdown of advanced kinds, anchored to the ellipsis button.
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Ephemeral lifecycle: the stub fades 100→0% over 3s and despawns if
+  // ignored; any interaction revives it (opacity climbs back at 75%/s), then
+  // the fade restarts. Click-away removal is handled by the canvas background.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const startFade = useRef<() => void>(() => {});
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    startFade.current = () => {
+      gsap.to(wrap, {
+        opacity: 0,
+        duration: 3,
+        ease: 'power1.inOut',
+        overwrite: true,
+        onComplete: () => canvasStore.getState().removeUnconfirmedStubs(),
+      });
+    };
+    startFade.current();
+    return () => gsap.killTweensOf(wrap);
+  }, []);
+
+  const revive = () => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const cur = Number(gsap.getProperty(wrap, 'opacity')) || 1;
+    gsap.killTweensOf(wrap);
+    gsap.to(wrap, {
+      opacity: 1,
+      duration: Math.max(0.04, (1 - cur) / 0.75),
+      ease: 'power1.out',
+      overwrite: true,
+      onComplete: () => startFade.current(),
+    });
+  };
   const filled = isInstantKind(kind)
     ? el.typeId === `${kind}:default`
     : el.root !== null && el.typeId !== null;
@@ -98,7 +134,7 @@ export function StubCard({ el }: { el: StubElement }) {
 
   return (
     <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={false} soloSelected={false}>
-      <div className={chordStyles.wrap}>
+      <div className={chordStyles.wrap} ref={wrapRef} onPointerDownCapture={revive}>
         <div className={chordStyles.header}>
           <span className={chordStyles.nameTab}>
             <span className={chordStyles.nameTabInner} data-empty={!filled || undefined}>

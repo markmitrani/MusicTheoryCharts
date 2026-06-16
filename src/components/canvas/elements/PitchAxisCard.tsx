@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { NOTE_NAMES } from '@/lib/theory/note';
 import { AXES, AXIS_COLOR, CHROMATIC_LABELS, axisOf, type AxisFn } from '@/lib/theory/pitch-axis';
 import type { PitchAxisElement } from '@/lib/canvas-store/types';
+import { canvasStore } from '@/lib/canvas-store/store';
 import { ElementShell } from '../ElementShell';
 import { InfoIcon } from '@/components/chrome/icons';
 import chordStyles from './ChordCard.module.scss';
@@ -47,6 +48,12 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
   }
 
   const dim = (fn: AxisFn) => focus !== null && focus !== fn;
+
+  const recenter = (i: number) => {
+    const note = NOTE_NAMES[i];
+    if (note === el.centerKey) return;
+    canvasStore.getState().updateElement(el.id, { centerKey: note }, { commit: true });
+  };
 
   return (
     <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
@@ -103,10 +110,23 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
                 const fn = axisOf(i, el.centerKey);
                 const dot = pos(R_RING, i);
                 const lab = pos(R_LABEL, i);
+                const isCenter = NOTE_NAMES[i] === el.centerKey;
                 return (
-                  <g key={i} data-dim={dim(fn) || undefined} className={styles.note}>
+                  <g
+                    key={i}
+                    data-dim={dim(fn) || undefined}
+                    className={styles.note}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      recenter(i);
+                    }}
+                  >
+                    {isCenter && (
+                      <circle cx={dot.x} cy={dot.y} r={12} className={styles.centerRing} />
+                    )}
                     <circle cx={dot.x} cy={dot.y} r={8} fill={AXIS_COLOR[fn]} className={styles.dot} />
-                    <text x={lab.x} y={lab.y + 4} className={styles.noteLabel}>
+                    <text x={lab.x} y={lab.y + 4} className={styles.noteLabel} data-center={isCenter || undefined}>
                       {label}
                     </text>
                   </g>

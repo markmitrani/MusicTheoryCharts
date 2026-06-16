@@ -24,6 +24,8 @@ export function PageRail() {
   const pages = useCanvas((s) => s.pages);
   const activePageId = useCanvas((s) => s.activePageId);
   const [hovered, setHovered] = useState<string | null>(null);
+  // True while the pointer is anywhere over the rail — reveals every label.
+  const [railHovered, setRailHovered] = useState(false);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -95,7 +97,12 @@ export function PageRail() {
   };
 
   return (
-    <nav className={styles.rail} aria-label="Pages">
+    <nav
+      className={styles.rail}
+      aria-label="Pages"
+      onMouseEnter={() => setRailHovered(true)}
+      onMouseLeave={() => setRailHovered(false)}
+    >
       <button
         className={styles.add}
         aria-label="Add page"
@@ -147,7 +154,7 @@ export function PageRail() {
           ) : (
             <span
               className={styles.label}
-              data-visible={hovered === page.id || undefined}
+              data-visible={railHovered || hovered === page.id || undefined}
               onDoubleClick={() => setRenaming(page.id)}
             >
               {page.name || <em>Untitled</em>}

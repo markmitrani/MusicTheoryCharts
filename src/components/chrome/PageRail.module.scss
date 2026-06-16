@@ -183,5 +183,6 @@
   &[data-visible] {
     opacity: 1;
     translate: 0 -50%;
+    pointer-events: auto; // keep the rail "hovered" while reading the names
   }
 }

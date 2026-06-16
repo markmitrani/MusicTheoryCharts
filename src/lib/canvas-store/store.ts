@@ -1,6 +1,6 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import { Note, type NoteName } from '@/lib/theory/note';
+import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import type { CanvasElement, Page, Tool } from './types';
 
 /** Omit that distributes over union members (plain Omit collapses the union). */
@@ -184,18 +184,16 @@ export function createCanvasStore() {
         const targets = get().activePage().elements.filter((e) => set.has(e.id) && pitched(e));
         if (targets.length === 0) return;
         snapshot();
+        // Pitch-class transpose: only the root note name changes; the octave
+        // (the register where notes are drawn AND sounded) stays fixed, so a
+        // chord can never climb out of the displayable / audible band.
         mutatePage((p) => ({
           ...p,
           elements: p.elements.map((e) => {
             if (!set.has(e.id) || !pitched(e)) return e;
-            try {
-              const moved = new Note((e as { root: NoteName }).root, (e as { octave: number }).octave).move(
-                semitones,
-              );
-              return { ...e, root: moved.name as NoteName, octave: moved.octave };
-            } catch {
-              return e; // out of the valid C1–B8 range; leave unchanged
-            }
+            const i = NOTE_NAMES.indexOf((e as { root: NoteName }).root);
+            const next = NOTE_NAMES[(((i + semitones) % 12) + 12) % 12];
+            return { ...e, root: next };
           }),
         }));
       },

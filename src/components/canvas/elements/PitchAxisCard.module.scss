@@ -24,15 +24,32 @@
 }
 
 .note {
+  cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out);
 
   &[data-dim] {
     opacity: 0.18;
   }
+
+  .dot {
+    transition: transform var(--dur-fast) var(--ease-out);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  &:hover .dot {
+    transform: scale(1.18);
+  }
 }
 
 .dot {
   stroke: var(--canvas-bg);
+  stroke-width: 1.5;
+}
+
+.centerRing {
+  fill: none;
+  stroke: var(--text-primary);
   stroke-width: 1.5;
 }
 
@@ -43,6 +60,11 @@
   font-weight: 500;
   text-anchor: middle;
   user-select: none;
+
+  &[data-center] {
+    fill: var(--text-primary);
+    font-weight: 700;
+  }
 }
 
 .hub {

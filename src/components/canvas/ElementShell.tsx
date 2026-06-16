@@ -42,7 +42,8 @@ export function ElementShell({ id, x, y, z, selected, soloSelected, adornments, 
     if (tool !== 'select' || e.button !== 0) return;
     e.stopPropagation();
     const s = canvasStore.getState();
-    s.removeUnconfirmedStubs();
+    // Note: stubs are dismissed by the background click-away handler + their own
+    // fade timer — not here, so a stub can be clicked/dragged without vanishing.
     if (e.shiftKey) {
       s.toggleSelect(id);
       return;
