@@ -213,7 +213,8 @@ export function CanvasApp() {
 
   const onBackgroundPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const s = canvasStore.getState();
-    s.removeUnconfirmedStubs();
+    // Don't remove stubs here — clicking away unfocuses them so they fade out
+    // gracefully (the stub manages its own despawn once the fade completes).
     if (!e.shiftKey) s.clearSelection();
     if (e.button !== 0 || (s.tool !== 'select' && s.tool !== 'frame')) return;
 
