@@ -46,11 +46,17 @@ const GROUPS: Array<{ heading: string; items: Shortcut[] }> = [
     ],
   },
   {
-    heading: 'Navigate',
+    heading: 'Pitch',
     items: [
-      { label: 'Previous / next page', keys: ['↑', '↓'] },
+      { label: 'Transpose ± semitone', keys: ['↑', '↓'] },
+      { label: 'Transpose ± a fifth', keys: ['⇧ ↑', '⇧ ↓'] },
       { label: 'Cycle chord inversion', keys: ['←', '→'] },
+      { label: 'Cycle highlight colour', keys: ['R'] },
     ],
+  },
+  {
+    heading: 'Navigate',
+    items: [{ label: 'Switch page (nothing selected)', keys: ['↑', '↓'] }],
   },
 ];
 

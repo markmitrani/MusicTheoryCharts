@@ -65,7 +65,13 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
         </div>
         <div className={styles.card}>
           <div className={styles.keys}>
-            <PianoKeys baseC={baseC} octaves={octaves} highlighted={highlighted} lit={lit} />
+            <PianoKeys
+              baseC={baseC}
+              octaves={octaves}
+              highlighted={highlighted}
+              lit={lit}
+              colorIndex={el.highlightColor ?? 0}
+            />
             <TransposeControl id={el.id} />
           </div>
         </div>

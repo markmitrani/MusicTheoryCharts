@@ -6,10 +6,10 @@ import { CameraController } from '@/lib/canvas-store/camera';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { loadImageFile, imageFilesFrom } from '@/lib/images';
 import { inversionCount, withSeventh } from '@/lib/theory/chords';
+import { HIGHLIGHT_COUNT } from '@/lib/highlight-presets';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
 import { UrlSync } from './UrlSync';
-import { GlassDefs } from './GlassDefs';
 import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
@@ -91,6 +91,17 @@ export function CanvasApp() {
       if ((e.key === 'Delete' || e.key === 'Backspace') && s.selection.size > 0) {
         e.preventDefault();
         s.removeElements([...s.selection]);
+      } else if (!cmd && e.key.toLowerCase() === 'r' && s.selection.size > 0) {
+        // Cycle the highlight colour of selected scale/chord elements.
+        const targets = s
+          .activePage()
+          .elements.filter((el) => s.selection.has(el.id) && (el.kind === 'scale' || el.kind === 'chord'));
+        if (targets.length === 0) return;
+        e.preventDefault();
+        targets.forEach((el, i) => {
+          const cur = (el as { highlightColor?: number }).highlightColor ?? 0;
+          s.updateElement(el.id, { highlightColor: (cur + 1) % HIGHLIGHT_COUNT }, { commit: i === 0 });
+        });
       } else if (cmd && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         s.selectAll();
@@ -255,7 +266,6 @@ export function CanvasApp() {
     <>
       <AudioBoot />
       <UrlSync />
-      <GlassDefs />
       <Viewport camera={camera} onBackgroundPointerDown={onBackgroundPointerDown}>
         <div ref={contentAnimRef}>
           {sections.map((el) => (

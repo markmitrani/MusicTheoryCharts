@@ -87,7 +87,13 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
         </div>
         <div className={styles.card}>
           <div className={styles.keys}>
-            <PianoKeys baseC={baseC} octaves={octaves} highlighted={new Set(pitches)} lit={lit} />
+            <PianoKeys
+              baseC={baseC}
+              octaves={octaves}
+              highlighted={new Set(pitches)}
+              lit={lit}
+              colorIndex={el.highlightColor ?? 0}
+            />
             <TransposeControl id={el.id} />
           </div>
         </div>
