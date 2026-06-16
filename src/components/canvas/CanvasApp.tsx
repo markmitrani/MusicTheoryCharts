@@ -39,6 +39,7 @@ const isTypingTarget = (t: EventTarget | null) =>
 export function CanvasApp() {
   const page = useCanvas((s) => s.pages.find((p) => p.id === s.activePageId)!);
   const selection = useCanvas((s) => s.selection);
+  const tool = useCanvas((s) => s.tool);
   const cameraRef = useRef<CameraController | null>(null);
   if (!cameraRef.current) cameraRef.current = new CameraController();
   const camera = cameraRef.current;
@@ -268,7 +269,9 @@ export function CanvasApp() {
       <AudioBoot />
       <UrlSync />
       <Viewport camera={camera} onBackgroundPointerDown={onBackgroundPointerDown}>
-        <div ref={contentAnimRef}>
+        {/* In pan mode the elements ignore the pointer: no hover states fire and
+            drags fall through to the surface so you can grab anywhere to pan. */}
+        <div ref={contentAnimRef} style={{ pointerEvents: tool === 'move' ? 'none' : undefined }}>
           {sections.map((el) => (
             <SectionCard key={el.id} el={el} selected={selection.has(el.id)} />
           ))}
