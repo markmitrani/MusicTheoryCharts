@@ -1,0 +1,24 @@
+// Screen-fixed experimental backdrops, mounted inside the viewport surface
+// behind the (transformed) element content. They never pan/zoom with the canvas.
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+// Gradient fades in so toggling it doesn't hard-cut.
+.gradient {
+  animation: fade 0.6s var(--ease-out);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
