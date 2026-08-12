@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CloseIcon } from './icons';
 import styles from './KeyboardShortcuts.module.scss';
 
@@ -62,6 +63,12 @@ const GROUPS: Array<{ heading: string; items: Shortcut[] }> = [
 
 /** Modal listing every keyboard + trackpad shortcut, grouped by purpose. */
 export function KeyboardShortcuts({ onClose }: { onClose: () => void }) {
+  // Portal to <body> so the fixed backdrop covers the viewport — rendered in
+  // place it would inherit the intro panel's GSAP transform as its containing
+  // block and stay trapped inside that pane.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -70,7 +77,9 @@ export function KeyboardShortcuts({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className={styles.backdrop} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <header className={styles.head}>
@@ -99,6 +108,7 @@ export function KeyboardShortcuts({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

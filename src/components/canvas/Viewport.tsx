@@ -26,9 +26,11 @@ interface ViewportProps {
   camera: CameraController;
   /** Click landed on empty canvas (not on an element). Screen coords. */
   onBackgroundPointerDown?: (e: ReactPointerEvent<HTMLDivElement>) => void;
+  /** Screen-fixed layers drawn behind the (transformed) element content. */
+  backdrop?: ReactNode;
 }
 
-export function Viewport({ children, camera, onBackgroundPointerDown }: ViewportProps) {
+export function Viewport({ children, camera, onBackgroundPointerDown, backdrop }: ViewportProps) {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -119,6 +121,7 @@ export function Viewport({ children, camera, onBackgroundPointerDown }: Viewport
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
+        {backdrop}
         <div ref={contentRef} className={styles.content}>
           {children}
         </div>

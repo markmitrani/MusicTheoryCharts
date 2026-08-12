@@ -11,11 +11,15 @@ const GAP = 7; // resting gap
 
 /**
  * Vertical page rail (Direction A / page-navigation.png): "+" on top,
- * stacked bars, active page wide + bright. As the pointer nears the rail it
- * magnifies (bars grow up to +25%, gaps widen, names fade in) — a dock-style
- * proximity response. Hover reveals the name, double-click renames inline,
- * right-click offers delete, dragging a bar vertically reorders.
+ * stacked bars, active page wide + bright. The rail has two states: resting
+ * and expanded. Once the pointer crosses a proximity threshold the whole rail
+ * snaps to expanded (bars +25%, gaps widen, names fade in), easing in/out via
+ * CSS — a deliberate step, not a continuous dock zoom. Hover reveals the name,
+ * double-click renames inline, right-click offers delete, drag reorders.
  */
+// Enter/exit radii for the expanded state (hysteresis avoids flicker at the edge).
+const NEAR_ENTER = 150;
+const NEAR_EXIT = 200;
 /** Bars taper as they get further from the active page (reference design). */
 const barWidth = (distance: number, hovered: boolean) => {
   const base = distance === 0 ? 56 : Math.max(22, 48 - 8 * distance);
@@ -26,8 +30,10 @@ export function PageRail() {
   const pages = useCanvas((s) => s.pages);
   const activePageId = useCanvas((s) => s.activePageId);
   const [hovered, setHovered] = useState<string | null>(null);
-  // 0..1 closeness of the pointer to the rail, driving the magnification.
-  const [prox, setProx] = useState(0);
+  // Step state: resting vs expanded. Flipped once the pointer crosses the
+  // proximity threshold; CSS eases the size/gap/label change.
+  const [near, setNear] = useState(false);
+  const nearRef = useRef(false);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -43,12 +49,11 @@ export function PageRail() {
   // Live transform of the bar being carried; cleared on release so it snaps home.
   const [dragView, setDragView] = useState<{ id: string; offset: number } | null>(null);
 
-  const scale = 1 + 0.25 * prox;
+  const scale = near ? 1.25 : 1;
   const activeIdx = pages.findIndex((p) => p.id === activePageId);
 
-  // Proximity = closeness of the pointer to the rail. Horizontal influence is
-  // anchored to a fixed zone near the left edge (so the rail growing doesn't
-  // feed back); vertical uses the rail's live box.
+  // Flip to expanded once the pointer crosses NEAR_ENTER of the rail's centre;
+  // back to resting past NEAR_EXIT. Hysteresis between the two stops jitter.
   useEffect(() => {
     let raf = 0;
     const onMove = (e: MouseEvent) => {
@@ -58,10 +63,16 @@ export function PageRail() {
         const rail = railRef.current;
         if (!rail) return;
         const r = rail.getBoundingClientRect();
-        const dx = Math.max(0, e.clientX - 140);
-        const dy = Math.max(0, r.top - e.clientY, e.clientY - r.bottom);
-        const p = Math.max(0, Math.min(1, 1 - Math.hypot(dx, dy) / 210));
-        setProx((prev) => (Math.abs(prev - p) < 0.012 ? prev : p));
+        // Radial distance from the rail's centre point; the vertical axis is
+        // softened so the whole stack responds, not just the middle bar.
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dist = Math.hypot(e.clientX - cx, (e.clientY - cy) * 0.6);
+        const next = dist < (nearRef.current ? NEAR_EXIT : NEAR_ENTER);
+        if (next !== nearRef.current) {
+          nearRef.current = next;
+          setNear(next);
+        }
       });
     };
     window.addEventListener('mousemove', onMove);
@@ -147,7 +158,7 @@ export function PageRail() {
       ref={railRef}
       className={styles.rail}
       aria-label="Pages"
-      style={{ gap: GAP + 5 * prox }}
+      style={{ gap: near ? GAP + 5 : GAP }}
     >
       <button
         className={styles.add}
@@ -199,7 +210,7 @@ export function PageRail() {
           ) : (
             <span
               className={styles.label}
-              data-visible={prox > 0.32 || hovered === page.id || undefined}
+              data-visible={near || hovered === page.id || undefined}
               onDoubleClick={() => setRenaming(page.id)}
             >
               {page.name || <em>Untitled</em>}

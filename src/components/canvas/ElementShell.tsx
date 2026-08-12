@@ -20,11 +20,19 @@ interface ElementShellProps {
   selected: boolean;
   /** Hide per-element adornments during multi-select. */
   soloSelected: boolean;
+  /**
+   * Float this element above all others (e.g. while an editor/popover is open)
+   * without touching its stored z-order, so the rest keep their relative order.
+   */
+  lifted?: boolean;
   adornments?: ReactNode;
   children: ReactNode;
 }
 
-export function ElementShell({ id, x, y, z, selected, soloSelected, adornments, children }: ElementShellProps) {
+/** CSS z-index for a temporarily-lifted element — above any real element z. */
+const LIFT_Z = 100000;
+
+export function ElementShell({ id, x, y, z, selected, soloSelected, lifted, adornments, children }: ElementShellProps) {
   const camera = useCamera();
   const tool = useCanvas((s) => s.tool);
   const ref = useRef<HTMLDivElement>(null);
@@ -77,7 +85,7 @@ export function ElementShell({ id, x, y, z, selected, soloSelected, adornments, 
     <div
       ref={ref}
       className={styles.shell}
-      style={{ left: x, top: y, zIndex: z }}
+      style={{ left: x, top: y, zIndex: lifted ? LIFT_Z : z }}
       data-element-id={id}
       data-selected={selected || undefined}
       onPointerDown={onPointerDown}

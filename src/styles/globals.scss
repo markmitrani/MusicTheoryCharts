@@ -51,10 +51,11 @@
   --degree-dim: #9e9e9e;
   --degree-aug: #b08bc9;
 
-  // Bartók pitch-axis functions (semantic: tonic=home, subdom=motion, dom=tension)
-  --axis-tonic: #4f9ed6;
-  --axis-subdominant: #5bb083;
-  --axis-dominant: #e06b4f;
+  // Bartók pitch-axis functions — primary-triad palette: rich deep blue tonic,
+  // true primary red subdominant, Mondrian gold (a hair toward orange) dominant.
+  --axis-tonic: #002855;
+  --axis-subdominant: #c1272d;
+  --axis-dominant: #e6a12c;
 
   // piano
   --key-white: #f4f0ea;
@@ -109,44 +110,48 @@
 // Only colour/atmosphere tokens are overridden; shape/type/motion inherit.
 // ============================================================
 [data-theme='light'] {
-  // surfaces — mostly white, with the cyan only as a corner splash
-  --canvas-bg: #fbfdfe;
-  --canvas-dot-grid: rgba(40, 96, 116, 0.08);
-  --element-fill: #fcfeff;
+  // "Sublime" fusion-jazz light mode: glassy whites, powder-blue linework,
+  // a mint-aqua signature blue (#96DED1) as the soul colour, and a deeper pull
+  // of it for anything active. Whites stay white; pure black is avoided.
+  //
+  // surfaces — white base; fancier surfaces gradient white → a whisper of grey
+  --canvas-bg: #fcfefe;
+  --canvas-dot-grid: rgba(70, 110, 122, 0.09);
+  --element-fill: #ffffff;
   --element-fill-raised: #ffffff;
-  --chrome-fill: rgba(255, 255, 255, 0.8);
+  --chrome-fill: rgba(255, 255, 255, 0.82);
   --chrome-blur: 18px;
-  // icy stained-glass sheen on cards: white → soft cyan toward bottom-right
-  --glass-fill: linear-gradient(150deg, rgba(255, 255, 255, 0.92) 0%, rgba(204, 240, 248, 0.72) 100%);
+  // element background: white easing into the signature blue toward the corner
+  --glass-fill: linear-gradient(150deg, #ffffff 0%, rgba(150, 222, 209, 0.5) 100%);
   --glass-blur: 12px;
-  --card-sheen: linear-gradient(168deg, rgba(26, 196, 222, 0.14) 0%, rgba(255, 255, 255, 0) 58%);
+  --card-sheen: linear-gradient(168deg, rgba(150, 222, 209, 0.2) 0%, rgba(255, 255, 255, 0) 60%);
   --glass-sheen: linear-gradient(
     120deg,
-    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.42) 0%,
     rgba(255, 255, 255, 0.12) 32%,
     rgba(255, 255, 255, 0) 60%
   );
-  // the splash: a defined icy-cyan bleed concentrated in the bottom-right corner
+  // corner splash: signature mint bleeding out through powder blue
   --atmosphere: radial-gradient(
     70% 58% at 103% 104%,
-    rgba(20, 200, 228, 0.52) 0%,
-    rgba(120, 222, 240, 0.22) 38%,
+    rgba(150, 222, 209, 0.55) 0%,
+    rgba(182, 208, 226, 0.24) 38%,
     transparent 68%
   );
 
-  // strokes
-  --element-stroke: rgba(40, 162, 188, 0.32);
-  --element-stroke-hover: rgba(26, 184, 210, 0.62);
-  --element-stroke-selected: #1ac1d9;
-  --hairline: rgba(24, 72, 88, 0.1);
+  // strokes — powder blue
+  --element-stroke: #b6d0e2;
+  --element-stroke-hover: #96ded1;
+  --element-stroke-selected: #45c9b2; // prominent signature blue
+  --hairline: rgba(150, 200, 214, 0.34);
 
-  // accents — icier cyan
-  --accent: #1ac1d9;
-  --accent-soft: rgba(26, 193, 217, 0.16);
-  --accent-warm: #3f97ab;
-  --accent-warm-soft: rgba(63, 151, 171, 0.16);
-  --on-accent: #053039; // deep teal-ink reads cleanly on bright cyan
-  --accent-glow: rgba(26, 196, 222, 0.4);
+  // accents — signature blue #96DED1, with a deeper shade for active states
+  --accent: #45c9b2; // prominent sig-blue = active fills
+  --accent-soft: rgba(150, 222, 209, 0.3); // resting sig-blue tint
+  --accent-warm: #83c3cf; // secondary cool (powder-teal)
+  --accent-warm-soft: rgba(182, 208, 226, 0.36);
+  --on-accent: #073b34; // deep teal-ink on mint, never pure black
+  --accent-glow: rgba(70, 201, 178, 0.4);
 
   // harmony degree chips (legacy tones: teal major, coral minor, on white)
   --degree-major: #2e9fc2;
@@ -154,31 +159,32 @@
   --degree-dim: #8a9298;
   --degree-aug: #9466bf;
 
-  // Bartók pitch-axis functions
-  --axis-tonic: #3f8fce;
-  --axis-subdominant: #46a275;
-  --axis-dominant: #d65c41;
+  // Bartók pitch-axis functions — primary-triad palette (deepened for contrast
+  // on the light canvas).
+  --axis-tonic: #013a7a;
+  --axis-subdominant: #b71c2b;
+  --axis-dominant: #c8851a;
 
   // piano
   --key-white: #ffffff;
-  --key-black: #233038;
-  --key-highlight: #3f97ab;
-  --key-lit: #1ac1d9;
+  --key-black: #1e3138; // deep cool slate, not pure black
+  --key-highlight: #96ded1; // signature blue
+  --key-lit: #45c9b2; // prominent while playing
 
-  // text
-  --text-primary: #133039;
-  --text-secondary: #3f5a66;
-  --text-muted: #8aa2ac;
+  // text — cool ink, pure black used very sparingly
+  --text-primary: #163038;
+  --text-secondary: #45606a;
+  --text-muted: #90a6b0;
 
-  // page rail inactive bars (cool gray, visible on white)
-  --rail-bar: rgba(36, 70, 85, 0.18);
-  --rail-bar-hover: rgba(36, 70, 85, 0.36);
+  // inactivity a level below the saturated colours: very subtle cool grey
+  --rail-bar: rgba(70, 100, 112, 0.16);
+  --rail-bar-hover: rgba(70, 201, 178, 0.42);
 
-  // depth (cooler, softer than dark)
-  --shadow-sm: 0 1px 2px rgba(36, 70, 85, 0.1), 0 2px 8px rgba(36, 70, 85, 0.06);
-  --shadow-md: 0 2px 6px rgba(36, 70, 85, 0.12), 0 10px 28px rgba(36, 70, 85, 0.1);
-  --shadow-lg: 0 4px 12px rgba(36, 70, 85, 0.14), 0 24px 56px rgba(36, 70, 85, 0.16);
-  --glow-accent: 0 0 0 1px var(--element-stroke-selected), 0 0 18px rgba(26, 193, 217, 0.22);
+  // depth (cool, soft)
+  --shadow-sm: 0 1px 2px rgba(40, 78, 88, 0.09), 0 2px 8px rgba(40, 78, 88, 0.055);
+  --shadow-md: 0 2px 6px rgba(40, 78, 88, 0.11), 0 10px 28px rgba(40, 78, 88, 0.09);
+  --shadow-lg: 0 4px 12px rgba(40, 78, 88, 0.13), 0 24px 56px rgba(40, 78, 88, 0.15);
+  --glow-accent: 0 0 0 1px var(--element-stroke-selected), 0 0 18px rgba(70, 201, 178, 0.22);
 }
 
 * {

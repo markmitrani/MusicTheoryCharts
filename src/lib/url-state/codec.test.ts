@@ -24,7 +24,7 @@ describe('url codec', () => {
     } as const;
 
     const encoded = encodeDoc(doc);
-    expect(encoded.startsWith('v1:')).toBe(true);
+    expect(encoded.startsWith('v2:')).toBe(true);
 
     const decoded = decodeDoc(encoded)!;
     expect(decoded.pages.length).toBe(2);
@@ -37,7 +37,7 @@ describe('url codec', () => {
     expect(decoded.pages[1].elements[0]).toMatchObject({ kind: 'chord', quality: '7b9', seventh: true });
   });
 
-  it('preserves relative position within a 16px bucket', () => {
+  it('preserves relative position within a 24px bucket', () => {
     const doc = {
       activePageId: 'p-x',
       pages: [
@@ -50,17 +50,44 @@ describe('url codec', () => {
     const decoded = decodeDoc(encodeDoc(doc))!;
     const [a, b] = decoded.pages[0].elements;
     // offsets are normalized per page; deltas survive within bucket precision
-    expect(Math.abs(b.x - a.x - 480)).toBeLessThanOrEqual(16);
-    expect(Math.abs(b.y - a.y - 416)).toBeLessThanOrEqual(16);
+    expect(Math.abs(b.x - a.x - 480)).toBeLessThanOrEqual(24);
+    expect(Math.abs(b.y - a.y - 416)).toBeLessThanOrEqual(24);
   });
 
   it('escapes separator characters in page names', () => {
     const doc = {
       activePageId: 'p-weird',
-      pages: [page('a~b;c,d:e', [])],
+      pages: [page('a~b;c,d:e-f', [])],
     } as const;
     const decoded = decodeDoc(encodeDoc(doc))!;
-    expect(decoded.pages[0].name).toBe('a~b;c,d:e');
+    expect(decoded.pages[0].name).toBe('a~b;c,d:e-f');
+  });
+
+  it('keeps the dash separator unambiguous against dashes in section names', () => {
+    const doc = {
+      activePageId: 'p-d',
+      pages: [
+        page('d', [
+          { id: 'a', kind: 'section', x: 0, y: 0, z: 1, name: 'ii-V-I', width: 480, height: 240 },
+          { id: 'b', kind: 'scale', x: 96, y: 96, z: 2, root: 'C', octave: 3, scaleId: 'major' },
+        ]),
+      ],
+    } as const;
+    const decoded = decodeDoc(encodeDoc(doc))!;
+    expect(decoded.pages[0].elements.length).toBe(2);
+    expect(decoded.pages[0].elements.find((e) => e.kind === 'section')).toMatchObject({
+      kind: 'section', name: 'ii-V-I',
+    });
+  });
+
+  it('still decodes legacy v1 links', () => {
+    // v1: page "x" with one C-major scale at the origin (root2 "0o", type "0").
+    const decoded = decodeDoc('v1:0;x~s0o00000')!;
+    expect(decoded).not.toBeNull();
+    expect(decoded.pages[0].name).toBe('x');
+    expect(decoded.pages[0].elements[0]).toMatchObject({
+      kind: 'scale', root: 'C', octave: 3, scaleId: 'major',
+    });
   });
 
   it('round-trips harmony elements', () => {
@@ -109,14 +136,14 @@ describe('url codec', () => {
       activePageId: 'p-s',
       pages: [
         page('s', [
-          { id: 'a', kind: 'section', x: 64, y: 32, z: 1, name: 'ii–V–I drills', width: 800, height: 480 },
-          { id: 'b', kind: 'scale', x: 100, y: 100, z: 2, root: 'C', octave: 3, scaleId: 'major' },
+          { id: 'a', kind: 'section', x: 72, y: 24, z: 1, name: 'ii–V–I drills', width: 480, height: 240 },
+          { id: 'b', kind: 'scale', x: 96, y: 96, z: 2, root: 'C', octave: 3, scaleId: 'major' },
         ]),
       ],
     } as const;
     const decoded = decodeDoc(encodeDoc(doc))!;
     const section = decoded.pages[0].elements.find((e) => e.kind === 'section')!;
-    expect(section).toMatchObject({ kind: 'section', name: 'ii–V–I drills', width: 800, height: 480 });
+    expect(section).toMatchObject({ kind: 'section', name: 'ii–V–I drills', width: 480, height: 240 });
   });
 
   it('skips images and stubs', () => {

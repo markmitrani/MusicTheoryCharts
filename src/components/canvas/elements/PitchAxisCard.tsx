@@ -56,7 +56,7 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
   };
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
+    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected} lifted={info}>
       <div className={`${chordStyles.wrap} ${styles.square}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
           <span className={chordStyles.nameTab}>

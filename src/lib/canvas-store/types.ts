@@ -54,6 +54,8 @@ export interface HarmonyElement extends ElementBase {
   root: NoteName;
   octave: number;
   scaleId: string;
+  /** Show each degree chord as its diatonic seventh instead of a triad. */
+  showSevenths?: boolean;
   /** Highlight-colour preset index (0 = theme default); cycled with R. */
   highlightColor?: number;
 }

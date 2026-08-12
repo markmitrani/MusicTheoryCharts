@@ -47,7 +47,7 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
   };
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
+    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected} lifted={editing}>
       <div className={styles.wrap} data-selected={selected || undefined}>
         <div className={styles.header}>
           <button
@@ -72,7 +72,7 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
               lit={lit}
               colorIndex={el.highlightColor ?? 0}
             />
-            <TransposeControl id={el.id} />
+            <TransposeControl id={el.id} visible={selected && soloSelected} />
           </div>
         </div>
         {editing && (

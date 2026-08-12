@@ -56,6 +56,7 @@ export const SCALE_GROUPS: ScaleGroup[] = [
     scales: [
       { id: 'phrygianDominant', label: 'Phrygian Dominant', intervals: [1, 3, 1, 2, 1, 2, 2] },
       { id: 'halfWholeDiminished', label: 'Half-Whole Diminished', intervals: [1, 2, 1, 2, 1, 2, 1, 2] },
+      { id: 'wholeHalfDiminished', label: 'Whole-Half Diminished', intervals: [2, 1, 2, 1, 2, 1, 2, 1] },
       { id: 'altered', label: 'Altered', intervals: [1, 2, 1, 2, 2, 2, 2] },
       { id: 'mixolydianFlat6', label: 'Mixolydian ♭6', intervals: [2, 2, 1, 2, 1, 2, 2] },
     ],

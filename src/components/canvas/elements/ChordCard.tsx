@@ -66,6 +66,7 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
       z={el.z}
       selected={selected}
       soloSelected={soloSelected}
+      lifted={editing}
       adornments={
         <InversionChevrons onPrev={() => cycleInversion(-1)} onNext={() => cycleInversion(1)} />
       }
@@ -94,7 +95,7 @@ export function ChordCard({ el, selected, soloSelected }: ChordCardProps) {
               lit={lit}
               colorIndex={el.highlightColor ?? 0}
             />
-            <TransposeControl id={el.id} />
+            <TransposeControl id={el.id} visible={selected && soloSelected} />
           </div>
         </div>
         {editing && (

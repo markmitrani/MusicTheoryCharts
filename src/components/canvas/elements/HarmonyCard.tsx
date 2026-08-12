@@ -33,10 +33,10 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
   const { chords, name } = useMemo(() => {
     const root = new Note(el.root, el.octave);
     return {
-      chords: harmonyChords(root, el.scaleId),
+      chords: harmonyChords(root, el.scaleId, el.showSevenths ?? false),
       name: `${scaleDisplayName(el.root, el.scaleId)} Harmony`,
     };
-  }, [el.root, el.octave, el.scaleId]);
+  }, [el.root, el.octave, el.scaleId, el.showSevenths]);
 
   const playChip = (i: number) => {
     setActiveChip(i);
@@ -61,7 +61,7 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
   };
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
+    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected} lifted={editing}>
       <div className={`${chordStyles.wrap} ${styles.wide}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
           <button
@@ -75,6 +75,25 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
           >
             <span className={chordStyles.nameTabInner}>{name}</span>
           </button>
+          {selected && soloSelected && (
+            <button
+              className={styles.seventhToggle}
+              role="switch"
+              aria-checked={el.showSevenths ?? false}
+              data-on={el.showSevenths || undefined}
+              title="Show diatonic 7th chords"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                canvasStore
+                  .getState()
+                  .updateElement(el.id, { showSevenths: !el.showSevenths }, { commit: true });
+              }}
+            >
+              <span className={styles.seventhBox} />
+              7ths
+            </button>
+          )}
           <PlayButton playing={playing} onClick={playAll} />
         </div>
         <div className={chordStyles.card}>

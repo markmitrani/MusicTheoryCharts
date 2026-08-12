@@ -79,8 +79,48 @@ export interface DegreeChord {
   pitches: number[];
 }
 
-/** The seven diatonic triads of a scale, voiced from the given root note. */
-export function harmonyChords(root: Note, scaleId: string): DegreeChord[] {
+/**
+ * The label for the diatonic seventh formed over a triad of the given quality,
+ * decided by the actual seventh interval (semitones above the chord root):
+ * 11 = major 7th, 10 = minor 7th, 9 = diminished 7th.
+ */
+function seventhLabel(quality: ModeHarmony['qualities'][number], interval: number): string {
+  switch (quality) {
+    case 'maj':
+      return interval === 11 ? 'maj7' : '7';
+    case 'min':
+      return interval === 11 ? 'mMaj7' : 'm7';
+    case 'dim':
+      return interval === 9 ? 'dim7' : 'm7♭5';
+    case 'aug':
+      return interval === 11 ? 'maj7♯5' : '7♯5';
+    default:
+      return '7';
+  }
+}
+
+/**
+ * The roman-numeral form with its seventh appended, following the same quality
+ * the chord name carries: a major-7th interval is spelled "maj7" (so I → Imaj7,
+ * IV → IVmaj7), a minor 7th is a plain "7" (V → V7, ii → ii7). On a diminished
+ * triad, a fully-diminished 7th keeps the "°" (vii°7) while a half-diminished
+ * one switches to "ø" (vii° → viiø7); an augmented triad keeps its "+".
+ */
+function seventhNumeral(base: string, quality: ModeHarmony['qualities'][number], interval: number): string {
+  if (quality === 'dim') {
+    return interval === 9 ? `${base}7` : `${base.replace('°', 'ø')}7`;
+  }
+  return interval === 11 ? `${base}maj7` : `${base}7`;
+}
+
+/**
+ * The seven diatonic degree chords of a scale, voiced from the given root note.
+ * With `sevenths`, each degree stacks the scale's own thirds one note further
+ * (degrees i, i+2, i+4, i+6) so the added seventh is the true diatonic one —
+ * e.g. the V of a major scale becomes a dominant 7 (not maj7), and vii° becomes
+ * a half-diminished m7♭5. The triad `quality` is preserved for chip colouring.
+ */
+export function harmonyChords(root: Note, scaleId: string, sevenths = false): DegreeChord[] {
   const mode = HARMONY_MODES[scaleId];
   if (!mode) throw new Error(`No harmony definition for scale: ${scaleId}`);
   // degree positions = cumulative semitone offsets of the scale's intervals
@@ -88,14 +128,28 @@ export function harmonyChords(root: Note, scaleId: string): DegreeChord[] {
   for (const step of getScaleDef(scaleId).intervals) {
     positions.push(positions[positions.length - 1] + step);
   }
+  const degreeCount = positions.length - 1; // scale notes per octave (7, sometimes 8)
+  const degreeSemis = (i: number, third: number) =>
+    positions[(i + third) % degreeCount] + 12 * Math.floor((i + third) / degreeCount);
+
   return mode.numerals.map((numeral, i) => {
     const chordRoot = root.move(positions[i]);
     const quality = mode.qualities[i];
+    if (!sevenths) {
+      return {
+        numeral,
+        name: `${chordRoot.name}${getChordDef(quality).label}`,
+        quality,
+        pitches: buildChord(chordRoot, quality).map((n) => n.totalSemitones),
+      };
+    }
+    const semis = [0, 2, 4, 6].map((t) => degreeSemis(i, t));
+    const interval = (((semis[3] - semis[0]) % 12) + 12) % 12;
     return {
-      numeral,
-      name: `${chordRoot.name}${getChordDef(quality).label}`,
+      numeral: seventhNumeral(numeral, quality, interval),
+      name: `${chordRoot.name}${seventhLabel(quality, interval)}`,
       quality,
-      pitches: buildChord(chordRoot, quality).map((n) => n.totalSemitones),
+      pitches: semis.map((s) => root.move(s).totalSemitones),
     };
   });
 }

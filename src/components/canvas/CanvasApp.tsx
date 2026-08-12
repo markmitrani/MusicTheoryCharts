@@ -10,6 +10,9 @@ import { HIGHLIGHT_COUNT } from '@/lib/highlight-presets';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
 import { UrlSync } from './UrlSync';
+import { GradientBackdrop } from './GradientBackdrop';
+import { MeshGradientBackdrop } from './MeshGradientBackdrop';
+import { HarmonicsBackdrop } from './HarmonicsBackdrop';
 import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
@@ -36,11 +39,29 @@ interface DragRect {
 const isTypingTarget = (t: EventTarget | null) =>
   t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement;
 
+/**
+ * Overwrite the OS clipboard after an internal element copy. Otherwise a
+ * previously-copied image stays on the OS clipboard and hijacks the next
+ * paste (paste checks for image data first) — so copying a theory element
+ * after copying an image would silently keep pasting the image. Writing text
+ * clears the stale image; the actual element payload still comes from the
+ * store's internal clipboard. Best-effort: ignored where the API is blocked.
+ */
+const clearOsClipboard = () => {
+  try {
+    navigator.clipboard?.writeText('').catch(() => {});
+  } catch {
+    // clipboard API unavailable (insecure context / permissions) — degrade
+  }
+};
+
 export function CanvasApp() {
   const page = useCanvas((s) => s.pages.find((p) => p.id === s.activePageId)!);
   const selection = useCanvas((s) => s.selection);
   const tool = useCanvas((s) => s.tool);
   const spacePanning = useCanvas((s) => s.spacePanning);
+  const gradientMode = useCanvas((s) => s.gradientMode);
+  const harmonicsViz = useCanvas((s) => s.harmonicsViz);
   const cameraRef = useRef<CameraController | null>(null);
   if (!cameraRef.current) cameraRef.current = new CameraController();
   const camera = cameraRef.current;
@@ -112,10 +133,12 @@ export function CanvasApp() {
         if (s.selection.size === 0 || window.getSelection()?.toString()) return;
         e.preventDefault();
         s.copySelection();
+        clearOsClipboard();
       } else if (cmd && e.key.toLowerCase() === 'x') {
         if (s.selection.size === 0 || window.getSelection()?.toString()) return;
         e.preventDefault();
         s.cutSelection();
+        clearOsClipboard();
       } else if (cmd && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         s.duplicateSelection();
@@ -269,7 +292,17 @@ export function CanvasApp() {
     <>
       <AudioBoot />
       <UrlSync />
-      <Viewport camera={camera} onBackgroundPointerDown={onBackgroundPointerDown}>
+      <Viewport
+        camera={camera}
+        onBackgroundPointerDown={onBackgroundPointerDown}
+        backdrop={
+          <>
+            {gradientMode === 'perlin' && <GradientBackdrop />}
+            {gradientMode === 'mesh' && <MeshGradientBackdrop />}
+            {harmonicsViz && <HarmonicsBackdrop />}
+          </>
+        }
+      >
         {/* In pan mode (move tool or space-held) the elements ignore the pointer:
             no hover states fire and drags fall through to the surface to pan. */}
         <div

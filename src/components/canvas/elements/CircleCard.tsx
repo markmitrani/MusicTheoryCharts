@@ -23,17 +23,22 @@ const RING_OUTER = 150;
 const RING_INNER = 96;
 const MID_R = (RING_OUTER + RING_INNER) / 2; // key name radius
 const MINOR_R = 76; // relative minor sits inside the ring
-const SIG_R = 190; // staff centre, outboard of the ring
+const MINOR_INNER = 52; // inner edge of the relative-minor band (clears the hub)
+const SIG_R = 188; // staff centre, outboard of the ring (centred in the margin)
 const HUB_R = 40;
 
-// Treble-staff metrics for the rendered key signatures.
-const STAFF_LS = 3; // line spacing
+// Treble-staff metrics for the rendered key signatures. Drawn 135% larger than
+// the original engraving without enlarging the box: SIG_R was pulled inward so
+// the bigger staves still sit between the ring and the (unchanged) viewbox edge.
+const STAFF_SCALE = 1.35;
+const STAFF_LS = 3 * STAFF_SCALE; // line spacing
 const STAFF_HALF = STAFF_LS * 2; // top/bottom line offset from centre
-const STAFF_CLEF_W = 13; // horizontal room reserved for the (large) clef
-const STAFF_ACC_STEP = 4.2;
+const STAFF_CLEF_W = 13 * STAFF_SCALE; // horizontal room reserved for the (large) clef
+const STAFF_ACC_STEP = 4.2 * STAFF_SCALE;
+const STAFF_ACC_PAD = 4 * STAFF_SCALE; // trailing room after the last accidental
 // Large treble clef: its body curls around the G line (2nd from the bottom,
 // y = +STAFF_LS), per engraving convention. Sized ~2.2× the staff height.
-const STAFF_CLEF_SIZE = 27;
+const STAFF_CLEF_SIZE = 27 * STAFF_SCALE;
 const STAFF_CLEF_Y = STAFF_LS; // central-baseline y → seats the curl on the G line
 /** Diatonic step above the bottom staff line (E4) → y offset from centre. */
 const stepToY = (step: number) => STAFF_HALF - step * (STAFF_LS / 2);
@@ -45,18 +50,18 @@ const polar = (cx: number, cy: number, r: number, deg: number) => ({
 });
 
 /** Ring-segment path for wedge i (30° each, index 0 centred at the top). */
-function wedgePath(cx: number, cy: number, i: number): string {
+function wedgePath(cx: number, cy: number, i: number, outer = RING_OUTER, inner = RING_INNER): string {
   const a0 = i * 30 - 105;
   const a1 = i * 30 - 75;
-  const p1 = polar(cx, cy, RING_OUTER, a0);
-  const p2 = polar(cx, cy, RING_OUTER, a1);
-  const p3 = polar(cx, cy, RING_INNER, a1);
-  const p4 = polar(cx, cy, RING_INNER, a0);
+  const p1 = polar(cx, cy, outer, a0);
+  const p2 = polar(cx, cy, outer, a1);
+  const p3 = polar(cx, cy, inner, a1);
+  const p4 = polar(cx, cy, inner, a0);
   return [
     `M ${p1.x} ${p1.y}`,
-    `A ${RING_OUTER} ${RING_OUTER} 0 0 1 ${p2.x} ${p2.y}`,
+    `A ${outer} ${outer} 0 0 1 ${p2.x} ${p2.y}`,
     `L ${p3.x} ${p3.y}`,
-    `A ${RING_INNER} ${RING_INNER} 0 0 0 ${p4.x} ${p4.y}`,
+    `A ${inner} ${inner} 0 0 0 ${p4.x} ${p4.y}`,
     'Z',
   ].join(' ');
 }
@@ -161,7 +166,7 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
   };
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
+    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected} lifted={panel !== 'none' || menuOpen}>
       <div className={`${chordStyles.wrap} ${showSig ? styles.squareWide : styles.square}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
           <button
@@ -197,6 +202,17 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
             <svg viewBox={`0 0 ${VIEW} ${VIEW}`} width="100%" role="img" aria-label="Circle of fifths">
               {/* rotating wheel: wedge fills only */}
               <g ref={wheelRef} transform={`rotate(${rot0} ${CX} ${CY})`}>
+                {/* relative-minor band: the same wedge background + stroke
+                    extended inward behind the minor labels, but fainter. */}
+                {showMinor &&
+                  CIRCLE_KEYS.map((key, i) => (
+                    <path
+                      key={`m-${key.note}`}
+                      className={styles.minorWedge}
+                      data-active={key.note === el.centerKey || undefined}
+                      d={wedgePath(CX, CY, i, RING_INNER, MINOR_INNER)}
+                    />
+                  ))}
                 {CIRCLE_KEYS.map((key, i) => (
                   <path
                     key={key.note}
@@ -344,7 +360,7 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
 function KeySignatureStaff({ count, type }: { count: number; type: 'sharp' | 'flat' | 'none' }) {
   const steps = type === 'flat' ? FLAT_STEPS : SHARP_STEPS;
   const glyph = type === 'flat' ? '♭' : '♯';
-  const width = STAFF_CLEF_W + count * STAFF_ACC_STEP + 4;
+  const width = STAFF_CLEF_W + count * STAFF_ACC_STEP + STAFF_ACC_PAD;
   const left = -width / 2;
 
   return (

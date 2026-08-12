@@ -28,6 +28,22 @@
   }
 }
 
+// Relative-minor band: same fill family as the main wedges but much fainter,
+// extended inward behind the minor labels. The active (centred) key lights up
+// like the main ring, just softer.
+.minorWedge {
+  fill: rgba(244, 240, 234, 0.02);
+  stroke: var(--hairline);
+  stroke-width: 1;
+  pointer-events: none;
+  transition: fill var(--dur-fast) var(--ease-out);
+
+  &[data-active] {
+    fill: color-mix(in srgb, var(--accent) 7%, transparent);
+    stroke: color-mix(in srgb, var(--element-stroke-selected) 55%, transparent);
+  }
+}
+
 .keyLabel {
   fill: var(--text-secondary);
   font-family: var(--font-body);
@@ -70,7 +86,7 @@
 .accidental {
   fill: var(--accent-warm);
   font-family: var(--font-body);
-  font-size: 6.4px; // 80% of the original 8px
+  font-size: 8.64px; // staff drawn 135% larger (was 6.4px)
   font-weight: 700; // a touch heavier so they hold up at the smaller size
 }
 

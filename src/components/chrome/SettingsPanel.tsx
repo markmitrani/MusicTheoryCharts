@@ -24,6 +24,9 @@ export function CornerActions() {
   const [surfaces, setSurfacesState] = useState<Surfaces>('flat');
   const muted = useCanvas((s) => s.muted);
   const tempoMs = useCanvas((s) => s.tempoMs);
+  const sound = useCanvas((s) => s.sound);
+  const gradientMode = useCanvas((s) => s.gradientMode);
+  const harmonicsViz = useCanvas((s) => s.harmonicsViz);
 
   // Sync from the DOM (set pre-paint by the no-flash script) on mount.
   useEffect(() => {
@@ -81,6 +84,19 @@ export function CornerActions() {
           </label>
 
           <label className={styles.row}>
+            <span>Sound</span>
+            <select
+              className={styles.select}
+              value={sound}
+              aria-label="Playback sound"
+              onChange={(e) => canvasStore.getState().setSound(e.target.value as 'pad' | 'piano')}
+            >
+              <option value="pad">Pad</option>
+              <option value="piano">Piano</option>
+            </select>
+          </label>
+
+          <label className={styles.row}>
             <span>Tempo</span>
             <span className={styles.tempoValue}>{tempoMs}ms / note</span>
           </label>
@@ -130,6 +146,40 @@ export function CornerActions() {
               ))}
             </div>
           </label>
+
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>Experimental</span>
+
+            <label className={styles.row}>
+              <span>Background gradient</span>
+              <select
+                className={styles.select}
+                value={gradientMode}
+                aria-label="Gradient backdrop style"
+                onChange={(e) =>
+                  canvasStore.getState().setGradientMode(e.target.value as 'off' | 'perlin' | 'mesh')
+                }
+              >
+                <option value="off">Off</option>
+                <option value="perlin">Perlin</option>
+                <option value="mesh">Mesh</option>
+              </select>
+            </label>
+
+            <label className={styles.row}>
+              <span>Harmonics wave</span>
+              <button
+                className={styles.switch}
+                role="switch"
+                aria-checked={harmonicsViz}
+                data-on={harmonicsViz || undefined}
+                onClick={() => canvasStore.getState().setHarmonicsViz(!harmonicsViz)}
+              >
+                <span className={styles.knob} />
+              </button>
+            </label>
+            <p className={styles.hint}>Harmonics wave reacts while audio plays.</p>
+          </div>
 
           <button
             className={styles.danger}

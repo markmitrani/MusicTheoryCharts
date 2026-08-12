@@ -21,9 +21,11 @@ export function AudioBoot() {
       const engine = getAudioEngine();
       setAudioSink(engine);
       engine.setMuted(canvasStore.getState().muted);
+      engine.setSound(canvasStore.getState().sound);
 
       unsubscribe = canvasStore.subscribe((s, prev) => {
         if (s.muted !== prev.muted) engine.setMuted(s.muted);
+        if (s.sound !== prev.sound) engine.setSound(s.sound);
       });
 
       const unlock = () => engine.ensureStarted();

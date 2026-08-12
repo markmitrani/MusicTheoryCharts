@@ -6,6 +6,16 @@ import type { CanvasElement, Page, Tool } from './types';
 /** Omit that distributes over union members (plain Omit collapses the union). */
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 
+/** Playback voice. 'pad' = the warm detuned-saw pad; 'piano' = flanged piano. */
+export type SoundId = 'pad' | 'piano';
+
+/**
+ * Experimental gradient backdrop style. 'off' = none; 'perlin' = domain-warped
+ * fractal-noise blobs; 'mesh' = vertical blue→gold→black ramp whose gold ridge
+ * follows an equation curve across x.
+ */
+export type GradientMode = 'off' | 'perlin' | 'mesh';
+
 let nextId = 0;
 const newId = () => `e${(++nextId).toString(36)}${Date.now().toString(36).slice(-4)}`;
 
@@ -26,12 +36,20 @@ export interface CanvasState extends DocState {
   /** Audio + settings (panel state lives with the doc store for URL encoding later). */
   muted: boolean;
   tempoMs: number;
+  sound: SoundId;
+  /** Experimental: gradient backdrop style behind the canvas. */
+  gradientMode: GradientMode;
+  /** Experimental: harmonics wave that surges behind the canvas on playback. */
+  harmonicsViz: boolean;
 
   activePage(): Page;
   setSpacePanning(on: boolean): void;
   setTool(tool: Tool): void;
   setMuted(muted: boolean): void;
   setTempoMs(ms: number): void;
+  setSound(sound: SoundId): void;
+  setGradientMode(mode: GradientMode): void;
+  setHarmonicsViz(on: boolean): void;
 
   addElement(el: DistributiveOmit<CanvasElement, 'id' | 'z'>): string;
   /** Convert a filled-in stub to a real element in place (one undo step). */
@@ -111,6 +129,9 @@ export function createCanvasStore() {
       spacePanning: false,
       muted: false,
       tempoMs: 180,
+      sound: 'pad',
+      gradientMode: 'off',
+      harmonicsViz: false,
 
       activePage() {
         const s = get();
@@ -121,6 +142,9 @@ export function createCanvasStore() {
       setTool: (tool) => set({ tool }),
       setMuted: (muted) => set({ muted }),
       setTempoMs: (tempoMs) => set({ tempoMs }),
+      setSound: (sound) => set({ sound }),
+      setGradientMode: (gradientMode) => set({ gradientMode }),
+      setHarmonicsViz: (harmonicsViz) => set({ harmonicsViz }),
 
       addElement(el) {
         snapshot();

@@ -132,7 +132,7 @@ export function StubCard({ el }: { el: StubElement }) {
   }, [moreOpen]);
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={false} soloSelected={false}>
+    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={false} soloSelected={false} lifted={focused}>
       <div className={chordStyles.wrap} ref={wrapRef}>
         <div className={chordStyles.header}>
           <span className={chordStyles.nameTab}>
