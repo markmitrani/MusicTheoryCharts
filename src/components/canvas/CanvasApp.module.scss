@@ -1,0 +1,14 @@
+.marquee {
+  position: fixed;
+  z-index: 80;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 2px;
+  pointer-events: none;
+
+  &[data-mode='frame'] {
+    border: 1px dashed var(--accent-warm);
+    background: var(--accent-warm-soft);
+    border-radius: var(--radius-sm);
+  }
+}

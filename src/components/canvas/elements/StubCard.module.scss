@@ -1,0 +1,160 @@
+// Tab height (6px padding × 2 + ~18px line) + 4px wrapper padding ≈ 38px.
+// The right corners are rounded to half that so they hug the circular
+// ellipsis button that caps the row.
+$kinds-pad: 4px;
+$ellipsis-d: 30px;
+$kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
+
+.kinds {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: $kinds-pad;
+  border-radius: var(--radius-sm) $kinds-right-radius $kinds-right-radius var(--radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.moreWrap {
+  position: relative;
+  display: flex;
+  margin-left: 2px;
+}
+
+// Circular ellipsis, intentionally breaking the rectangular tab pattern —
+// echoes the round "add" button that stands apart in the toolbar.
+.more {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: $ellipsis-d;
+  height: $ellipsis-d;
+  border-radius: 50%;
+  border: 1px solid var(--element-stroke);
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    border-color: var(--element-stroke-hover);
+    color: var(--text-primary);
+  }
+
+  &[data-active] {
+    border-color: var(--accent);
+    background: var(--accent-warm-soft);
+    color: var(--accent);
+  }
+}
+
+// Dropdown spawns downward and rightward from the ellipsis.
+.moreMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: var(--chrome-fill);
+  backdrop-filter: blur(var(--chrome-blur));
+  box-shadow: var(--shadow-lg);
+  transform-origin: top left;
+  animation: moreIn var(--dur-fast) var(--ease-out);
+}
+
+@keyframes moreIn {
+  from {
+    opacity: 0;
+    scale: 0.94;
+    translate: 0 -4px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+.moreItem {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    background: var(--accent-warm-soft);
+    color: var(--text-primary);
+  }
+
+  &[data-active] {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+}
+
+.kind {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[data-active] {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+}
+
+.body {
+  padding: 13px;
+  border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
+  border: 1px dashed var(--element-stroke-hover);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-sm);
+}
+
+.circleNote {
+  padding: 6px 4px 4px;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.confirm {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #1a1109;
+  box-shadow: 0 0 14px var(--accent-glow);
+  transition: transform var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    transform: scale(1.08);
+  }
+}

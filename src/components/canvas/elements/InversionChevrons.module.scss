@@ -1,0 +1,41 @@
+// Covers the card body only (below the 32px name-tab header) so the
+// chevrons center on the card, not the whole element.
+.frame {
+  position: absolute;
+  inset: 32px 0 0 0;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: var(--chrome-fill);
+  backdrop-filter: blur(var(--chrome-blur));
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--element-stroke-hover);
+  }
+}
+
+.left {
+  right: calc(100% + 10px);
+}
+
+.right {
+  left: calc(100% + 10px);
+}

@@ -1,0 +1,7 @@
+.box {
+  position: fixed;
+  z-index: 70;
+  border: 1px solid var(--element-stroke-selected);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}

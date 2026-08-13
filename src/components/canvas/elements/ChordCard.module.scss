@@ -1,0 +1,98 @@
+.wrap {
+  width: 300px;
+}
+
+// Name tab + play button row: lives outside the stroked card, mac-folder style.
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 32px;
+}
+
+// Folder tab: right edge slants outward like a mac folder. clip-path clips
+// real borders, so the stroke is faked: outer = stroke color clipped to the
+// tab shape, inner = glass fill clipped to the same shape inset by 1px.
+$tab-slant: 14px;
+
+.nameTab {
+  position: relative;
+  align-self: stretch;
+  margin-bottom: -1px; // fuse with the card's top stroke
+  padding: 1px 1px 0;
+  border: none;
+  border-radius: var(--radius-sm) 0 0 0;
+  clip-path: polygon(6px 0, calc(100% - #{$tab-slant}) 0, 100% 100%, 0 100%, 0 6px);
+  background: var(--tab-stroke, var(--element-stroke));
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.nameTabInner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 26px 0 15px;
+  clip-path: polygon(6px 0, calc(100% - #{$tab-slant} + 0.5px) 0, 100% 100%, 0 100%, 0 6px);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.nameTab:hover .nameTabInner {
+  color: var(--accent);
+}
+
+.nameTabInner[data-empty] {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.card {
+  padding: 13px;
+  // top-left square: the name tab connects there
+  border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
+  border: 1px solid var(--element-stroke);
+  // accent sheen (alpha fading to transparent) layered over the glass fill
+  background: var(--card-sheen), var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
+    translate var(--dur-med) var(--ease-out);
+}
+
+.wrap:hover {
+  --tab-stroke: var(--element-stroke-hover);
+
+  .card {
+    border-color: var(--element-stroke-hover);
+    box-shadow: var(--shadow-md);
+    translate: 0 -2px;
+  }
+}
+
+.wrap[data-selected] {
+  --tab-stroke: var(--element-stroke-selected);
+
+  .card {
+    border-color: var(--element-stroke-selected);
+    box-shadow: var(--glow-accent), var(--shadow-md);
+    translate: 0 -2px;
+  }
+}
+
+.keys {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 8px 0;
+}
+

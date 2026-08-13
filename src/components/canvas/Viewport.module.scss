@@ -1,0 +1,42 @@
+.surface {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--canvas-bg);
+  // dot grid (top layer) over the stained-glass atmosphere bleed, over the base colour
+  background-image:
+    radial-gradient(var(--canvas-dot-grid) 1.5px, transparent 1.5px),
+    var(--atmosphere);
+  background-size: 28px 28px, cover;
+  background-position: 0 0, bottom right;
+  background-repeat: repeat, no-repeat;
+  transition: background-color var(--dur-med) var(--ease-out);
+  touch-action: none;
+  cursor: default;
+
+  &[data-tool='move'] {
+    cursor: grab;
+  }
+
+  &[data-tool='frame'] {
+    cursor: crosshair;
+  }
+}
+
+.grabbable {
+  cursor: grab !important;
+}
+
+.grabbing {
+  cursor: grabbing !important;
+}
+
+.content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
