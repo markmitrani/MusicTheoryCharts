@@ -26,6 +26,8 @@ Stack: Next.js (App Router) + TypeScript, SCSS with design tokens in `src/styles
 
 The previous HTML/CSS/JS implementation lives in [`legacy/`](legacy/) as reference material.
 
+Check out a prefilled example at: http://localhost:3000/#v2:1;~;~f05010r0iC%20Minor%20Section%3A%20Chords-c0700603-c5700j03-c7800j09-c2900609-h01070g1-f060m0r07Key%20centers%20in%20this%20tune%3A%20C%20Minor%20%2B%20Eb%20major-s01060n-s300j0n;~;~
+
 ## Acknowledgements
 
 Type set in [Fraunces](https://fonts.google.com/specimen/Fraunces) and [Inter](https://fonts.google.com/specimen/Inter).
