@@ -16,7 +16,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Music Theory Playground',
   description:
-    'An infinite canvas for arranging scales, chords, and musical ideas — composition, improvisation, or pure learning.',
+    'An infinite canvas for arranging scales, chords, and musical ideas – composition, improvisation, or pure learning.',
 };
 
 export default function RootLayout({

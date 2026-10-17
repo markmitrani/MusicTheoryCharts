@@ -60,7 +60,7 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
       <div className={`${chordStyles.wrap} ${styles.square}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
           <span className={chordStyles.nameTab}>
-            <span className={chordStyles.nameTabInner}>Pitch Axis — {el.centerKey}</span>
+            <span className={chordStyles.nameTabInner}>Pitch Axis – {el.centerKey}</span>
           </span>
         </div>
         <div className={chordStyles.card}>
@@ -158,7 +158,7 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
           <div className={styles.info} onPointerDown={(e) => e.stopPropagation()}>
             <h4>Pitch axis</h4>
             <p>
-              The twelve notes fall into three functional axes — tonic, subdominant, dominant.
+              The twelve notes fall into three functional axes – tonic, subdominant, dominant.
               Each axis is a diminished-seventh chord: four notes a minor third apart, drawn as a
               cross of two tritone diameters.
             </p>
@@ -166,7 +166,7 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
               <strong>Independent of mode.</strong> The axis of a note is set by the key centre
               alone, not the scale. In {el.centerKey}, the notes{' '}
               {[0, 3, 6, 9].map((o) => CHROMATIC_LABELS[(centerIdx + o) % 12]).join(', ')} all carry
-              tonic function — in {el.centerKey} major, {el.centerKey} minor, or any mode. A chord a
+              tonic function – in {el.centerKey} major, {el.centerKey} minor, or any mode. A chord a
               tritone away substitutes for its pole; that is why this map works the same everywhere.
             </p>
           </div>

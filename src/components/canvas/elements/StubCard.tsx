@@ -50,9 +50,9 @@ const INSTANT_LABEL: Record<string, string> = {
 
 const INSTANT_NOTE: Record<string, string> = {
   circle:
-    'An interactive circle of fifths — click a key on it to re-center, and spawn scales, chords, or harmonies from any key. Confirm above to place it.',
+    'An interactive circle of fifths – click a key on it to re-center, and spawn scales, chords, or harmonies from any key. Confirm above to place it.',
   pitchaxis:
-    "Bartók's pitch axis — the 12 notes grouped into tonic, subdominant and dominant functions, independent of mode. Confirm above to place it.",
+    "Bartók's pitch axis – the 12 notes grouped into tonic, subdominant and dominant functions, independent of mode. Confirm above to place it.",
 };
 
 /**

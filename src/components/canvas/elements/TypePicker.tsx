@@ -57,7 +57,7 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
   if (kinds.includes('scale')) {
     for (const g of SCALE_GROUPS) {
       sections.push({
-        label: kinds.length > 1 ? `Scales — ${g.label}` : g.label,
+        label: kinds.length > 1 ? `Scales – ${g.label}` : g.label,
         items: g.scales.map((s) => ({ id: `scale:${s.id}`, label: s.label })),
       });
     }
@@ -65,7 +65,7 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
   if (kinds.includes('chord')) {
     for (const g of CHORD_GROUPS) {
       sections.push({
-        label: kinds.length > 1 ? `Chords — ${g.label}` : g.label,
+        label: kinds.length > 1 ? `Chords – ${g.label}` : g.label,
         items: g.chords.map((c) => ({ id: `chord:${c.id}`, label: c.label || 'maj' })),
       });
     }
@@ -76,7 +76,7 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
         .filter((s) => hasHarmony(s.id))
         .map((s) => ({ id: `harmony:${s.id}`, label: s.label }));
       if (items.length > 0) {
-        sections.push({ label: kinds.length > 1 ? `Harmony — ${g.label}` : g.label, items });
+        sections.push({ label: kinds.length > 1 ? `Harmony – ${g.label}` : g.label, items });
       }
     }
   }
