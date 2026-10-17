@@ -1,6 +1,6 @@
 # Many Ways Home: Design
 
-**Date:** 2026-10-03, revised 2026-10-17 · **Status:** approved
+**Date:** 2026-10-03, revised 2026-10-17 · **Status:** built (branch `ways-home`)
 **Source:** brainstorming session with Mark (conversation). Decisions below were picked at explicit check-ins.
 
 ## What we're building
@@ -22,10 +22,10 @@ Four cadence types, each defined by the root motion from the approach chord into
 
 | Type | Approach → I | Root motion into home | Semitones | Corner | Colour |
 |---|---|---|---|---|---|
-| dominant | V → I | falls a 5th | +5 | ↗ top-right | red |
-| plagal | IV → I | falls a 4th | +7 | ↖ top-left | green |
-| backdoor | ♭VII → I | rises a whole step | +2 | ↙ bottom-left | blue-violet |
-| tritone | ♭II → I | falls a half step | −1 | ↘ bottom-right | yellow-orange |
+| dominant | V → I | falls a 5th | +5 | ↗ top-right | rose |
+| plagal | IV → I | falls a 4th | +7 | ↖ top-left | yellow |
+| backdoor | ♭VII → I | rises a whole step | +2 | ↙ bottom-left | sky blue |
+| tritone | ♭II → I | falls a half step | −1 | ↘ bottom-right | lime |
 
 Two directions from any node X:
 
@@ -74,18 +74,23 @@ interface WaysHomeElement extends ElementBase {
   kind: 'wayshome';
   walk: WalkStep[];      // path from I to the current centre, max 12 steps
   dir: 'in' | 'out';     // current view: ways in, or homes
-  key: NoteName | null;  // null = functional; set by the key picker (last build step)
+  key: NoteName | null;  // null = functional; set by the key picker
+  showLegend: boolean;   // corner colour key, toggled on the card
 }
 ```
 
-**Spawning.** New instant kind in the stub's "more" menu ("Ways Home"), next to Circle of Fifths and Pitch Axis. `confirmStub` creates `{ kind: 'wayshome', walk: [], dir: 'in', key: null }`.
+**Spawning.** New instant kind in the stub's "more" menu ("Ways Home"), next to Circle of Fifths and Pitch Axis. `confirmStub` creates `{ kind: 'wayshome', walk: [], dir: 'in', key: null, showLegend: true }`.
 
-**Shell.** House pattern: folder tab "Ways Home – <centre numeral>", fixed-size square card, play button floating top-right, an ⓘ "Explainer" button that opens the slideshow.
+**Shell.** House pattern: folder tab "Ways Home – <centre>" (clicking it opens the key picker), fixed-size square card, play button floating top-right. A top bar holds the breadcrumb, a "Legend" toggle and an "Explainer" button that opens the slideshow.
 
 **Stage** (SVG, `src/components/cadence/FractalScene.tsx`, shared with the explainer):
 
 - Centre node + four corners + their four corners, labelled; the fourth level renders as faint dots that grow into labelled nodes during a zoom.
-- Level-1 arrows connect fully into the centre as gentle pinwheel arcs that pass beside each corner's inward-facing child; deeper arrows are straight full lines.
+- Every arrow connects fully and bows the same way (a pinwheel at every level), so each road passes beside its corner's inward-facing child and the layout stays self-similar for the zoom.
+- The fourth level is hidden at rest and fades in during a zoom (slide 6 shows it as faint dots).
+- Labels: the centre node in the display serif, every other node in the UI sans (as on the other cards). Accidentals are set in a tight span, since the faces have no ♭/♯.
+- Legend: each colour's name and move ("Dominant V→I") sits in the corner that move points to. Toggleable per card.
+- Glass surfaces: each node gets a subtle radial wash of its own colour, brighter top-left and deepening into a tinted rim (the inner shadow); never white.
 - Breadcrumb top-left, Explorer-style: `I › V › II`. A flip in the walk shows as a turn marker between crumbs. Clicking a crumb zooms back out to that level.
 - Bottom: a two-way switch, "Ways in ⇄ Homes".
 
@@ -104,8 +109,8 @@ interface WaysHomeElement extends ElementBase {
 **URL codec** (append-only; existing registries untouched). New element code:
 
 ```
-wayshome = w + dir1 + key1 + x2 + y2 + steps   (7 + n chars, n ≤ 12)
-dir1  = '0' ways in | '1' homes
+wayshome = w + flags1 + key1 + x2 + y2 + steps   (7 + n chars, n ≤ 12)
+flags1 = (homes ? 1 : 0) + (legend hidden ? 2 : 0)
 key1  = pitch class 0–b, or 'c' = functional
 step  = base36( dirBit * 4 + typeIndex ), one char, 0–7
 ```
@@ -163,33 +168,32 @@ Click any chord to travel there. Flip the arrows to see where a chord can go ins
 
 The interlude's ring as a canvas element, reusing `RoadsRing`.
 
-- **Element:** `{ kind: 'roads', centerKey: NoteName }`. Instant kind in the "more" menu ("Roads"). Folder tab "Roads – C".
+- **Element:** `{ kind: 'roads', centerKey: NoteName, show: 'in' | 'out' | 'both' }`. Instant kind in the "more" menu ("Roads"). Folder tab "Roads – C".
 - **Body:** the 12 keys in fifths order, the centre key rotated to the top (rotate-then-relabel, as in `CircleCard`). The centre's four ways in and four ways out are drawn as coloured roads; neighbour roads appear as paired two-way arcs, so the dominant/plagal duality is always visible. Nodes show the real key name with the numeral relative to the centre as a subtitle.
-- **Interactions:** click a key to rotate it to the top; hover a road to highlight it and show its label ("G→C · V→I"); click a road to play that cadence. Chips switch between ways in, homes, and both (default both). ⓘ panel with a short explanation.
-- **URL codec:** `roads = r + center1 + x2 + y2` (6 chars).
+- **Roads geometry:** neighbour roads bow to the left of travel, so a road's two directions separate; longer roads bow toward the ring's centre so they never cross the stops in between.
+- **Interactions:** click a key to rotate it to the top; hover a road to highlight it; click a road to play that cadence. Chips switch between ways in, homes, and both (default both). ⓘ panel with a short explanation; a colour legend sits under the ring.
+- **URL codec:** `roads = r + center1 + show1 + x2 + y2` (7 chars; show 0 both, 1 in, 2 out).
 
 ## Unit: key picker
 
 Lands last; the data model and codec carry `key` from the start.
 
 - **Where:** the Ways Home card's folder tab opens a key popover (house pattern: the tab edits the element). Options: "Functional" plus the 12 keys in circle-of-fifths order using the circle's labels (C, G, D, A, E, B, F♯, D♭, A♭, E♭, B♭, F). The explainer's final slide shows the same picker.
-- **Labels when keyed:** chord name large, numeral small beneath. The breadcrumb switches to names too. Tab: "Ways Home – G (in C)"; functional stays "Ways Home – V".
+- **Labels when keyed:** chord name large, numeral small beneath. The breadcrumb switches to names too. Tab: "Ways Home – G (in C)" away from I, "Ways Home – C" at home; functional stays "Ways Home – V".
 - **Spelling:** tonic spelled from the circle labels; each degree takes the letter (tonic letter + degree − 1) and the accidental that matches the semitone; double accidentals collapse to the simpler enharmonic (A♭♭ → G).
 - **Sound:** keyed playback sounds in that key; functional playback sounds in C.
 
 ## Look and motion
 
-- **Tokens** in `globals.scss`, dark + light like `--axis-*`. Tetradic scheme from the CMYK-wheel quartering; warm on the dominant side (right), cool on the subdominant side (left), complements across the diagonals. Starting values, tuned in the browser:
+- **Tokens** in `globals.scss`, dark + light like `--axis-*` (Mark's palette; light takes the next shade deeper):
 
   | Token | Dark | Light |
   |---|---|---|
-  | `--cadence-dominant` (red) | `#e5484d` | `#d13438` |
-  | `--cadence-tritone` (yellow-orange) | `#f5b82e` | `#d9930f` |
-  | `--cadence-plagal` (green) | `#46b97a` | `#1f9d61` |
-  | `--cadence-backdoor` (blue-violet) | `#8a7cf5` | `#5b4fd6` |
-
-  The tritone yellow-orange must stay visibly distinct from `--accent` (`#f49119` dark); checked during tuning.
-- **Motion** (GSAP): arrows draw on via stroke-dashoffset; nodes pop with `back.out`; zoom-travel 0.8s `power3.inOut`; flip reverses arrow draw direction while labels cross-fade; slide transitions tween the stage between states rather than cutting.
+  | `--cadence-dominant` (rose) | `#f43f5e` | `#e11d48` |
+  | `--cadence-plagal` (yellow) | `#eab308` | `#ca8a04` |
+  | `--cadence-backdoor` (sky) | `#0ea5e9` | `#0284c7` |
+  | `--cadence-tritone` (lime) | `#84cc16` | `#65a30d` |
+- **Motion** (GSAP): arrows draw on via stroke-dashoffset; nodes pop with `back.out`; zoom-travel 0.8s `power3.inOut`; flip reverses arrow draw direction while labels cross-fade; slide transitions tween the stage between states rather than cutting. Sparse slides (level 1 only) show the stage slightly zoomed in and ease out as the map fills.
 - Cards follow the folder-tab pattern and reference tokens only; no hardcoded colours.
 
 ## Testing

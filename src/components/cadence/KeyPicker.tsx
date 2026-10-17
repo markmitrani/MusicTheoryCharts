@@ -30,14 +30,17 @@ export function KeyPicker({ value, onChange, onClose }: KeyPickerProps) {
       if (ref.current?.contains(t) || t.closest?.('[data-key-anchor]')) return;
       closeRef.current();
     };
+    // Capture phase: Esc closes only the picker, not the window it sits in.
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeRef.current();
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      closeRef.current();
     };
     window.addEventListener('pointerdown', onDown, { capture: true });
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, { capture: true });
     return () => {
       window.removeEventListener('pointerdown', onDown, { capture: true });
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keydown', onKey, { capture: true });
     };
   }, []);
 

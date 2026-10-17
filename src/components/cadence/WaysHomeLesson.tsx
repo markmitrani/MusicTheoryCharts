@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   CADENCES,
+  keyLabel,
   numeral,
   rootName,
   runToProgression,
@@ -15,6 +16,7 @@ import {
   type WalkStep,
 } from '@/lib/theory/cadence';
 import { canvasStore } from '@/lib/canvas-store/store';
+import type { NoteName } from '@/lib/theory/note';
 import { lessonStore, useLesson } from '@/lib/lesson/store';
 import { playProgression, uiTick } from '@/lib/playback/playback';
 import { WAYS_HOME_SLIDES, WAYS_HOME_TITLE } from '@/lessons/ways-home';
@@ -28,6 +30,7 @@ import { Breadcrumb } from './Breadcrumb';
 import { DirectionSwitch } from './DirectionSwitch';
 import { CornerLegend } from './CornerLegend';
 import { Acc } from './Acc';
+import { KeyPicker } from './KeyPicker';
 import type { NodeLabel } from './FractalScene';
 import type { Road } from './RoadsRing';
 import styles from './WaysHomeLesson.module.scss';
@@ -49,6 +52,8 @@ export function WaysHomeLesson() {
   })();
 
   const [explorer, setExplorer] = useState<{ walk: WalkStep[]; dir: Direction }>({ walk: [], dir: 'in' });
+  const [finaleKey, setFinaleKey] = useState<NoteName | null>(sourceKey);
+  const [picking, setPicking] = useState(false);
   const [growLevel, setGrowLevel] = useState(1);
   const [active, setActive] = useState<{ id: string; index: number } | null>(null);
   const [lit, setLit] = useState<ReadonlySet<number>>(NO_PITCHES);
@@ -61,14 +66,14 @@ export function WaysHomeLesson() {
   }, [slideIdx, stage]);
 
   const finale = stage.scene === 'explorer';
-  const key = finale ? (sourceKey ?? null) : 'C';
+  const key = finale ? finaleKey : 'C';
 
   const labelFor = useCallback(
     (pc: number): NodeLabel => {
       if (!finale) return { main: numeral(pc), sub: rootName(pc, 'C') };
-      return sourceKey ? { main: rootName(pc, sourceKey), sub: numeral(pc) } : { main: numeral(pc) };
+      return finaleKey ? { main: rootName(pc, finaleKey), sub: numeral(pc) } : { main: numeral(pc) };
     },
-    [finale, sourceKey],
+    [finale, finaleKey],
   );
 
   const play = (id: string, chords: ChordSpec[]) => {
@@ -114,7 +119,7 @@ export function WaysHomeLesson() {
         ? (stage.corners ?? null)
         : null;
 
-  const names = (pc: number) => (sourceKey ? rootName(pc, sourceKey) : numeral(pc));
+  const names = (pc: number) => (finaleKey ? rootName(pc, finaleKey) : numeral(pc));
   const pcs = walkPcs(explorer.walk);
   // Crumb lit while the walk plays: the last run, in musical time.
   const runStart = (() => {
@@ -172,7 +177,34 @@ export function WaysHomeLesson() {
                 setExplorer((x) => ({ ...x, walk: x.walk.slice(0, i) }));
               }}
             />
-            <PlayButton playing={active?.id === 'walk'} onClick={() => play('walk', walkToProgression(explorer.walk))} />
+            <div className={styles.explorerActions}>
+              <button
+                className={styles.keyBtn}
+                data-key-anchor
+                aria-expanded={picking}
+                title="Choose the home key"
+                onClick={() => setPicking((v) => !v)}
+              >
+                {finaleKey ? (
+                  <>
+                    Key <Acc text={keyLabel(finaleKey)} />
+                  </>
+                ) : (
+                  'Functional'
+                )}
+              </button>
+              <PlayButton playing={active?.id === 'walk'} onClick={() => play('walk', walkToProgression(explorer.walk))} />
+              {picking && (
+                <KeyPicker
+                  value={finaleKey}
+                  onChange={(k) => {
+                    uiTick(k ? 1 : 0);
+                    setFinaleKey(k);
+                  }}
+                  onClose={() => setPicking(false)}
+                />
+              )}
+            </div>
           </div>
           <div className={styles.stage}>
             <CadenceStage
