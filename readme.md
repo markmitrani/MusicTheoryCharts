@@ -2,6 +2,10 @@
 
 An infinite-canvas webapp for arranging music theory tools – scales, chords, and reference images – however you think. Built for jazz learners who are tired of switching contexts between isolated theory tools.
 
+## Live
+
+`main` is deployed to production at <https://ardeis.tech/music-theory-charts> (Cloudflare Workers via OpenNext; deploy with `npm run cf:deploy`). Open all subsequent PRs against the `dev` branch, not `main`.
+
 ## Features
 
 - **Infinite canvas** with trackpad-native pan (two-finger drag), zoom (pinch or cmd+scroll), and space-hold panning
