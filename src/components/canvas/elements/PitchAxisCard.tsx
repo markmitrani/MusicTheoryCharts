@@ -1,6 +1,7 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { gsap } from 'gsap';
 import { NOTE_NAMES } from '@/lib/theory/note';
 import { AXES, AXIS_COLOR, CHROMATIC_LABELS, axisOf, type AxisFn } from '@/lib/theory/pitch-axis';
 import type { PitchAxisElement } from '@/lib/canvas-store/types';
@@ -25,16 +26,18 @@ const R_LABEL = 135;
 const R_HUB = 34;
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
-const pos = (r: number, i: number) => {
-  const a = rad(-90 + i * 30); // C at top, clockwise by semitone
+/** Chromatic index `i` with index `center` on top, clockwise by semitone, turned by `rot` degrees. */
+const pos = (r: number, i: number, center: number, rot: number) => {
+  const a = rad(-90 + (((i - center) % 12) + 12) % 12 * 30 + rot);
   return { x: C + r * Math.cos(a), y: C + r * Math.sin(a) };
 };
 
 /**
- * Bartók pitch-axis element (v1, static C on top). The 12 chromatic notes are
+ * Bartók pitch-axis element, key centre on top. The 12 chromatic notes are
  * coloured by functional axis (tonic / subdominant / dominant); each axis is a
  * diminished-seventh "cross" of two tritone diameters. The whole point: this
  * functional grouping is fixed by the key centre and is the same in every mode.
+ * Double-clicking a note makes it the centre and spins it (shortest way) to the top.
  */
 export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps) {
   const [info, setInfo] = useState(false);
@@ -42,6 +45,23 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
   const glass = useSurfaces() === 'glass';
   const uid = useId().replace(/[:]/g, '');
   const centerIdx = NOTE_NAMES.indexOf(el.centerKey);
+  // Rotation in degrees, tweened back to 0 after a re-centre; positions are recomputed per frame.
+  const rotRef = useRef({ centerIdx, v: 0 });
+  const [rot, setRot] = useState(0);
+
+  useEffect(() => {
+    const live = rotRef.current;
+    if (live.centerIdx === centerIdx) return;
+    // Start from the current view seen from the new centre, normalised so it turns the shortest way.
+    const start = live.v - ((((live.centerIdx - centerIdx) % 12) + 12) % 12) * 30;
+    live.centerIdx = centerIdx;
+    live.v = ((start % 360) + 540) % 360 - 180;
+    setRot(live.v);
+    const tween = gsap.to(live, { v: 0, duration: 0.7, ease: 'power3.inOut', onUpdate: () => setRot(live.v) });
+    return () => {
+      tween.kill();
+    };
+  }, [centerIdx]);
 
   // The two tritone diameters of each axis (note index pairs).
   const diameters: Array<{ fn: AxisFn; a: number; b: number }> = [];
@@ -99,8 +119,8 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
               <circle cx={C} cy={C} r={R_RING} className={styles.ring} />
 
               {diameters.map((d, i) => {
-                const p1 = pos(R_RING, d.a);
-                const p2 = pos(R_RING, d.b);
+                const p1 = pos(R_RING, d.a, centerIdx, rot);
+                const p2 = pos(R_RING, d.b, centerIdx, rot);
                 return (
                   <line
                     key={i}
@@ -126,22 +146,23 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
 
               {CHROMATIC_LABELS.map((label, i) => {
                 const fn = axisOf(i, el.centerKey);
-                const dot = pos(R_RING, i);
-                const lab = pos(R_LABEL, i);
+                const dot = pos(R_RING, i, centerIdx, rot);
+                const lab = pos(R_LABEL, i, centerIdx, rot);
                 const isCenter = NOTE_NAMES[i] === el.centerKey;
                 return (
                   <g
                     key={i}
                     data-dim={dim(fn) || undefined}
+                    data-center={isCenter || undefined}
                     className={styles.note}
                     onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
+                    onDoubleClick={(e) => {
                       e.stopPropagation();
                       recenter(i);
                     }}
                   >
                     {isCenter && (
-                      <circle cx={dot.x} cy={dot.y} r={12} className={styles.centerRing} />
+                      <circle cx={dot.x} cy={dot.y} r={12} stroke={AXIS_COLOR[fn]} className={styles.centerRing} />
                     )}
                     <circle
                       cx={dot.x}

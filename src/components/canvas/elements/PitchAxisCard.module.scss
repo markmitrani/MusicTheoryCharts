@@ -27,6 +27,10 @@
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out);
 
+  &[data-center] {
+    cursor: default;
+  }
+
   &[data-dim] {
     opacity: 0.18;
   }
@@ -51,7 +55,6 @@
 
 .centerRing {
   fill: none;
-  stroke: var(--text-primary);
   stroke-width: 1.5;
 }
 
