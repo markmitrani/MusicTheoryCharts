@@ -97,7 +97,7 @@ export const WAYS_HOME_SLIDES: Slide[] = [
     id: 'your-turn',
     title: 'Your turn',
     body: [
-      'Click any chord to travel there. Flip the arrows to see where a chord can go instead of how to reach it.',
+      'Click a chord to hear its move; double-click to travel there. Flip the arrows to see where a chord can go instead of how to reach it.',
       'The trail at the top is your progression: play it, or click back to any step.',
     ],
     drill: 'Walk five steps, play the trail, then play it from memory.',

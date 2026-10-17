@@ -37,7 +37,7 @@ const MOVE = { dominant: 'V→I', plagal: 'IV→I', backdoor: '♭VII→I', trit
 /**
  * Roads: the circle of fifths as a road map around a centre key. Its four
  * ways in and four homes are drawn as roads; neighbours share one road driven
- * both ways (dominant in, plagal out). Click a key to make it the centre.
+ * both ways (dominant in, plagal out). Double-click a key to make it the centre.
  */
 export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
   const [info, setInfo] = useState(false);
@@ -111,7 +111,7 @@ export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
             centre={el.centerKey}
             roads={roads}
             onRoadClick={playRoad}
-            onKeyClick={(key) => {
+            onKeyDoubleClick={(key) => {
               uiTick(1);
               update({ centerKey: key });
             }}
@@ -139,8 +139,8 @@ export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
               next key.
             </p>
             <p>
-              The backdoor skips two stops; the tritone sub crosses the circle. Click a road to hear it, or a key to
-              make it the centre.
+              The backdoor skips two stops; the tritone sub crosses the circle. Click a road to hear it; double-click a
+              key to make it the centre.
             </p>
           </div>
         )}

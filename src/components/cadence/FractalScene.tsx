@@ -18,7 +18,10 @@ interface FractalSceneProps {
   dir: Direction;
   labelFor: (pc: number) => NodeLabel;
   interactive?: boolean;
+  /** Single click: hear the move. */
   onNodeClick?: (rel: CadenceType[]) => void;
+  /** Double click: travel there (re-centre). */
+  onNodeDoubleClick?: (rel: CadenceType[]) => void;
   /** Deepest level visible at rest (2 = labelled levels, 3 adds faint dots). */
   maxLevel?: number;
   /** Level-1 corners shown; deeper nodes follow their corner. */
@@ -72,6 +75,7 @@ function plan(from: Frame, to: Frame): Plan[] {
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const DOUBLE_CLICK_MS = 240;
 
 /**
  * Glass-mode node fill: a subtle radial wash of the node's own colour,
@@ -122,6 +126,7 @@ export function FractalScene({
   labelFor,
   interactive = false,
   onNodeClick,
+  onNodeDoubleClick,
   maxLevel = 2,
   corners = null,
   highlight = null,
@@ -138,6 +143,8 @@ export function FractalScene({
   const [hovered, setHovered] = useState<string | null>(null);
   const tweenRef = useRef<gsap.core.Tween | gsap.core.Timeline | null>(null);
   const runRef = useRef(0);
+  // A single click waits out the double-click window so the two never both fire.
+  const clickTimer = useRef<number | undefined>(undefined);
 
   // Mount animations only for elements that appear while idle (reveals,
   // flips) — never for nodes born mid-zoom, whose opacity the camera drives.
@@ -218,6 +225,7 @@ export function FractalScene({
   useEffect(
     () => () => {
       tweenRef.current?.kill();
+      window.clearTimeout(clickTimer.current);
     },
     [],
   );
@@ -324,7 +332,18 @@ export function FractalScene({
                 clickable
                   ? (ev) => {
                       ev.stopPropagation();
-                      onNodeClick?.(n.rel);
+                      window.clearTimeout(clickTimer.current);
+                      if (!onNodeDoubleClick) onNodeClick?.(n.rel);
+                      else if (ev.detail < 2) clickTimer.current = window.setTimeout(() => onNodeClick?.(n.rel), DOUBLE_CLICK_MS);
+                    }
+                  : undefined
+              }
+              onDoubleClick={
+                clickable && onNodeDoubleClick
+                  ? (ev) => {
+                      ev.stopPropagation();
+                      window.clearTimeout(clickTimer.current);
+                      onNodeDoubleClick(n.rel);
                     }
                   : undefined
               }

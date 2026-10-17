@@ -95,15 +95,15 @@ export function WaysHomeLesson() {
   };
 
   const onNodeClick = (rel: CadenceType[]) => {
-    if (finale) {
-      if (explorer.walk.length + rel.length > 12) return;
-      const focus = walkPcs(explorer.walk).at(-1)!;
-      play('node', runToProgression(focus, explorer.dir, rel));
-      setExplorer((x) => ({ ...x, walk: [...x.walk, ...rel.map((type) => ({ dir: x.dir, type }))] }));
-    } else if (stage.scene === 'fractal') {
-      const focus = walkPcs(stage.walk).at(-1)!;
-      play('node', runToProgression(focus, stage.dir, rel));
-    }
+    const frame = finale ? explorer : stage.scene === 'fractal' ? stage : null;
+    if (!frame) return;
+    play('node', runToProgression(walkPcs(frame.walk).at(-1)!, frame.dir, rel));
+  };
+
+  const onNodeDoubleClick = (rel: CadenceType[]) => {
+    if (explorer.walk.length + rel.length > 12) return;
+    onNodeClick(rel);
+    setExplorer((x) => ({ ...x, walk: [...x.walk, ...rel.map((type) => ({ dir: x.dir, type }))] }));
   };
 
   const onRoadClick = (road: Road) =>
@@ -213,10 +213,15 @@ export function WaysHomeLesson() {
               growLevel={growLevel}
               labelFor={labelFor}
               onNodeClick={onNodeClick}
+              onNodeDoubleClick={onNodeDoubleClick}
               onRoadClick={onRoadClick}
               scale={stage.scene === 'fractal' && (stage.maxLevel ?? 2) <= 1 ? 1.28 : 1}
             />
-            <CornerLegend key={legendTypes?.join() ?? 'all'} types={legendTypes} />
+            <CornerLegend
+              key={legendTypes?.join() ?? 'all'}
+              types={legendTypes}
+              dir={finale ? explorer.dir : stage.scene === 'fractal' ? stage.dir : 'in'}
+            />
           </div>
           <div className={styles.switchRow} data-hidden={!finale || undefined}>
             <DirectionSwitch

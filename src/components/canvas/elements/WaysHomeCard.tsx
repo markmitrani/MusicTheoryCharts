@@ -37,9 +37,9 @@ const MAX_WALK = 12;
 export const CHORD_MS = 950;
 
 /**
- * Ways Home: the cadence fractal on the canvas. Click a chord to hear the move
- * and travel there; flip to see where the centre can go; the breadcrumb is the
- * walk (click to zoom back) and the play button plays it as a progression.
+ * Ways Home: the cadence fractal on the canvas. Click a chord to hear the move,
+ * double-click to travel there; flip to see where the centre can go; the
+ * breadcrumb is the walk (click to zoom back) and the play button plays it.
  */
 export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) {
   const [playingCrumb, setPlayingCrumb] = useState(-1);
@@ -57,10 +57,14 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
   const update = (patch: Partial<WaysHomeElement>) =>
     canvasStore.getState().updateElement(el.id, patch, { commit: true });
 
-  const travel = (rel: CadenceType[]) => {
-    if (el.walk.length + rel.length > MAX_WALK) return;
+  const listen = (rel: CadenceType[]) => {
     const chords = voiceProgression(runToProgression(focus, el.dir, rel), key ?? 'C');
     playProgression(chords, { onStep: () => {}, onDone: () => {} }, CHORD_MS);
+  };
+
+  const travel = (rel: CadenceType[]) => {
+    if (el.walk.length + rel.length > MAX_WALK) return;
+    listen(rel);
     update({ walk: [...el.walk, ...rel.map((type) => ({ dir: el.dir, type }))] });
   };
 
@@ -152,10 +156,11 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
               dir={el.dir}
               labelFor={labelFor}
               interactive
-              onNodeClick={travel}
+              onNodeClick={listen}
+              onNodeDoubleClick={travel}
               ariaLabel={`Ways home fractal centred on ${name(focus)}`}
             />
-            {el.showLegend && <CornerLegend />}
+            {el.showLegend && <CornerLegend dir={el.dir} />}
           </div>
           <div className={styles.bottomBar}>
             <DirectionSwitch

@@ -16,6 +16,7 @@ interface CadenceStageProps {
   growLevel: number;
   labelFor: (pc: number) => NodeLabel;
   onNodeClick: (rel: CadenceType[]) => void;
+  onNodeDoubleClick?: (rel: CadenceType[]) => void;
   onRoadClick: (road: Road) => void;
   /** Camera scale for sparse slides; eases back to 1 as the map fills in. */
   scale?: number;
@@ -31,7 +32,16 @@ export const INTERLUDE_ROADS: Road[] = [
  * changes animate (reveals, zooms, flips); the roads ring fades over it for
  * the interlude while the fractal keeps its last state underneath.
  */
-export function CadenceStage({ stage, explorer, growLevel, labelFor, onNodeClick, onRoadClick, scale = 1 }: CadenceStageProps) {
+export function CadenceStage({
+  stage,
+  explorer,
+  growLevel,
+  labelFor,
+  onNodeClick,
+  onNodeDoubleClick,
+  onRoadClick,
+  scale = 1,
+}: CadenceStageProps) {
   const lastFractal = useRef<FractalProps>({ walk: [], dir: 'in', corners: ['dominant'], maxLevel: 1 });
   if (stage.scene === 'fractal') {
     lastFractal.current = {
@@ -57,6 +67,7 @@ export function CadenceStage({ stage, explorer, growLevel, labelFor, onNodeClick
           labelFor={labelFor}
           interactive={!roads}
           onNodeClick={onNodeClick}
+          onNodeDoubleClick={stage.scene === 'explorer' ? onNodeDoubleClick : undefined}
         />
       </div>
       {roads && (

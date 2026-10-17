@@ -24,7 +24,8 @@ interface RoadsRingProps {
   /** Faint two-way roads between every pair of neighbours. */
   ghostNeighbours?: boolean;
   onRoadClick?: (road: Road) => void;
-  onKeyClick?: (key: NoteName) => void;
+  /** Double click a key: make it the centre. */
+  onKeyDoubleClick?: (key: NoteName) => void;
   ariaLabel?: string;
 }
 
@@ -88,7 +89,7 @@ function roadPath(a: { x: number; y: number }, b: { x: number; y: number }, neig
  * backdoor skips two stops; the tritone sub crosses the circle. The ring
  * rotates (shortest way) to keep the centre key on top.
  */
-export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick, onKeyClick, ariaLabel }: RoadsRingProps) {
+export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick, onKeyDoubleClick, ariaLabel }: RoadsRingProps) {
   const glass = useSurfaces() === 'glass';
   const uid = useId().replace(/[:]/g, '');
   const centreIdx = NOTE_NAMES.indexOf(centre);
@@ -187,13 +188,13 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
             className={styles.key}
             data-centre={isCentre || undefined}
             data-quiet={(!touched && !isCentre) || undefined}
-            data-clickable={onKeyClick && !isCentre ? true : undefined}
-            onPointerDown={onKeyClick ? (e) => e.stopPropagation() : undefined}
-            onClick={
-              onKeyClick && !isCentre
+            data-clickable={onKeyDoubleClick && !isCentre ? true : undefined}
+            onPointerDown={onKeyDoubleClick ? (e) => e.stopPropagation() : undefined}
+            onDoubleClick={
+              onKeyDoubleClick && !isCentre
                 ? (e) => {
                     e.stopPropagation();
-                    onKeyClick(key);
+                    onKeyDoubleClick(key);
                   }
                 : undefined
             }

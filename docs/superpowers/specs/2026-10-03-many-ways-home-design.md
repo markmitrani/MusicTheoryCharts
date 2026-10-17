@@ -97,7 +97,8 @@ interface WaysHomeElement extends ElementBase {
 **Interactions.**
 
 - Hover a node → its full path to the centre lights up; everything else dims.
-- Click a node → play the move(s) between it and the centre (e.g. V7→Imaj7, or centre→home when viewing homes), zoom into the node, then re-root seamlessly; the walk grows by that node's path (one step for a corner, two for a corner's corner). Fourth-level dots are not clickable.
+- Click a node → play the move(s) between it and the centre (e.g. V7→Imaj7, or centre→home when viewing homes).
+- Double-click a node → zoom into it, then re-root seamlessly; the walk grows by that node's path (one step for a corner, two for a corner's corner). Only a double-click re-centres. Fourth-level dots are not clickable.
 - Flip → every arrow reverses (animated draw-on in the new direction) and corner labels cross-fade to their new values; the walk records the turn.
 - Play button → plays the walk as a progression. A ways-in run plays from its furthest chord back to where the run started (walk I › V › II plays II–V–I); a homes run plays forward from where it started (walk I › IV › ♭VII plays C–F–B♭). After a flip, playback covers the steps since the last turn.
 - Zoom is click-driven only. Pinch and scroll stay with the canvas camera.
@@ -161,7 +162,7 @@ Every corner has four corners of its own: V has its own V, IV, ♭VII and ♭II,
 *At the piano:* Pick any path three steps deep and play it into C. Then play the four straight ones.
 
 **7. Your turn**: *stage: the live explorer (same component as the card).*
-Click any chord to travel there. Flip the arrows to see where a chord can go instead of how to reach it. The trail top-left is your progression: play it, or click back to any step.
+Click a chord to hear its move; double-click to travel there. Flip the arrows to see where a chord can go instead of how to reach it. The trail top-left is your progression: play it, or click back to any step.
 *At the piano:* Walk five steps, play the trail, then play it from memory.
 
 ## Unit: Roads card (`src/components/canvas/elements/RoadsCard.tsx`)
@@ -171,7 +172,7 @@ The interlude's ring as a canvas element, reusing `RoadsRing`.
 - **Element:** `{ kind: 'roads', centerKey: NoteName, show: 'in' | 'out' | 'both' }`. Instant kind in the "more" menu ("Roads"). Folder tab "Roads – C".
 - **Body:** the 12 keys in fifths order, the centre key rotated to the top (rotate-then-relabel, as in `CircleCard`). The centre's four ways in and four ways out are drawn as coloured roads; neighbour roads appear as paired two-way arcs, so the dominant/plagal duality is always visible. Nodes show the real key name with the numeral relative to the centre as a subtitle.
 - **Roads geometry:** neighbour roads bow to the left of travel, so a road's two directions separate; longer roads bow toward the ring's centre so they never cross the stops in between.
-- **Interactions:** click a key to rotate it to the top; hover a road to highlight it; click a road to play that cadence. Chips switch between ways in, homes, and both (default both). ⓘ panel with a short explanation; a colour legend sits under the ring.
+- **Interactions:** double-click a key to rotate it to the top (only a double-click re-centres); hover a road to highlight it; click a road to play that cadence. Chips switch between ways in, homes, and both (default both). ⓘ panel with a short explanation; a colour legend sits under the ring.
 - **URL codec:** `roads = r + center1 + show1 + x2 + y2` (7 chars; show 0 both, 1 in, 2 out).
 
 ## Unit: key picker
