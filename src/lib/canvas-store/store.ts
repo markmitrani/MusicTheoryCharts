@@ -33,6 +33,8 @@ export interface CanvasState extends DocState {
   tool: Tool;
   /** Holding space temporarily pans; mirrors the move tool's hover suppression. */
   spacePanning: boolean;
+  /** Mobile: tapping an element deletes it. Transient UI. */
+  deleteMode: boolean;
   /** Audio + settings (panel state lives with the doc store for URL encoding later). */
   muted: boolean;
   tempoMs: number;
@@ -44,6 +46,7 @@ export interface CanvasState extends DocState {
 
   activePage(): Page;
   setSpacePanning(on: boolean): void;
+  setDeleteMode(on: boolean): void;
   setTool(tool: Tool): void;
   setMuted(muted: boolean): void;
   setTempoMs(ms: number): void;
@@ -130,6 +133,7 @@ export function createCanvasStore() {
       selection: new Set<string>(),
       tool: 'select',
       spacePanning: false,
+      deleteMode: false,
       muted: false,
       tempoMs: 180,
       sound: 'pad',
@@ -142,6 +146,7 @@ export function createCanvasStore() {
       },
 
       setSpacePanning: (on) => set((s) => (s.spacePanning === on ? s : { spacePanning: on })),
+      setDeleteMode: (deleteMode) => set({ deleteMode }),
       setTool: (tool) => set({ tool }),
       setMuted: (muted) => set({ muted }),
       setTempoMs: (tempoMs) => set({ tempoMs }),

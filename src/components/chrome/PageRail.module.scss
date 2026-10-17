@@ -11,7 +11,14 @@
   gap: 7px;
   z-index: 100;
   // Eases the gap when the rail steps between resting and expanded.
-  transition: gap var(--dur-med) var(--ease-in-out);
+  transition:
+    gap var(--dur-med) var(--ease-in-out),
+    opacity var(--dur-med) var(--ease-out);
+
+  &[data-recede] {
+    opacity: 0.15;
+    pointer-events: none;
+  }
 }
 
 .add {
@@ -189,5 +196,11 @@
     opacity: 1;
     translate: 0 -50%;
     pointer-events: auto; // keep the rail "hovered" while reading the names
+  }
+}
+
+@media (max-width: 640px) {
+  .rail {
+    left: 10px;
   }
 }

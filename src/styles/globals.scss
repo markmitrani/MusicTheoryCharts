@@ -220,6 +220,7 @@ html,
 body {
   height: 100%;
   overscroll-behavior: none; // canvas owns trackpad gestures
+  touch-action: pan-x pan-y; // no browser pinch-zoom; the canvas does its own
 }
 
 body {

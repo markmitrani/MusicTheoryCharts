@@ -57,6 +57,7 @@
   flex: 1;
   max-height: 280px;
   overflow-y: auto;
+  touch-action: pan-y; // the canvas surface disables touch scrolling
   padding-right: 4px;
 
   &::-webkit-scrollbar {

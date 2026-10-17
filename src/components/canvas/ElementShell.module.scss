@@ -17,3 +17,12 @@
     background: var(--accent-warm-soft);
   }
 }
+
+// Mobile delete mode: every element reads as removable.
+@media (max-width: 640px) {
+  :global([data-delete-mode]) .shell {
+    outline: 2px dashed rgba(244, 96, 54, 0.7);
+    outline-offset: 4px;
+    border-radius: var(--radius-md);
+  }
+}

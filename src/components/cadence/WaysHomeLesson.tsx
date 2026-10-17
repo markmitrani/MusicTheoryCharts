@@ -33,6 +33,7 @@ import { Acc } from './Acc';
 import { KeyPicker } from './KeyPicker';
 import type { NodeLabel } from './FractalScene';
 import type { Road } from './RoadsRing';
+import { useIsMobile } from '@/lib/use-mobile';
 import styles from './WaysHomeLesson.module.scss';
 
 const NO_PITCHES = new Set<number>();
@@ -44,6 +45,7 @@ export function WaysHomeLesson() {
   const sourceId = useLesson((s) => s.sourceId);
   const slide = WAYS_HOME_SLIDES[slideIdx];
   const stage = slide.stage;
+  const mobile = useIsMobile();
 
   // The finale speaks the launching card's key; the narrative is in C.
   const sourceKey = (() => {
@@ -163,7 +165,11 @@ export function WaysHomeLesson() {
               <Acc text={slide.drill} />
             </p>
           </div>
-          {!finale && <p className={styles.hint}>Click any arrow or chord on the right to hear it.</p>}
+          {!finale && (
+            <p className={styles.hint}>
+              {mobile ? 'Tap any arrow or chord below to hear it.' : 'Click any arrow or chord on the right to hear it.'}
+            </p>
+          )}
         </article>
 
         <div className={styles.stageCol}>

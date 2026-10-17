@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode, type PointerEvent as ReactPointerEve
 import { gsap } from 'gsap';
 import { useCamera } from './Viewport';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { isMobile, touchGesture } from '@/lib/use-mobile';
 import styles from './ElementShell.module.scss';
 
 /**
@@ -45,6 +46,25 @@ export function ElementShell({ id, x, y, z, selected, soloSelected, lifted, ador
       { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.8)' },
     );
   }, []);
+
+  const deleting = () => canvasStore.getState().deleteMode && isMobile();
+
+  // Delete mode: a tap (not a drag or pinch) removes the element. Capture so
+  // the element's own controls never see the tap.
+  const onDeleteTap = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!deleting()) return;
+    e.stopPropagation();
+    const { pointerId, clientX: sx, clientY: sy } = e;
+    const serial = touchGesture.serial;
+    const onUp = (ue: PointerEvent) => {
+      if (ue.pointerId !== pointerId) return;
+      window.removeEventListener('pointerup', onUp);
+      if (touchGesture.serial === serial && Math.hypot(ue.clientX - sx, ue.clientY - sy) < 10) {
+        canvasStore.getState().removeElements([id]);
+      }
+    };
+    window.addEventListener('pointerup', onUp);
+  };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (tool !== 'select' || e.button !== 0) return;
@@ -88,6 +108,10 @@ export function ElementShell({ id, x, y, z, selected, soloSelected, lifted, ador
       style={{ left: x, top: y, zIndex: lifted ? LIFT_Z : z }}
       data-element-id={id}
       data-selected={selected || undefined}
+      onPointerDownCapture={onDeleteTap}
+      onClickCapture={(e) => {
+        if (deleting()) e.stopPropagation();
+      }}
       onPointerDown={onPointerDown}
     >
       {children}

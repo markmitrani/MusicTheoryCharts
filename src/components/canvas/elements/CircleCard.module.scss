@@ -139,6 +139,22 @@
   position: absolute;
 }
 
+.radialRow {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  translate: -50% 0;
+  display: flex;
+  gap: 6px;
+
+  .radialItem {
+    position: static;
+    translate: none;
+    padding: 8px 14px;
+    font-size: var(--text-sm);
+  }
+}
+
 .radialItem {
   position: absolute;
   translate: -50% -50%;

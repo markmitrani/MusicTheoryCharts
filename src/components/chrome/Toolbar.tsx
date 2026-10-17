@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { uiTick } from '@/lib/playback/playback';
 import type { Tool } from '@/lib/canvas-store/types';
+import { useIsMobile } from '@/lib/use-mobile';
 import {
   SelectIcon,
   MoveIcon,
@@ -49,6 +50,9 @@ interface ToolbarProps {
 export function Toolbar({ onAddNew, onUpload }: ToolbarProps) {
   const tool = useCanvas((s) => s.tool);
   const hasSelection = useCanvas((s) => s.selection.size > 0);
+  const adding = useCanvas((s) => s.activePage().elements.some((el) => el.kind === 'stub'));
+  // Phone: step back while adding so the stub has the whole screen.
+  const recede = useIsMobile() && adding;
   const barRef = useRef<HTMLDivElement>(null);
   const [layersOpen, setLayersOpen] = useState(false);
 
@@ -87,7 +91,13 @@ export function Toolbar({ onAddNew, onUpload }: ToolbarProps) {
   };
 
   return (
-    <div ref={barRef} className={styles.bar} role="toolbar" aria-label="Canvas tools">
+    <div
+      ref={barRef}
+      className={styles.bar}
+      role="toolbar"
+      aria-label="Canvas tools"
+      data-recede={recede || undefined}
+    >
       {MODE_TOOLS.map((def) => (
         <button
           key={def.id}

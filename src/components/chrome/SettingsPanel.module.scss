@@ -28,10 +28,19 @@
     color: var(--accent);
     border-color: var(--element-stroke-selected);
   }
+
+  &[data-danger] {
+    color: #f0876b;
+    border-color: rgba(244, 96, 54, 0.6);
+    background: rgba(244, 96, 54, 0.16);
+  }
 }
 
 .popover {
   position: absolute;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 90px);
+  overflow-y: auto;
   top: 48px;
   right: 0;
   width: 260px;
@@ -210,5 +219,12 @@
   &[data-visible] {
     opacity: 1;
     translate: 0 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .corner {
+    top: 16px;
+    right: 16px;
   }
 }
