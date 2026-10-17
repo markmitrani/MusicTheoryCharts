@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import {
+  keyLabel,
   numeral,
   rootName,
   runToProgression,
@@ -18,6 +19,8 @@ import { FractalScene, type NodeLabel } from '@/components/cadence/FractalScene'
 import { Breadcrumb } from '@/components/cadence/Breadcrumb';
 import { DirectionSwitch } from '@/components/cadence/DirectionSwitch';
 import { CornerLegend } from '@/components/cadence/CornerLegend';
+import { KeyPicker } from '@/components/cadence/KeyPicker';
+import { Acc } from '@/components/cadence/Acc';
 import { LightbulbIcon } from '@/components/chrome/icons';
 import { ElementShell } from '../ElementShell';
 import { PlayButton } from './PlayButton';
@@ -40,6 +43,7 @@ export const CHORD_MS = 950;
  */
 export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) {
   const [playingCrumb, setPlayingCrumb] = useState(-1);
+  const [picking, setPicking] = useState(false);
   const pcs = walkPcs(el.walk);
   const focus = pcs[pcs.length - 1];
   const key = el.key;
@@ -78,12 +82,28 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
   };
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected}>
+    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected} lifted={picking}>
       <div className={`${chordStyles.wrap} ${styles.wrap}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
-          <span className={chordStyles.nameTab}>
-            <span className={chordStyles.nameTabInner}>Ways Home – {name(focus)}</span>
-          </span>
+          <button
+            className={chordStyles.nameTab}
+            data-key-anchor
+            title="Choose the home key"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setPicking((v) => !v);
+            }}
+          >
+            <span className={chordStyles.nameTabInner}>
+              Ways Home – <Acc text={name(focus)} />
+              {key && focus !== 0 && (
+                <span className={styles.inKey}>
+                  &nbsp;(in <Acc text={keyLabel(key)} />)
+                </span>
+              )}
+            </span>
+          </button>
           <PlayButton playing={playingCrumb >= 0} onClick={playWalk} />
         </div>
         <div className={chordStyles.card}>
@@ -147,6 +167,16 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
             />
           </div>
         </div>
+        {picking && (
+          <KeyPicker
+            value={key}
+            onChange={(k) => {
+              uiTick(k ? 1 : 0);
+              update({ key: k });
+            }}
+            onClose={() => setPicking(false)}
+          />
+        )}
       </div>
     </ElementShell>
   );

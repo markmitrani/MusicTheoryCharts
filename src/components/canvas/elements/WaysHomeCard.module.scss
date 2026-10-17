@@ -1,5 +1,11 @@
 .wrap {
+  position: relative;
   width: 480px;
+}
+
+.inKey {
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
 .topBar {
