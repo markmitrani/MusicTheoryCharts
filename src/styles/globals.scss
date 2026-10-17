@@ -48,7 +48,7 @@
   // harmony degree chips (legacy harmony chart tones: teal major, coral minor)
   --degree-major: #3fb3d4;
   --degree-minor: #da7e57;
-  --degree-dim: #9e9e9e;
+  --degree-dim: #a8a29e; // stone-400
   --degree-aug: #b08bc9;
 
   // Bartók pitch-axis functions, a primary-triad palette matching Ways Home:
@@ -78,8 +78,8 @@
 
   // text
   --text-primary: #f4f0ea;
-  --text-secondary: #d9d9d9;
-  --text-muted: #787878;
+  --text-secondary: #d6d3d1; // stone-300 (warm greys, not neutral)
+  --text-muted: #78716c; // stone-500
 
   // page rail inactive bars
   --rail-bar: rgba(244, 240, 234, 0.14);
