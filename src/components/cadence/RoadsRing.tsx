@@ -47,16 +47,50 @@ function place(pc: number, rot: number) {
   return { x: C + R * Math.cos(a), y: C + R * Math.sin(a) };
 }
 
-/** Offset of each lane from the ring, at the road's midpoint. */
-const LANE = 11;
+/** How far each lane bulges off the ring at the road's midpoint. */
+const LANE = 14;
+
+type Pt = { x: number; y: number };
+
+function arrowTip(e: Pt, u: Pt) {
+  const L = 10;
+  const W = 5;
+  const base = { x: e.x - u.x * L, y: e.y - u.y * L };
+  return `${e.x + u.x * 3},${e.y + u.y * 3} ${base.x + u.y * W},${base.y - u.x * W} ${base.x - u.y * W},${base.y + u.x * W}`;
+}
 
 /**
- * Bowed road from a to b. A neighbour road follows the ring's own curve, with
- * the dominant direction in the outer lane (the main way) and the plagal one in
- * the inner lane (the subway), symmetric about the ring. Longer roads curve
- * toward the ring's centre so they never run through the stops in between.
+ * Neighbour road: rides the ring itself, bulging off it by the same amount on
+ * either side (outer lane for dominant, the main way; inner lane for plagal,
+ * the subway). The two directions of one road are mirror images about the
+ * ring line. Sampled as a polyline and trimmed at the stops' edges.
  */
-function roadPath(a: { x: number; y: number }, b: { x: number; y: number }, type: CadenceType, neighbours: boolean) {
+function laneRoad(a: Pt, b: Pt, type: CadenceType) {
+  const ta = Math.atan2(a.y - C, a.x - C);
+  let dt = Math.atan2(b.y - C, b.x - C) - ta;
+  while (dt > Math.PI) dt -= 2 * Math.PI;
+  while (dt < -Math.PI) dt += 2 * Math.PI;
+  const side = type === 'dominant' ? 1 : -1;
+  const pts: Pt[] = [];
+  for (let i = 0; i <= 48; i++) {
+    const t = i / 48;
+    const r = R + side * LANE * Math.sin(Math.PI * t);
+    const th = ta + dt * t;
+    pts.push({ x: C + r * Math.cos(th), y: C + r * Math.sin(th) });
+  }
+  const far = (p: Pt, q: Pt, d: number) => Math.hypot(p.x - q.x, p.y - q.y) >= d;
+  const kept = pts.filter((p) => far(p, a, NODE_R + 2) && far(p, b, NODE_R + 6));
+  const e = kept[kept.length - 1];
+  const prev = kept[kept.length - 2];
+  const l = Math.hypot(e.x - prev.x, e.y - prev.y);
+  return {
+    d: kept.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' '),
+    tip: arrowTip(e, { x: (e.x - prev.x) / l, y: (e.y - prev.y) / l }),
+  };
+}
+
+/** Longer road: a gentle bow toward the ring's centre, clear of the stops between. */
+function chordRoad(a: Pt, b: Pt) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len = Math.hypot(dx, dy);
@@ -64,36 +98,23 @@ function roadPath(a: { x: number; y: number }, b: { x: number; y: number }, type
   const uy = dy / len;
   const mx = (a.x + b.x) / 2;
   const my = (a.y + b.y) / 2;
-  let q: { x: number; y: number };
-  if (neighbours) {
-    const dist = Math.hypot(mx - C, my - C);
-    const nx = (mx - C) / dist;
-    const ny = (my - C) / dist;
-    // A quadratic's midpoint sits halfway to its control point.
-    const lift = 2 * (R - dist + (type === 'dominant' ? LANE : -LANE));
-    q = { x: mx + nx * lift, y: my + ny * lift };
-  } else {
-    const h = Math.min(0.22 * len, 36);
-    const towardCentre = (C - mx) * uy - (C - my) * ux > 0 ? 1 : -1;
-    q = { x: mx + uy * h * towardCentre, y: my - ux * h * towardCentre };
-  }
-  const trim = (p: { x: number; y: number }, r: number) => {
+  const h = Math.min(0.22 * len, 36);
+  const side = (C - mx) * uy - (C - my) * ux > 0 ? 1 : -1;
+  const q = { x: mx + uy * h * side, y: my - ux * h * side };
+  const trim = (p: Pt, r: number) => {
     const vx = q.x - p.x;
     const vy = q.y - p.y;
     const l = Math.hypot(vx, vy);
     return { x: p.x + (vx / l) * r, y: p.y + (vy / l) * r };
   };
-  const s = trim(a, NODE_R + 2);
+  const s0 = trim(a, NODE_R + 2);
   const e = trim(b, NODE_R + 6);
-  const tx = e.x - q.x;
-  const ty = e.y - q.y;
-  const tl = Math.hypot(tx, ty);
-  const u = { x: tx / tl, y: ty / tl };
-  const L = 10;
-  const W = 5;
-  const base = { x: e.x - u.x * L, y: e.y - u.y * L };
-  const tip = `${e.x + u.x * 3},${e.y + u.y * 3} ${base.x + u.y * W},${base.y - u.x * W} ${base.x - u.y * W},${base.y + u.x * W}`;
-  return { d: `M ${s.x} ${s.y} Q ${q.x} ${q.y} ${e.x} ${e.y}`, tip };
+  const tl = Math.hypot(e.x - q.x, e.y - q.y);
+  return { d: `M ${s0.x} ${s0.y} Q ${q.x} ${q.y} ${e.x} ${e.y}`, tip: arrowTip(e, { x: (e.x - q.x) / tl, y: (e.y - q.y) / tl }) };
+}
+
+function roadPath(a: Pt, b: Pt, type: CadenceType, neighbours: boolean) {
+  return neighbours ? laneRoad(a, b, type) : chordRoad(a, b);
 }
 
 /**
@@ -213,7 +234,14 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
             }
           >
             <circle r={NODE_R} className={styles.disc} />
-            {glass && <circle r={NODE_R - 0.7} fill={`url(#${isCentre ? 'glassc' : 'glass'}${uid})`} pointerEvents="none" />}
+            {glass && (
+              <circle
+                r={NODE_R - 0.7}
+                fill={`url(#${isCentre ? 'glassc' : 'glass'}${uid})`}
+                opacity={!touched && !isCentre ? 0.45 : 1}
+                pointerEvents="none"
+              />
+            )}
             <text className={styles.name} data-serif={isCentre || undefined} y={-5} dominantBaseline="central" textAnchor="middle">
               <Glyphs text={rootName(pc, centre)} />
             </text>

@@ -69,10 +69,17 @@
 }
 
 .key {
-  transition: opacity var(--dur-med) var(--ease-out);
-
+  // Quiet stops fade their ink, not the disc: an opaque disc keeps the ring
+  // line from showing through.
   &[data-quiet] {
-    opacity: 0.45;
+    text {
+      opacity: 0.45;
+    }
+
+    .disc {
+      fill: color-mix(in srgb, var(--element-fill) 70%, var(--canvas-bg));
+      stroke: var(--hairline);
+    }
   }
 
   &[data-centre] .disc {
