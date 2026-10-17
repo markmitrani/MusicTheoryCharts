@@ -43,11 +43,12 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
   }, [el.root, el.octave, el.scaleId, el.showSevenths]);
 
   const playChip = (i: number) => {
-    setActiveChip(i);
+    // Start first: it cancels any chord still sounding, whose onDone resets the chip.
     playChord(chords[i].pitches, {
       onLit: setLit,
       onDone: () => setActiveChip(-1),
     });
+    setActiveChip(i);
   };
 
   const playAll = () => {
