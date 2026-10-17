@@ -48,3 +48,7 @@ logs/
 # Coverage
 coverage/
 *.lcov
+
+# OpenNext / Cloudflare
+.open-next/
+.wrangler/

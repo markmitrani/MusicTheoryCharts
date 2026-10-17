@@ -89,7 +89,7 @@ class AudioEngine implements AudioSink {
         C6: 'C6.mp3', 'D#6': 'Ds6.mp3', 'F#6': 'Fs6.mp3', A6: 'A6.mp3',
         C7: 'C7.mp3',
       },
-      baseUrl: '/samples/piano/',
+      baseUrl: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/samples/piano/`,
       release: 1.1,
     });
     this.piano.volume.value = -7;
