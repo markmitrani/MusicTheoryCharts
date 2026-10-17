@@ -49,6 +49,10 @@ function place(pc: number, rot: number) {
 
 /** How far each lane bulges off the ring at the road's midpoint. */
 const LANE = 14;
+/** Roads leave a stop's edge and end with the arrow tip touching the next one. */
+const TIP = 3;
+const START_GAP = NODE_R + 1;
+const END_GAP = NODE_R + 1 + TIP;
 
 type Pt = { x: number; y: number };
 
@@ -56,7 +60,7 @@ function arrowTip(e: Pt, u: Pt) {
   const L = 10;
   const W = 5;
   const base = { x: e.x - u.x * L, y: e.y - u.y * L };
-  return `${e.x + u.x * 3},${e.y + u.y * 3} ${base.x + u.y * W},${base.y - u.x * W} ${base.x - u.y * W},${base.y + u.x * W}`;
+  return `${e.x + u.x * TIP},${e.y + u.y * TIP} ${base.x + u.y * W},${base.y - u.x * W} ${base.x - u.y * W},${base.y + u.x * W}`;
 }
 
 /**
@@ -78,10 +82,23 @@ function laneRoad(a: Pt, b: Pt, type: CadenceType) {
     const th = ta + dt * t;
     pts.push({ x: C + r * Math.cos(th), y: C + r * Math.sin(th) });
   }
-  const far = (p: Pt, q: Pt, d: number) => Math.hypot(p.x - q.x, p.y - q.y) >= d;
-  const kept = pts.filter((p) => far(p, a, NODE_R + 2) && far(p, b, NODE_R + 6));
+  const dist = (p: Pt, q: Pt) => Math.hypot(p.x - q.x, p.y - q.y);
+  // Exact point between two samples where the path crosses distance d from a stop.
+  const cross = (inside: Pt, outside: Pt, stop: Pt, d: number): Pt => {
+    const di = dist(inside, stop);
+    const k = (d - di) / (dist(outside, stop) - di);
+    return { x: inside.x + (outside.x - inside.x) * k, y: inside.y + (outside.y - inside.y) * k };
+  };
+  const i0 = pts.findIndex((p) => dist(p, a) >= START_GAP);
+  let i1 = pts.length - 1;
+  while (dist(pts[i1], b) < END_GAP) i1--;
+  const kept = [
+    cross(pts[i0 - 1], pts[i0], a, START_GAP),
+    ...pts.slice(i0, i1 + 1),
+    cross(pts[i1 + 1], pts[i1], b, END_GAP),
+  ];
   const e = kept[kept.length - 1];
-  const prev = kept[kept.length - 2];
+  const prev = kept[kept.length - 3];
   const l = Math.hypot(e.x - prev.x, e.y - prev.y);
   return {
     d: kept.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' '),
@@ -107,8 +124,8 @@ function chordRoad(a: Pt, b: Pt) {
     const l = Math.hypot(vx, vy);
     return { x: p.x + (vx / l) * r, y: p.y + (vy / l) * r };
   };
-  const s0 = trim(a, NODE_R + 2);
-  const e = trim(b, NODE_R + 6);
+  const s0 = trim(a, START_GAP);
+  const e = trim(b, END_GAP);
   const tl = Math.hypot(e.x - q.x, e.y - q.y);
   return { d: `M ${s0.x} ${s0.y} Q ${q.x} ${q.y} ${e.x} ${e.y}`, tip: arrowTip(e, { x: (e.x - q.x) / tl, y: (e.y - q.y) / tl }) };
 }
