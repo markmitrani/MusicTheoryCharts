@@ -107,8 +107,15 @@ describe('walks and playback order', () => {
     // in to V, flip, G as IV goes home to D
     expect(walkToProgression([step('in', 'dominant'), step('out', 'plagal')])).toEqual([
       { pc: 7, quality: 'maj7' },
-      { pc: 2, quality: 'maj7' },
+      { pc: 2, quality: 'maj7', seventhBelow: true },
     ]);
+  });
+
+  it('marks only plagal arrivals for a falling 7th', () => {
+    expect(runToProgression(0, 'in', ['plagal']).at(-1)).toEqual({ pc: 0, quality: 'maj7', seventhBelow: true });
+    expect(runToProgression(0, 'in', ['dominant']).at(-1)).toEqual({ pc: 0, quality: 'maj7' });
+    // homes run: the last step lands, here plagal (C as IV goes home to G)
+    expect(runToProgression(0, 'out', ['dominant', 'plagal']).at(-1)?.seventhBelow).toBe(true);
   });
 
   it('gives plagal approaches a maj7 and dominant-family approaches a 7', () => {
@@ -187,6 +194,14 @@ describe('voicing', () => {
     const b = voiced[1].slice(1);
     const moved = a.reduce((sum, p, i) => sum + Math.abs(p - b[i]), 0);
     expect(moved).toBeLessThanOrEqual(5);
+  });
+
+  it('drops into I after IV: the 7th sits under the root and every voice falls', () => {
+    const [iv, i] = voiceProgression(runToProgression(0, 'in', ['plagal']));
+    const a = iv.slice(1);
+    const b = i.slice(1);
+    expect(b[0] % 12).toBe(11); // B under C
+    b.forEach((p, k) => expect(p).toBeLessThanOrEqual(a[k]));
   });
 
   it('transposes to a key', () => {

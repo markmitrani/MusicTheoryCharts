@@ -49,7 +49,7 @@ Facts the views make visible (all are tested invariants):
 | backdoor | ♭V–♭VI–♭VII–I | iv7–♭VII7–Imaj7 |
 | tritone | ♭III–II–♭II–I | ii7–♭II7–Imaj7 |
 
-**Sound.** Chord quality follows the move it makes: dominant, backdoor and tritone approaches play as dominant 7ths; plagal approaches as maj7; home as maj7. Map chains therefore sound as secondary-dominant chains (VI7–II7–V7–Imaj7); jazz versions use their own qualities. Voicing: left-hand root plus a four-note right-hand close voicing, each chord voice-led to the nearest inversion of the next so guide tones move by step. Playback reuses `playProgression` and the existing audio engine.
+**Sound.** Chord quality follows the move it makes: dominant, backdoor and tritone approaches play as dominant 7ths; plagal approaches as maj7; home as maj7. Map chains therefore sound as secondary-dominant chains (VI7–II7–V7–Imaj7); jazz versions use their own qualities. Voicing: left-hand root plus a four-note right-hand close voicing, each chord voice-led to the nearest inversion of the next so guide tones move by step. When I arrives by the plagal road, its 7th sits under the root (B C E G) so every voice falls into home. Playback reuses `playProgression` and the existing audio engine.
 
 ## Unit: theory core (`src/lib/theory/cadence.ts`)
 

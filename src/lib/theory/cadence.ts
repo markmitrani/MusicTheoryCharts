@@ -100,6 +100,8 @@ export interface ChordSpec {
   pc: number;
   /** Chord catalog id (see chords.ts). */
   quality: string;
+  /** Voice the 7th under the root so the arrival falls (plagal "amen"). */
+  seventhBelow?: boolean;
 }
 
 /** Pitch classes visited by a walk, starting at I. */
@@ -118,12 +120,16 @@ export function walkPcs(walk: WalkStep[]): number[] {
 export function runToProgression(startPc: number, dir: Direction, types: CadenceType[]): ChordSpec[] {
   const pcs = [mod12(startPc)];
   for (const t of types) pcs.push(stepOf(pcs[pcs.length - 1], dir, t));
+  // The move that lands on the arrival: the first step of an inward run, the last of a homes run.
+  const landing = dir === 'in' ? types[0] : types[types.length - 1];
+  const home: ChordSpec = { pc: dir === 'in' ? pcs[0] : pcs[pcs.length - 1], quality: HOME_QUALITY };
+  if (landing === 'plagal') home.seventhBelow = true;
   if (dir === 'in') {
     const chords = types.map((t, i) => ({ pc: pcs[i + 1], quality: CADENCES[t].approachQuality })).reverse();
-    return [...chords, { pc: pcs[0], quality: HOME_QUALITY }];
+    return [...chords, home];
   }
   const chords = types.map((t, i) => ({ pc: pcs[i], quality: CADENCES[t].approachQuality }));
-  return [...chords, { pc: pcs[pcs.length - 1], quality: HOME_QUALITY }];
+  return [...chords, home];
 }
 
 /** The walk's progression: only the steps since the last flip of direction. */
@@ -144,7 +150,7 @@ export const MAP_CHAINS = Object.fromEntries(
 
 export const JAZZ_CHAINS: Record<CadenceType, ChordSpec[]> = {
   dominant: [{ pc: 2, quality: 'm7' }, { pc: 7, quality: '7' }, { pc: 0, quality: 'maj7' }],
-  plagal: [{ pc: 5, quality: 'maj7' }, { pc: 5, quality: 'm6' }, { pc: 0, quality: 'maj7' }],
+  plagal: [{ pc: 5, quality: 'maj7' }, { pc: 5, quality: 'm6' }, { pc: 0, quality: 'maj7', seventhBelow: true }],
   backdoor: [{ pc: 5, quality: 'm7' }, { pc: 10, quality: '7' }, { pc: 0, quality: 'maj7' }],
   tritone: [{ pc: 2, quality: 'm7' }, { pc: 1, quality: '7' }, { pc: 0, quality: 'maj7' }],
 };
@@ -239,8 +245,12 @@ export function voiceProgression(specs: ChordSpec[], key: NoteName = 'C'): numbe
   let prev: number[] | null = null;
   return specs.map((spec) => {
     const root = mod12(keyPc + spec.pc);
-    const tones = getChordDef(spec.quality).formula.slice(0, 4).map((o) => mod12(root + o));
-    const candidates = closeVoicings(tones);
+    const formula = getChordDef(spec.quality).formula.slice(0, 4);
+    const tones = formula.map((o) => mod12(root + o));
+    const all = closeVoicings(tones);
+    const seventh = formula.length === 4 ? tones[3] : null;
+    const below = spec.seventhBelow && seventh !== null ? all.filter((v) => mod12(v[0]) === seventh) : [];
+    const candidates = below.length ? below : all;
     const score = (v: number[]) =>
       prev ? movement(prev, v) * 10 + Math.abs(mean(v) - RH_CENTRE) : Math.abs(mean(v) - RH_CENTRE);
     const best = candidates.reduce((a, b) => (score(b) < score(a) ? b : a));
