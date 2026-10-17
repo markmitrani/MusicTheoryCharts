@@ -57,8 +57,11 @@
   --axis-subdominant: #c1272d;
   --axis-dominant: #e6a12c;
 
-  // Cadence types (Ways Home): rose V, yellow IV, sky ♭VII, lime ♭II.
-  --cadence-dominant: #f43f5e;
+  // Cadence types (Ways Home): red V (the pitch axis subdominant), yellow IV,
+  // sky ♭VII, lime ♭II. An -up token is the brighter tone a glass node's
+  // highlight starts from; without one the gradient uses the base colour.
+  --cadence-dominant: #c1272d;
+  --cadence-dominant-up: #e5534f;
   --cadence-tritone: #84cc16;
   --cadence-plagal: #eab308;
   --cadence-backdoor: #0ea5e9;
@@ -172,7 +175,8 @@
   --axis-dominant: #c8851a;
 
   // Cadence types (Ways Home), one shade deeper for contrast on the light canvas.
-  --cadence-dominant: #e11d48;
+  --cadence-dominant: #b71c2b;
+  --cadence-dominant-up: #dc4a4c;
   --cadence-tritone: #65a30d;
   --cadence-plagal: #ca8a04;
   --cadence-backdoor: #0284c7;

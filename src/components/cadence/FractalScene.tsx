@@ -82,11 +82,22 @@ const DOUBLE_CLICK_MS = 240;
  * brighter toward the top-left and deepening into a tinted rim (the inner
  * shadow). Object-bounding-box units, so one gradient fits every radius.
  */
-export function GlassGradient({ id, color, quiet = false }: { id: string; color: string; quiet?: boolean }) {
-  const [hi, mid, rim] = quiet ? [20, 6, 14] : [40, 22, 34];
+export function GlassGradient({
+  id,
+  color,
+  up = color,
+  quiet = false,
+}: {
+  id: string;
+  color: string;
+  /** Brighter tone the highlight starts from (deep colours go muddy otherwise). */
+  up?: string;
+  quiet?: boolean;
+}) {
+  const [hi, mid, rim] = quiet ? [20, 6, 14] : [42, 22, 34];
   return (
     <radialGradient id={id} cx="0.36" cy="0.32" r="0.7" fx="0.32" fy="0.28">
-      <stop offset="0" style={{ stopColor: `color-mix(in srgb, ${color} ${hi}%, var(--element-fill))` }} />
+      <stop offset="0" style={{ stopColor: `color-mix(in srgb, ${up} ${hi}%, var(--element-fill))` }} />
       <stop offset="0.72" style={{ stopColor: `color-mix(in srgb, ${color} ${mid}%, var(--element-fill))` }} />
       <stop offset="1" style={{ stopColor: `color-mix(in srgb, ${color} ${rim}%, var(--canvas-bg))` }} />
     </radialGradient>
@@ -275,7 +286,12 @@ export function FractalScene({
       {glass && (
         <defs>
           {CADENCE_TYPES.map((t) => (
-            <GlassGradient key={t} id={`glass-${t}${uid}`} color={CADENCES[t].colorVar} />
+            <GlassGradient
+              key={t}
+              id={`glass-${t}${uid}`}
+              color={CADENCES[t].colorVar}
+              up={`var(--cadence-${t}-up, ${CADENCES[t].colorVar})`}
+            />
           ))}
           <GlassGradient id={`glass-centre${uid}`} color="var(--accent-warm)" quiet />
         </defs>

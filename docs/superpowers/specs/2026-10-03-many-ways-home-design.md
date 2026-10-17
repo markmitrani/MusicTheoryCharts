@@ -22,7 +22,7 @@ Four cadence types, each defined by the root motion from the approach chord into
 
 | Type | Approach → I | Root motion into home | Semitones | Corner | Colour |
 |---|---|---|---|---|---|
-| dominant | V → I | falls a 5th | +5 | ↗ top-right | rose |
+| dominant | V → I | falls a 5th | +5 | ↗ top-right | red |
 | plagal | IV → I | falls a 4th | +7 | ↖ top-left | yellow |
 | backdoor | ♭VII → I | rises a whole step | +2 | ↙ bottom-left | sky blue |
 | tritone | ♭II → I | falls a half step | −1 | ↘ bottom-right | lime |
@@ -190,7 +190,8 @@ Lands last; the data model and codec carry `key` from the start.
 
   | Token | Dark | Light |
   |---|---|---|
-  | `--cadence-dominant` (rose) | `#f43f5e` | `#e11d48` |
+  | `--cadence-dominant` (red, the pitch axis subdominant) | `#c1272d` | `#b71c2b` |
+  | `--cadence-dominant-up` (glass highlight tone) | `#e5534f` | `#dc4a4c` |
   | `--cadence-plagal` (yellow) | `#eab308` | `#ca8a04` |
   | `--cadence-backdoor` (sky) | `#0ea5e9` | `#0284c7` |
   | `--cadence-tritone` (lime) | `#84cc16` | `#65a30d` |
