@@ -51,19 +51,21 @@
   --degree-dim: #9e9e9e;
   --degree-aug: #b08bc9;
 
-  // Bartók pitch-axis functions — primary-triad palette: rich deep blue tonic,
-  // true primary red subdominant, Mondrian gold (a hair toward orange) dominant.
-  --axis-tonic: #002855;
+  // Bartók pitch-axis functions, a primary-triad palette: sky tonic (the Ways
+  // Home ♭VII blue), true primary red subdominant, Mondrian gold (a hair toward
+  // orange) dominant.
+  --axis-tonic: #0ea5e9;
   --axis-subdominant: #c1272d;
   --axis-dominant: #e6a12c;
 
-  // Cadence types (Ways Home): red V (the pitch axis subdominant), yellow IV,
-  // sky ♭VII, lime ♭II. An -up token is the brighter tone a glass node's
-  // highlight starts from; without one the gradient uses the base colour.
+  // Cadence types (Ways Home): red V and amber IV (the pitch axis subdominant
+  // and dominant), sky ♭VII, lime ♭II. An -up token is the brighter tone a glass
+  // node's highlight starts from; without one the gradient uses the base colour.
   --cadence-dominant: #c1272d;
   --cadence-dominant-up: #e5534f;
   --cadence-tritone: #84cc16;
-  --cadence-plagal: #eab308;
+  --cadence-plagal: #e6a12c;
+  --cadence-plagal-up: #f2b84f;
   --cadence-backdoor: #0ea5e9;
 
   // piano
@@ -170,7 +172,7 @@
 
   // Bartók pitch-axis functions — primary-triad palette (deepened for contrast
   // on the light canvas).
-  --axis-tonic: #013a7a;
+  --axis-tonic: #0284c7;
   --axis-subdominant: #b71c2b;
   --axis-dominant: #c8851a;
 
@@ -178,7 +180,8 @@
   --cadence-dominant: #b71c2b;
   --cadence-dominant-up: #dc4a4c;
   --cadence-tritone: #65a30d;
-  --cadence-plagal: #ca8a04;
+  --cadence-plagal: #c8851a;
+  --cadence-plagal-up: #dc9c34;
   --cadence-backdoor: #0284c7;
 
   // piano
