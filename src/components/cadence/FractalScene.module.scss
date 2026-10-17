@@ -14,16 +14,26 @@
   cursor: pointer;
 }
 
+// Sans everywhere, as on the other cards; only the centre takes the serif.
 .label {
   fill: var(--text-primary);
-  font-family: var(--font-display);
-  font-weight: var(--weight-display);
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+
+  &[data-serif] {
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+  }
 }
 
 .acc {
   font-family: var(--font-body);
-  font-size: 0.78em;
-  font-weight: 400;
+  font-size: 0.9em;
+
+  [data-serif] > & {
+    font-size: 0.78em;
+    font-weight: 400;
+  }
 }
 
 .sub {

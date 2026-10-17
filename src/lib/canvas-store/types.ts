@@ -82,6 +82,8 @@ export interface WaysHomeElement extends ElementBase {
   walk: WalkStep[];
   dir: Direction;
   key: NoteName | null;
+  /** Corner colour key (which move each colour is). */
+  showLegend: boolean;
 }
 
 /**

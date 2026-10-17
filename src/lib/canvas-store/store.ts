@@ -175,7 +175,7 @@ export function createCanvasStore() {
             case 'pitchaxis':
               return { ...pos, kind: 'pitchaxis', centerKey: 'C' };
             case 'wayshome':
-              return { ...pos, kind: 'wayshome', walk: [], dir: 'in', key: null };
+              return { ...pos, kind: 'wayshome', walk: [], dir: 'in', key: null, showLegend: true };
             case 'chord':
               return { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false };
             case 'harmony':

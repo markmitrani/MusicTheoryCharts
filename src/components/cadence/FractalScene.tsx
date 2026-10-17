@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { CADENCES, type CadenceType, type Direction, type WalkStep } from '@/lib/theory/cadence';
+import { useSurfaces } from '@/lib/use-surfaces';
 import { buildScene, VIEW, type Frame } from './geometry';
 import styles from './FractalScene.module.scss';
 
@@ -110,6 +111,8 @@ export function FractalScene({
   highlight = null,
   ariaLabel = 'Ways home fractal',
 }: FractalSceneProps) {
+  const glass = useSurfaces() === 'glass';
+  const uid = useId().replace(/[:]/g, '');
   const [shown, setShown] = useState<Frame>({ walk, dir });
   const shownRef = useRef(shown);
   shownRef.current = shown;
@@ -245,6 +248,18 @@ export function FractalScene({
       data-idle={idle || undefined}
       style={{ opacity: fade }}
     >
+      {glass && (
+        <defs>
+          <radialGradient id={`gloss${uid}`} cx="0.34" cy="0.3" r="0.62">
+            <stop offset="0" style={{ stopColor: 'var(--node-gloss)' }} />
+            <stop offset="1" style={{ stopColor: 'var(--node-gloss)', stopOpacity: 0 }} />
+          </radialGradient>
+          <radialGradient id={`rim${uid}`} cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0.62" style={{ stopColor: 'var(--node-rim)', stopOpacity: 0 }} />
+            <stop offset="1" style={{ stopColor: 'var(--node-rim)' }} />
+          </radialGradient>
+        </defs>
+      )}
       <g>
         {edges.map((e) => {
           const color = CADENCES[e.type].colorVar;
@@ -303,7 +318,18 @@ export function FractalScene({
               }
             >
               <g className={born(`n${n.posKey}`) ? styles.pop : undefined}>
-                <circle r={n.r} style={{ fill, stroke }} strokeWidth={n.a < 2.5 ? 1.4 : 0} />
+                <circle
+                  r={n.r}
+                  style={{ fill, stroke }}
+                  strokeWidth={n.a < 2.5 ? 1.4 : 0}
+                  opacity={1 - 0.45 * clamp01(n.a - 2)}
+                />
+                {glass && n.a < 2.5 && (
+                  <>
+                    <circle r={n.r} fill={`url(#rim${uid})`} pointerEvents="none" />
+                    <circle r={n.r} fill={`url(#gloss${uid})`} pointerEvents="none" />
+                  </>
+                )}
                 {n.labelOpacity > 0.01 && (
                   <g
                     key={`${n.pc}${label.main}`}
@@ -312,6 +338,7 @@ export function FractalScene({
                   >
                     <text
                       className={styles.label}
+                      data-serif={n.a < 0.5 || undefined}
                       y={showSub ? -n.font * 0.18 : 0}
                       style={{ fontSize: n.font }}
                       dominantBaseline="central"

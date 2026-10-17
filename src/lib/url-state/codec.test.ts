@@ -15,9 +15,9 @@ describe('url codec', () => {
       type: (['dominant', 'plagal', 'backdoor', 'tritone'] as const)[i % 4],
     }));
     const cases = [
-      { walk: [], dir: 'in' as const, key: null },
-      { walk: [{ dir: 'in' as const, type: 'tritone' as const }], dir: 'out' as const, key: 'D#' as const },
-      { walk: walk12, dir: 'in' as const, key: 'C' as const },
+      { walk: [], dir: 'in' as const, key: null, showLegend: true },
+      { walk: [{ dir: 'in' as const, type: 'tritone' as const }], dir: 'out' as const, key: 'D#' as const, showLegend: false },
+      { walk: walk12, dir: 'in' as const, key: 'C' as const, showLegend: true },
     ];
     for (const c of cases) {
       const doc = { activePageId: 'p-w', pages: [page('w', [{ id: 'w', kind: 'wayshome', x: 0, y: 0, z: 1, ...c }])] } as const;

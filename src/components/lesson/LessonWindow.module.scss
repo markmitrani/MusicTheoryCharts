@@ -1,0 +1,132 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 8, 7, 0.55);
+  backdrop-filter: blur(5px);
+  animation: fade var(--dur-med) var(--ease-out);
+}
+
+:global([data-theme='light']) .backdrop {
+  background: rgba(30, 49, 56, 0.28);
+}
+
+.window {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1120px, 92vw);
+  height: min(720px, 88vh);
+  padding: 34px 64px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: var(--card-sheen), var(--chrome-fill);
+  backdrop-filter: blur(var(--chrome-blur));
+  box-shadow: var(--shadow-lg);
+  animation: rise 0.4s var(--ease-out);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--accent-warm-soft);
+  }
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  border: 1px solid var(--element-stroke);
+  background: var(--element-fill);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    scale var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    scale: 1.06;
+  }
+}
+
+.prev {
+  left: 12px;
+}
+
+.next {
+  right: 12px;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rail-bar);
+  transition:
+    background var(--dur-med) var(--ease-out),
+    scale var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out);
+
+  &:hover {
+    background: var(--rail-bar-hover);
+    scale: 1.2;
+  }
+
+  &[data-active] {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 10px;
+  }
+}

@@ -13,7 +13,7 @@ import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
  *   chord   = c + pc1 + type1 + pack1 + x2 + y2 (8 chars; pack = inv*2+seventh)
  *   circle  = o + center1 + flags1 + x2 + y2    (7 chars; flags = sig + minor*2)
  *   pitchax = p + center1 + x2 + y2             (6 chars)
- *   wayshome = w + dir1 + key1 + x2 + y2 + steps (7 + n chars; dir 0 in / 1 out;
+ *   wayshome = w + flags1 + key1 + x2 + y2 + steps (7 + n chars; flags = out + noLegend*2;
  *             key = pitch class, or 'c' functional; step = dirBit*4 + cadence index)
  *   section = f + x2 + y2 + w2 + h2 + escapedName (9+ chars; name may be empty)
  *
@@ -125,7 +125,8 @@ export function encodeDoc(doc: DocSnapshot): string {
             .slice(0, MAX_WALK)
             .map((st) => b36((st.dir === 'out' ? 4 : 0) + CADENCE_TYPES.indexOf(st.type), 1))
             .join('');
-          return `w${e.dir === 'out' ? 1 : 0}${key}${x}${y}${steps}`;
+          const flags = (e.dir === 'out' ? 1 : 0) + (e.showLegend ? 0 : 2);
+          return `w${flags}${key}${x}${y}${steps}`;
         }
         if (e.kind === 'scale') {
           return `s${pcCode(e.root)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
@@ -202,7 +203,8 @@ function decodeV2(body: string): DecodedDoc | null {
           });
           return {
             id: freshId(), kind: 'wayshome', z: i + 1, walk,
-            dir: code[1] === '1' ? 'out' : 'in',
+            dir: (parseInt(code[1], 36) & 1) === 1 ? 'out' : 'in',
+            showLegend: (parseInt(code[1], 36) & 2) === 0,
             key: code[2] === 'c' ? null : parsePc(code[2]),
             x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };

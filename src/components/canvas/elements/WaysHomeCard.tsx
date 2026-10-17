@@ -17,6 +17,7 @@ import { playProgression, uiTick } from '@/lib/playback/playback';
 import { FractalScene, type NodeLabel } from '@/components/cadence/FractalScene';
 import { Breadcrumb } from '@/components/cadence/Breadcrumb';
 import { DirectionSwitch } from '@/components/cadence/DirectionSwitch';
+import { CornerLegend } from '@/components/cadence/CornerLegend';
 import { LightbulbIcon } from '@/components/chrome/icons';
 import { ElementShell } from '../ElementShell';
 import { PlayButton } from './PlayButton';
@@ -96,19 +97,34 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
                 update({ walk: el.walk.slice(0, i) });
               }}
             />
-            <button
-              className={styles.explainBtn}
-              title="Open the explainer"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                uiTick(2);
-                lessonStore.getState().openLesson('ways-home', el.id);
-              }}
-            >
-              <LightbulbIcon width={15} height={15} />
-              Explainer
-            </button>
+            <div className={styles.actions}>
+              <button
+                className={styles.legendBtn}
+                aria-pressed={el.showLegend}
+                data-active={el.showLegend || undefined}
+                title={el.showLegend ? 'Hide the colour key' : 'Show the colour key'}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  update({ showLegend: !el.showLegend });
+                }}
+              >
+                Legend
+              </button>
+              <button
+                className={styles.explainBtn}
+                title="Open the explainer"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  uiTick(2);
+                  lessonStore.getState().openLesson('ways-home', el.id);
+                }}
+              >
+                <LightbulbIcon width={15} height={15} />
+                Explainer
+              </button>
+            </div>
           </div>
           <div className={styles.stage}>
             <FractalScene
@@ -119,6 +135,7 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
               onNodeClick={travel}
               ariaLabel={`Ways home fractal centred on ${name(focus)}`}
             />
+            {el.showLegend && <CornerLegend />}
           </div>
           <div className={styles.bottomBar}>
             <DirectionSwitch

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { CameraController } from '@/lib/canvas-store/camera';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { lessonStore } from '@/lib/lesson/store';
 import styles from './Viewport.module.scss';
 
 const CameraContext = createContext<CameraController | null>(null);
@@ -56,7 +57,7 @@ export function Viewport({ children, camera, onBackgroundPointerDown, backdrop }
     surface.addEventListener('wheel', onWheel, { passive: false });
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !(e.target instanceof HTMLInputElement)) {
+      if (e.code === 'Space' && !(e.target instanceof HTMLInputElement) && !lessonStore.getState().open) {
         if (!spaceHeld.current) {
           spaceHeld.current = true;
           surface.classList.add(styles.grabbable);

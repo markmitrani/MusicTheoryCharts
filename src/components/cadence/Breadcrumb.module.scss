@@ -11,8 +11,7 @@
 .crumb {
   padding: 3px 7px;
   border-radius: var(--radius-sm);
-  font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-weight: var(--weight-medium);
   color: var(--text-muted);
   transition:
     color var(--dur-fast) var(--ease-out),

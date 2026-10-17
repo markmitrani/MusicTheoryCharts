@@ -102,6 +102,7 @@ describe('canvas store', () => {
       walk: [],
       dir: 'in',
       key: null,
+      showLegend: true,
     });
   });
 

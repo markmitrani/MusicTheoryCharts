@@ -7,6 +7,7 @@ import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { loadImageFile, imageFilesFrom } from '@/lib/images';
 import { inversionCount, withSeventh } from '@/lib/theory/chords';
 import { HIGHLIGHT_COUNT } from '@/lib/highlight-presets';
+import { lessonStore } from '@/lib/lesson/store';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
 import { UrlSync } from './UrlSync';
@@ -27,6 +28,7 @@ import { Toolbar } from '@/components/chrome/Toolbar';
 import { PageRail } from '@/components/chrome/PageRail';
 import { TitlePanel } from '@/components/chrome/TitlePanel';
 import { CornerActions } from '@/components/chrome/SettingsPanel';
+import { LessonHost } from '@/components/lesson/LessonHost';
 import styles from './CanvasApp.module.scss';
 
 interface DragRect {
@@ -109,7 +111,7 @@ export function CanvasApp() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isTypingTarget(e.target)) return;
+      if (isTypingTarget(e.target) || lessonStore.getState().open) return;
       const s = canvasStore.getState();
       const cmd = e.metaKey || e.ctrlKey;
       if ((e.key === 'Delete' || e.key === 'Backspace') && s.selection.size > 0) {
@@ -190,7 +192,7 @@ export function CanvasApp() {
     };
 
     const onPaste = (e: ClipboardEvent) => {
-      if (isTypingTarget(e.target)) return;
+      if (isTypingTarget(e.target) || lessonStore.getState().open) return;
       const files = imageFilesFrom(e.clipboardData);
       if (files.length > 0) {
         e.preventDefault();
@@ -370,6 +372,7 @@ export function CanvasApp() {
       <TitlePanel />
       <CornerActions />
       <Toolbar onAddNew={spawnStub} onUpload={() => fileInputRef.current?.click()} />
+      <LessonHost />
     </>
   );
 }

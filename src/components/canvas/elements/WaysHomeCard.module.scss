@@ -11,6 +11,13 @@
   margin-bottom: 4px;
 }
 
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.legendBtn,
 .explainBtn {
   display: inline-flex;
   flex-shrink: 0;
@@ -29,6 +36,15 @@
   &:hover {
     border-color: var(--accent);
     color: var(--accent);
+  }
+}
+
+.legendBtn {
+  padding-left: 11px;
+
+  &[data-active] {
+    border-color: var(--element-stroke-hover);
+    color: var(--text-primary);
   }
 }
 
