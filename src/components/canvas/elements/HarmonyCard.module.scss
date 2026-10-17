@@ -150,3 +150,106 @@
   font-weight: var(--weight-medium);
   color: var(--text-primary);
 }
+
+// Expand toggle: centered under the card, shown only when focused.
+.expandToggle {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: var(--chrome-fill);
+  backdrop-filter: blur(var(--chrome-blur));
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    rotate var(--dur-med) var(--ease-out);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--element-stroke-hover);
+  }
+
+  &[data-open] {
+    rotate: 180deg;
+  }
+}
+
+// Leaves room for the toggle between card and panel.
+.chordPanel {
+  position: absolute;
+  top: calc(100% + 54px);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.chordRow {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.miniChord {
+  --chip-color: var(--degree-major);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 196px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--element-stroke);
+  background: var(--card-sheen), var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
+    translate var(--dur-fast) var(--ease-out);
+
+  &[data-quality='min'] {
+    --chip-color: var(--degree-minor);
+  }
+
+  &[data-quality='dim'] {
+    --chip-color: var(--degree-dim);
+  }
+
+  &[data-quality='aug'] {
+    --chip-color: var(--degree-aug);
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--chip-color) 60%, transparent);
+    translate: 0 -1px;
+  }
+
+  &[data-active] {
+    border-color: var(--chip-color);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--chip-color) 35%, transparent);
+  }
+}
+
+.miniLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.miniKeys {
+  display: block;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 6px 0;
+}

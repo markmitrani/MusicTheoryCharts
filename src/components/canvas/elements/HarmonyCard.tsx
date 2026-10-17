@@ -7,7 +7,9 @@ import { harmonyChords } from '@/lib/theory/harmony';
 import type { HarmonyElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { playChord, playProgression } from '@/lib/playback/playback';
+import { ChevronDownIcon } from '@/components/chrome/icons';
 import { ElementShell } from '../ElementShell';
+import { PianoKeys } from '../PianoKeys';
 import { PlayButton } from './PlayButton';
 import { TypePicker } from './TypePicker';
 import chordStyles from './ChordCard.module.scss';
@@ -29,6 +31,8 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
   const [editing, setEditing] = useState(false);
   const [activeChip, setActiveChip] = useState(-1);
   const [playing, setPlaying] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [lit, setLit] = useState<ReadonlySet<number>>(new Set());
 
   const { chords, name } = useMemo(() => {
     const root = new Note(el.root, el.octave);
@@ -41,7 +45,7 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
   const playChip = (i: number) => {
     setActiveChip(i);
     playChord(chords[i].pitches, {
-      onLit: () => {},
+      onLit: setLit,
       onDone: () => setActiveChip(-1),
     });
   };
@@ -61,7 +65,30 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
   };
 
   return (
-    <ElementShell id={el.id} x={el.x} y={el.y} z={el.z} selected={selected} soloSelected={soloSelected} lifted={editing}>
+    <ElementShell
+      id={el.id}
+      x={el.x}
+      y={el.y}
+      z={el.z}
+      selected={selected}
+      soloSelected={soloSelected}
+      lifted={editing}
+      adornments={
+        <button
+          className={styles.expandToggle}
+          data-open={expanded || undefined}
+          aria-label={expanded ? 'Hide chords' : 'Show chords'}
+          aria-expanded={expanded}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+        >
+          <ChevronDownIcon width={18} height={18} />
+        </button>
+      }
+    >
       <div className={`${chordStyles.wrap} ${styles.wide}`} data-selected={selected || undefined}>
         <div className={chordStyles.header}>
           <button
@@ -116,6 +143,30 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
             ))}
           </div>
         </div>
+        {expanded && (
+          <div className={styles.chordPanel}>
+            {[chords.slice(0, 3), chords.slice(3, 6), chords.slice(6)].map((row, r) => (
+              <div key={r} className={styles.chordRow}>
+                {row.map((chord, j) => {
+                  const i = r * 3 + j;
+                  return (
+                    <MiniChord
+                      key={`${chord.name}-${i}`}
+                      numeral={chord.numeral}
+                      name={chord.name}
+                      quality={chord.quality}
+                      pitches={chord.pitches}
+                      lit={activeChip === i ? lit : undefined}
+                      active={activeChip === i}
+                      colorIndex={el.highlightColor ?? 0}
+                      onPlay={() => playChip(i)}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
         {editing && (
           <TypePicker
             kinds={['harmony']}
@@ -133,5 +184,51 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
         )}
       </div>
     </ElementShell>
+  );
+}
+
+interface MiniChordProps {
+  numeral: string;
+  name: string;
+  quality: string;
+  pitches: number[];
+  lit?: ReadonlySet<number>;
+  active: boolean;
+  colorIndex: number;
+  onPlay: () => void;
+}
+
+/** One degree chord on a small keyboard, shown in the expanded chord panel. */
+function MiniChord({ numeral, name, quality, pitches, lit, active, colorIndex, onPlay }: MiniChordProps) {
+  const { baseC, octaves, highlighted } = useMemo(() => {
+    const min = Math.min(...pitches);
+    const max = Math.max(...pitches);
+    const baseC = min - (min % 12);
+    return {
+      baseC,
+      octaves: Math.max(2, Math.ceil((max - baseC + 1) / 12)),
+      highlighted: new Set(pitches),
+    };
+  }, [pitches]);
+
+  return (
+    <button
+      className={styles.miniChord}
+      data-quality={quality}
+      data-active={active || undefined}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPlay();
+      }}
+    >
+      <span className={styles.miniLabel}>
+        <span className={styles.numeral}>{numeral}</span>
+        <span className={styles.chordName}>{name}</span>
+      </span>
+      <span className={styles.miniKeys}>
+        <PianoKeys baseC={baseC} octaves={octaves} highlighted={highlighted} lit={lit} colorIndex={colorIndex} />
+      </span>
+    </button>
   );
 }
