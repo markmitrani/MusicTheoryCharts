@@ -7,6 +7,7 @@ import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
 import { loadImageFile, imageFilesFrom } from '@/lib/images';
 import { inversionCount, withSeventh } from '@/lib/theory/chords';
 import { HIGHLIGHT_COUNT } from '@/lib/highlight-presets';
+import { lessonStore } from '@/lib/lesson/store';
 import { Viewport } from './Viewport';
 import { AudioBoot } from './AudioBoot';
 import { UrlSync } from './UrlSync';
@@ -19,6 +20,8 @@ import { ScaleCard } from './elements/ScaleCard';
 import { HarmonyCard } from './elements/HarmonyCard';
 import { CircleCard } from './elements/CircleCard';
 import { PitchAxisCard } from './elements/PitchAxisCard';
+import { WaysHomeCard } from './elements/WaysHomeCard';
+import { RoadsCard } from './elements/RoadsCard';
 import { ImageCard } from './elements/ImageCard';
 import { SectionCard } from './elements/SectionCard';
 import { StubCard } from './elements/StubCard';
@@ -26,6 +29,7 @@ import { Toolbar } from '@/components/chrome/Toolbar';
 import { PageRail } from '@/components/chrome/PageRail';
 import { TitlePanel } from '@/components/chrome/TitlePanel';
 import { CornerActions } from '@/components/chrome/SettingsPanel';
+import { LessonHost } from '@/components/lesson/LessonHost';
 import styles from './CanvasApp.module.scss';
 
 interface DragRect {
@@ -108,7 +112,7 @@ export function CanvasApp() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isTypingTarget(e.target)) return;
+      if (isTypingTarget(e.target) || lessonStore.getState().open) return;
       const s = canvasStore.getState();
       const cmd = e.metaKey || e.ctrlKey;
       if ((e.key === 'Delete' || e.key === 'Backspace') && s.selection.size > 0) {
@@ -189,7 +193,7 @@ export function CanvasApp() {
     };
 
     const onPaste = (e: ClipboardEvent) => {
-      if (isTypingTarget(e.target)) return;
+      if (isTypingTarget(e.target) || lessonStore.getState().open) return;
       const files = imageFilesFrom(e.clipboardData);
       if (files.length > 0) {
         e.preventDefault();
@@ -325,6 +329,10 @@ export function CanvasApp() {
                 return <CircleCard key={el.id} el={el} {...common} />;
               case 'pitchaxis':
                 return <PitchAxisCard key={el.id} el={el} {...common} />;
+              case 'wayshome':
+                return <WaysHomeCard key={el.id} el={el} {...common} />;
+              case 'roads':
+                return <RoadsCard key={el.id} el={el} {...common} />;
               case 'image':
                 return <ImageCard key={el.id} el={el} {...common} />;
               case 'stub':
@@ -367,6 +375,7 @@ export function CanvasApp() {
       <TitlePanel />
       <CornerActions />
       <Toolbar onAddNew={spawnStub} onUpload={() => fileInputRef.current?.click()} />
+      <LessonHost />
     </>
   );
 }

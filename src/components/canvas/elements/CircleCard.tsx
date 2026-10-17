@@ -179,7 +179,7 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
             }}
           >
             <span className={chordStyles.nameTabInner}>
-              Circle of Fifths — {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}
+              Circle of Fifths – {CIRCLE_KEYS[circleIndexOf(el.centerKey)].label}
             </span>
           </button>
         </div>
@@ -312,13 +312,13 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
               step counter-clockwise adds one flat. Neighbouring keys share every note but one.
             </p>
             <p>
-              <strong>Composing.</strong> Adjacent keys modulate smoothly — only a single note
+              <strong>Composing.</strong> Adjacent keys modulate smoothly – only a single note
               changes. The ii–V–I that drives jazz is three neighbours in a row.
             </p>
             <p>
               <strong>Tension &amp; resolution.</strong> Moving clockwise, toward the dominant,
               tightens; moving counter-clockwise, toward the subdominant, relaxes. A falling fifth,
-              V→I, is the strongest resolution in tonal music — the circle makes that pull visible.
+              V→I, is the strongest resolution in tonal music – the circle makes that pull visible.
             </p>
           </div>
         )}

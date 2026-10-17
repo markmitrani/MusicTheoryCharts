@@ -1,0 +1,46 @@
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.crumb {
+  padding: 3px 7px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+
+  &:not(:disabled):hover {
+    color: var(--text-primary);
+    background: var(--accent-warm-soft);
+  }
+
+  &[data-current] {
+    color: var(--text-primary);
+    cursor: default;
+  }
+
+  &[data-playing] {
+    color: var(--accent);
+  }
+}
+
+.sep,
+.more {
+  color: var(--text-muted);
+  opacity: 0.7;
+  padding: 0 1px;
+}
+
+.turn {
+  color: var(--accent-warm);
+  font-size: var(--text-xs);
+  padding: 0 3px;
+}

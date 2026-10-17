@@ -1,4 +1,5 @@
 import type { NoteName } from '@/lib/theory/note';
+import type { Direction, WalkStep } from '@/lib/theory/cadence';
 
 export type Tool = 'select' | 'move' | 'frame' | 'upload';
 
@@ -72,6 +73,30 @@ export interface PitchAxisElement extends ElementBase {
 }
 
 /**
+ * Ways Home: the cadence fractal. `walk` is the path from I to the current
+ * centre; `dir` shows ways in (approach chords) or homes (where the centre
+ * can go). `key` null = functional Roman numerals.
+ */
+export interface WaysHomeElement extends ElementBase {
+  kind: 'wayshome';
+  walk: WalkStep[];
+  dir: Direction;
+  key: NoteName | null;
+  /** Corner colour key (which move each colour is). */
+  showLegend: boolean;
+}
+
+/**
+ * Roads: the circle of fifths as a road map around a centre key. Shows the
+ * centre's ways in, its homes, or both; neighbour roads run both ways.
+ */
+export interface RoadsElement extends ElementBase {
+  kind: 'roads';
+  centerKey: NoteName;
+  show: 'in' | 'out' | 'both';
+}
+
+/**
  * Named region drawn with the frame tool. Acts as a group: dragging it
  * moves every element fully enclosed in its area. Renders beneath elements.
  */
@@ -86,7 +111,7 @@ export interface SectionElement extends ElementBase {
 export interface StubElement extends ElementBase {
   kind: 'stub';
   root: NoteName | null;
-  /** 'scale:<id>', 'chord:<id>', 'harmony:<id>', or 'circle:default' once chosen. */
+  /** 'scale:<id>', 'chord:<id>', 'harmony:<id>', or '<instant kind>:default' once chosen. */
   typeId: string | null;
   /** Pre-selects the kind tab (e.g. spawned from the circle's radial menu). */
   kindHint?: string;
@@ -98,6 +123,8 @@ export type CanvasElement =
   | HarmonyElement
   | CircleElement
   | PitchAxisElement
+  | WaysHomeElement
+  | RoadsElement
   | ImageElement
   | SectionElement
   | StubElement;

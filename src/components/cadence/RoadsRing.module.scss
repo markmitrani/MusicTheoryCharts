@@ -1,0 +1,137 @@
+.svg {
+  display: block;
+  overflow: hidden;
+  user-select: none;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--hairline);
+  stroke-width: 1.2;
+}
+
+.ghost {
+  opacity: 0.2;
+
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+  }
+
+  polygon {
+    fill: currentColor;
+  }
+}
+
+.road {
+  transition: opacity var(--dur-med) var(--ease-out);
+
+  &[data-dim] {
+    opacity: 0.3;
+  }
+
+  &[data-clickable] {
+    cursor: pointer;
+  }
+}
+
+.hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+}
+
+.line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 0.7s var(--ease-out) var(--delay, 0s) forwards;
+}
+
+.tip {
+  fill: currentColor;
+  opacity: 0;
+  animation: fadeIn 0.2s var(--ease-out) calc(var(--delay, 0s) + 0.6s) forwards;
+}
+
+.road:hover .line {
+  stroke-width: 4;
+}
+
+.disc {
+  fill: var(--element-fill);
+  stroke: var(--element-stroke-hover);
+  stroke-width: 1.4;
+}
+
+.key {
+  // Quiet stops fade their ink, not the disc: an opaque disc keeps the ring
+  // line from showing through.
+  &[data-quiet] {
+    text {
+      opacity: 0.45;
+    }
+
+    .disc {
+      fill: color-mix(in srgb, var(--element-fill) 70%, var(--canvas-bg));
+      stroke: var(--hairline);
+    }
+  }
+
+  &[data-centre] .disc {
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  &[data-clickable] {
+    cursor: pointer;
+
+    &:hover .disc {
+      stroke: var(--accent);
+    }
+  }
+}
+
+.name {
+  fill: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: var(--weight-medium);
+
+  &[data-serif] {
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+    font-size: 24px;
+  }
+}
+
+.numeral {
+  fill: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: var(--weight-medium);
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .tip {
+    animation-duration: 1ms;
+    animation-delay: 0s;
+  }
+}

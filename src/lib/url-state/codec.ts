@@ -1,5 +1,6 @@
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import type { CanvasElement, Page } from '@/lib/canvas-store/types';
+import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
 
 /**
  * Compact URL codec. The current writer emits v2; v1 is still decoded so links
@@ -12,6 +13,9 @@ import type { CanvasElement, Page } from '@/lib/canvas-store/types';
  *   chord   = c + pc1 + type1 + pack1 + x2 + y2 (8 chars; pack = inv*2+seventh)
  *   circle  = o + center1 + flags1 + x2 + y2    (7 chars; flags = sig + minor*2)
  *   pitchax = p + center1 + x2 + y2             (6 chars)
+ *   wayshome = w + flags1 + key1 + x2 + y2 + steps (7 + n chars; flags = out + noLegend*2;
+ *             key = pitch class, or 'c' functional; step = dirBit*4 + cadence index)
+ *   roads   = r + center1 + show1 + x2 + y2     (7 chars; show 0 both / 1 in / 2 out)
  *   section = f + x2 + y2 + w2 + h2 + escapedName (9+ chars; name may be empty)
  *
  * v2 vs v1: pitched elements encode only the pitch class (pc1, 1 char) — the
@@ -44,6 +48,8 @@ const V1 = 'v1:';
 const BUCKET_V2 = 24;
 const BUCKET_V1 = 16;
 const DEFAULT_OCTAVE = 3;
+const MAX_WALK = 12;
+const ROADS_SHOW = ['both', 'in', 'out'] as const;
 
 export interface DocSnapshot {
   pages: readonly Page[];
@@ -86,13 +92,15 @@ export function encodeDoc(doc: DocSnapshot): string {
         e,
       ): e is Extract<
         CanvasElement,
-        { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'pitchaxis' | 'section' }
+        { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'pitchaxis' | 'wayshome' | 'roads' | 'section' }
       > =>
         e.kind === 'scale' ||
         e.kind === 'chord' ||
         e.kind === 'harmony' ||
         e.kind === 'circle' ||
         e.kind === 'pitchaxis' ||
+        e.kind === 'wayshome' ||
+        e.kind === 'roads' ||
         e.kind === 'section',
     );
     const minX = Math.min(...serializable.map((e) => e.x), 0);
@@ -113,6 +121,18 @@ export function encodeDoc(doc: DocSnapshot): string {
         }
         if (e.kind === 'pitchaxis') {
           return `p${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${x}${y}`;
+        }
+        if (e.kind === 'roads') {
+          return `r${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${ROADS_SHOW.indexOf(e.show)}${x}${y}`;
+        }
+        if (e.kind === 'wayshome') {
+          const key = e.key ? b36(NOTE_NAMES.indexOf(e.key), 1) : 'c';
+          const steps = e.walk
+            .slice(0, MAX_WALK)
+            .map((st) => b36((st.dir === 'out' ? 4 : 0) + CADENCE_TYPES.indexOf(st.type), 1))
+            .join('');
+          const flags = (e.dir === 'out' ? 1 : 0) + (e.showLegend ? 0 : 2);
+          return `w${flags}${key}${x}${y}${steps}`;
         }
         if (e.kind === 'scale') {
           return `s${pcCode(e.root)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
@@ -178,6 +198,30 @@ function decodeV2(body: string): DecodedDoc | null {
           return {
             id: freshId(), kind: 'pitchaxis', z: i + 1, centerKey: center,
             x: px(code.slice(2, 4)), y: px(code.slice(4, 6)),
+          };
+        }
+        if (kind === 'r' && code.length === 7) {
+          const center = parsePc(code[1]);
+          const show = ROADS_SHOW[parseInt(code[2], 36)];
+          if (!center || !show) throw new Error(`bad roads: ${code}`);
+          return {
+            id: freshId(), kind: 'roads', z: i + 1, centerKey: center, show,
+            x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
+          };
+        }
+        if (kind === 'w' && code.length >= 7 && code.length <= 7 + MAX_WALK) {
+          const walk: WalkStep[] = [...code.slice(7)].map((ch) => {
+            const v = parseInt(ch, 36);
+            const type = CADENCE_TYPES[v % 4];
+            if (Number.isNaN(v) || v > 7 || !type) throw new Error(`bad walk: ${code}`);
+            return { dir: v >= 4 ? 'out' : 'in', type };
+          });
+          return {
+            id: freshId(), kind: 'wayshome', z: i + 1, walk,
+            dir: (parseInt(code[1], 36) & 1) === 1 ? 'out' : 'in',
+            showLegend: (parseInt(code[1], 36) & 2) === 0,
+            key: code[2] === 'c' ? null : parsePc(code[2]),
+            x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };
         }
         if (kind === 's' && code.length === 7) {
