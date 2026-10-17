@@ -47,23 +47,36 @@ function place(pc: number, rot: number) {
   return { x: C + R * Math.cos(a), y: C + R * Math.sin(a) };
 }
 
+/** Offset of each lane from the ring, at the road's midpoint. */
+const LANE = 11;
+
 /**
- * Bowed road from a to b. Neighbour roads curve to the left of travel so the
- * two directions of one road separate; longer roads curve toward the ring's
- * centre so they never run through the stops in between.
+ * Bowed road from a to b. A neighbour road follows the ring's own curve, with
+ * the dominant direction in the outer lane (the main way) and the plagal one in
+ * the inner lane (the subway), symmetric about the ring. Longer roads curve
+ * toward the ring's centre so they never run through the stops in between.
  */
-function roadPath(a: { x: number; y: number }, b: { x: number; y: number }, neighbours: boolean) {
+function roadPath(a: { x: number; y: number }, b: { x: number; y: number }, type: CadenceType, neighbours: boolean) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len = Math.hypot(dx, dy);
   const ux = dx / len;
   const uy = dy / len;
-  const h = Math.min(0.22 * len, 36);
   const mx = (a.x + b.x) / 2;
   const my = (a.y + b.y) / 2;
-  const towardCentre = (C - mx) * uy - (C - my) * ux > 0 ? 1 : -1;
-  const side = neighbours ? 1 : towardCentre;
-  const q = { x: mx + uy * h * side, y: my - ux * h * side };
+  let q: { x: number; y: number };
+  if (neighbours) {
+    const dist = Math.hypot(mx - C, my - C);
+    const nx = (mx - C) / dist;
+    const ny = (my - C) / dist;
+    // A quadratic's midpoint sits halfway to its control point.
+    const lift = 2 * (R - dist + (type === 'dominant' ? LANE : -LANE));
+    q = { x: mx + nx * lift, y: my + ny * lift };
+  } else {
+    const h = Math.min(0.22 * len, 36);
+    const towardCentre = (C - mx) * uy - (C - my) * ux > 0 ? 1 : -1;
+    q = { x: mx + uy * h * towardCentre, y: my - ux * h * towardCentre };
+  }
   const trim = (p: { x: number; y: number }, r: number) => {
     const vx = q.x - p.x;
     const vy = q.y - p.y;
@@ -137,7 +150,7 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
       <circle cx={C} cy={C} r={R} className={styles.ring} />
 
       {ghosts.filter((g) => !isLive(g)).map((g) => {
-        const p = roadPath(place(g.from, rot), place(g.to, rot), true);
+        const p = roadPath(place(g.from, rot), place(g.to, rot), g.type, true);
         return (
           <g key={`g${g.from}-${g.to}`} className={styles.ghost} style={{ color: CADENCES[g.type].colorVar }}>
             <path d={p.d} />
@@ -147,7 +160,7 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
       })}
 
       {roads.map((r, i) => {
-        const p = roadPath(place(r.from, rot), place(r.to, rot), isNeighbour(r));
+        const p = roadPath(place(r.from, rot), place(r.to, rot), r.type, isNeighbour(r));
         const dim = hover !== null && hover !== i;
         return (
           <g

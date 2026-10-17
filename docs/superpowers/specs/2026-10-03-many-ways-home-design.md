@@ -171,7 +171,7 @@ The interlude's ring as a canvas element, reusing `RoadsRing`.
 
 - **Element:** `{ kind: 'roads', centerKey: NoteName, show: 'in' | 'out' | 'both' }`. Instant kind in the "more" menu ("Roads"). Folder tab "Roads – C".
 - **Body:** the 12 keys in fifths order, the centre key rotated to the top (rotate-then-relabel, as in `CircleCard`). The centre's four ways in and four ways out are drawn as coloured roads; neighbour roads appear as paired two-way arcs, so the dominant/plagal duality is always visible. Nodes show the real key name with the numeral relative to the centre as a subtitle.
-- **Roads geometry:** neighbour roads bow to the left of travel, so a road's two directions separate; longer roads bow toward the ring's centre so they never cross the stops in between.
+- **Roads geometry:** a neighbour road follows the ring's curve in two lanes symmetric about it: dominant in the outer lane (the main way), plagal in the inner lane (the subway). Longer roads bow toward the ring's centre so they never cross the stops in between.
 - **Interactions:** double-click a key to rotate it to the top (only a double-click re-centres); hover a road to highlight it; click a road to play that cadence. Chips switch between ways in, homes, and both (default both). ⓘ panel with a short explanation; a colour legend sits under the ring.
 - **URL codec:** `roads = r + center1 + show1 + x2 + y2` (7 chars; show 0 both, 1 in, 2 out).
 
