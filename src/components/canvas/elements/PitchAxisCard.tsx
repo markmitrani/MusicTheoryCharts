@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { NOTE_NAMES } from '@/lib/theory/note';
 import { AXES, AXIS_COLOR, CHROMATIC_LABELS, axisOf, type AxisFn } from '@/lib/theory/pitch-axis';
 import type { PitchAxisElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { ElementShell } from '../ElementShell';
 import { InfoIcon } from '@/components/chrome/icons';
+import { GlassGradient } from '@/components/cadence/FractalScene';
+import { useSurfaces } from '@/lib/use-surfaces';
 import chordStyles from './ChordCard.module.scss';
 import styles from './PitchAxisCard.module.scss';
 
@@ -37,6 +39,8 @@ const pos = (r: number, i: number) => {
 export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps) {
   const [info, setInfo] = useState(false);
   const [focus, setFocus] = useState<AxisFn | null>(null);
+  const glass = useSurfaces() === 'glass';
+  const uid = useId().replace(/[:]/g, '');
   const centerIdx = NOTE_NAMES.indexOf(el.centerKey);
 
   // The two tritone diameters of each axis (note index pairs).
@@ -79,6 +83,19 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
             </button>
 
             <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width="100%" role="img" aria-label="Bartók pitch axis">
+              {glass && (
+                <defs>
+                  {AXES.map((a) => (
+                    <GlassGradient
+                      key={a.fn}
+                      id={`glass-${a.fn}${uid}`}
+                      color={a.colorVar}
+                      up={`var(--axis-${a.fn}-up, ${a.colorVar})`}
+                    />
+                  ))}
+                  <GlassGradient id={`glass-hub${uid}`} color="var(--axis-tonic)" quiet />
+                </defs>
+              )}
               <circle cx={C} cy={C} r={R_RING} className={styles.ring} />
 
               {diameters.map((d, i) => {
@@ -99,6 +116,7 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
               })}
 
               <circle cx={C} cy={C} r={R_HUB} className={styles.hub} />
+              {glass && <circle cx={C} cy={C} r={R_HUB - 0.7} fill={`url(#glass-hub${uid})`} />}
               <text x={C} y={C - 2} className={styles.hubKey}>
                 {el.centerKey}
               </text>
@@ -125,7 +143,24 @@ export function PitchAxisCard({ el, selected, soloSelected }: PitchAxisCardProps
                     {isCenter && (
                       <circle cx={dot.x} cy={dot.y} r={12} className={styles.centerRing} />
                     )}
-                    <circle cx={dot.x} cy={dot.y} r={8} fill={AXIS_COLOR[fn]} className={styles.dot} />
+                    <circle
+                      cx={dot.x}
+                      cy={dot.y}
+                      r={8}
+                      fill={AXIS_COLOR[fn]}
+                      className={styles.dot}
+                      style={glass ? { stroke: AXIS_COLOR[fn] } : undefined}
+                    />
+                    {glass && (
+                      <circle
+                        cx={dot.x}
+                        cy={dot.y}
+                        r={8 - 0.7}
+                        fill={`url(#glass-${fn}${uid})`}
+                        className={styles.dotGlass}
+                        pointerEvents="none"
+                      />
+                    )}
                     <text x={lab.x} y={lab.y + 4} className={styles.noteLabel} data-center={isCenter || undefined}>
                       {label}
                     </text>

@@ -190,9 +190,9 @@ Lands last; the data model and codec carry `key` from the start.
 
   | Token | Dark | Light |
   |---|---|---|
-  | `--cadence-dominant` (red, the pitch axis subdominant) | `#c1272d` | `#b71c2b` |
+  | `--cadence-dominant` (red, the pitch axis dominant) | `#c1272d` | `#b71c2b` |
   | `--cadence-dominant-up` (glass highlight tone) | `#e5534f` | `#dc4a4c` |
-  | `--cadence-plagal` (amber, the pitch axis dominant) | `#e6a12c` | `#c8851a` |
+  | `--cadence-plagal` (amber, the pitch axis subdominant) | `#e6a12c` | `#c8851a` |
   | `--cadence-plagal-up` (glass highlight tone) | `#f2b84f` | `#dc9c34` |
   | `--cadence-backdoor` (sky) | `#0ea5e9` | `#0284c7` |
   | `--cadence-tritone` (lime) | `#84cc16` | `#65a30d` |

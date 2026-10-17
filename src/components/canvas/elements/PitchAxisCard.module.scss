@@ -31,13 +31,15 @@
     opacity: 0.18;
   }
 
-  .dot {
+  .dot,
+  .dotGlass {
     transition: transform var(--dur-fast) var(--ease-out);
     transform-box: fill-box;
     transform-origin: center;
   }
 
-  &:hover .dot {
+  &:hover .dot,
+  &:hover .dotGlass {
     transform: scale(1.18);
   }
 }
