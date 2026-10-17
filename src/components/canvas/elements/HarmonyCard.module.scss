@@ -180,6 +180,15 @@
   &[data-open] {
     rotate: 180deg;
   }
+
+  // Larger tap target on phones without growing the visible button.
+  @media (max-width: 640px) {
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+    }
+  }
 }
 
 // Leaves room for the toggle between card and panel.
