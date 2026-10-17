@@ -34,6 +34,8 @@ interface WaysHomeCardProps {
 }
 
 const MAX_WALK = 12;
+/** Without the corner legend the fractal grows into the freed corners. */
+const LEGENDLESS_SCALE = 1.17;
 export const CHORD_MS = 950;
 
 /**
@@ -158,6 +160,7 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
               interactive
               onNodeClick={listen}
               onNodeDoubleClick={travel}
+              scale={el.showLegend ? 1 : LEGENDLESS_SCALE}
               ariaLabel={`Ways home fractal centred on ${name(focus)}`}
             />
             {el.showLegend && <CornerLegend dir={el.dir} />}

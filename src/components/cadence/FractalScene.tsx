@@ -28,6 +28,8 @@ interface FractalSceneProps {
   corners?: CadenceType[] | null;
   /** Path (relative to the centre) to light up when nothing is hovered. */
   highlight?: CadenceType[] | null;
+  /** Scale about the centre, e.g. to fill corners a hidden legend frees up. */
+  scale?: number;
   ariaLabel?: string;
 }
 
@@ -141,6 +143,7 @@ export function FractalScene({
   maxLevel = 2,
   corners = null,
   highlight = null,
+  scale = 1,
   ariaLabel = 'Ways home fractal',
 }: FractalSceneProps) {
   const glass = useSurfaces() === 'glass';
@@ -296,132 +299,137 @@ export function FractalScene({
           <GlassGradient id={`glass-centre${uid}`} color="var(--accent-warm)" quiet />
         </defs>
       )}
-      <g>
-        {edges.map((e) => {
-          const color = CADENCES[e.type].colorVar;
-          const isBorn = born(`e${e.posKey}${root.dir}`);
-          const litEdge = lit !== null && litSet.has(e.rel.join());
-          return (
-            <g key={`e${e.posKey}${root.dir}`} className={styles.edge} opacity={e.opacity * dimFor(e.rel)}>
-              <path
-                d={e.shape.d}
-                stroke={color}
-                strokeWidth={e.width + (litEdge ? 0.9 : 0)}
-                fill="none"
-                strokeLinecap="round"
-                pathLength={1}
-                className={isBorn ? styles.draw : undefined}
-              />
-              <polygon points={e.shape.tip} fill={color} className={isBorn ? styles.tipIn : undefined} />
-            </g>
-          );
-        })}
-      </g>
-      <g>
-        {nodes.map((n) => {
-          const color = n.type ? CADENCES[n.type].colorVar : null;
-          const centreness = clamp01(1 - n.a);
-          const solid = clamp01(n.a - 2);
-          const tint = (24 + 76 * solid) * (1 - centreness);
-          const fill = color
-            ? `color-mix(in srgb, ${color} ${tint}%, var(--element-fill))`
-            : 'var(--element-fill)';
-          const stroke = color
-            ? `color-mix(in srgb, ${color} ${(1 - centreness) * 100}%, var(--element-stroke-hover))`
-            : 'var(--element-stroke-hover)';
-          const label = labelFor(n.pc);
-          const showSub = !!label.sub && n.a < 1.6;
-          const clickable =
-            interactive && idle && n.rel.length >= 1 && n.rel.length <= 2 && n.labelOpacity > 0.5;
-          const relKey = n.rel.join();
-          return (
-            <g
-              key={`n${n.posKey}`}
-              transform={`translate(${n.x} ${n.y})`}
-              opacity={n.opacity * dimFor(n.rel)}
-              className={styles.node}
-              data-clickable={clickable || undefined}
-              onPointerEnter={interactive && idle ? () => setHovered(relKey) : undefined}
-              onPointerLeave={interactive ? () => setHovered((h) => (h === relKey ? null : h)) : undefined}
-              onPointerDown={clickable ? (ev) => ev.stopPropagation() : undefined}
-              onClick={
-                clickable
-                  ? (ev) => {
-                      ev.stopPropagation();
-                      window.clearTimeout(clickTimer.current);
-                      if (!onNodeDoubleClick) onNodeClick?.(n.rel);
-                      else if (ev.detail < 2) clickTimer.current = window.setTimeout(() => onNodeClick?.(n.rel), DOUBLE_CLICK_MS);
-                    }
-                  : undefined
-              }
-              onDoubleClick={
-                clickable && onNodeDoubleClick
-                  ? (ev) => {
-                      ev.stopPropagation();
-                      window.clearTimeout(clickTimer.current);
-                      onNodeDoubleClick(n.rel);
-                    }
-                  : undefined
-              }
-            >
-              <g className={born(`n${n.posKey}`) ? styles.pop : undefined}>
-                <circle
-                  r={n.r}
-                  style={{ fill, stroke }}
-                  strokeWidth={n.a < 2.5 ? 1.4 : 0}
-                  opacity={1 - 0.45 * clamp01(n.a - 2)}
+      <g className={styles.scaled} style={{ transform: `scale(${scale})` }}>
+        <g>
+          {edges.map((e) => {
+            const color = CADENCES[e.type].colorVar;
+            const isBorn = born(`e${e.posKey}${root.dir}`);
+            const litEdge = lit !== null && litSet.has(e.rel.join());
+            return (
+              <g key={`e${e.posKey}${root.dir}`} className={styles.edge} opacity={e.opacity * dimFor(e.rel)}>
+                <path
+                  d={e.shape.d}
+                  stroke={color}
+                  strokeWidth={e.width + (litEdge ? 0.9 : 0)}
+                  fill="none"
+                  strokeLinecap="round"
+                  pathLength={1}
+                  className={isBorn ? styles.draw : undefined}
                 />
-                {glass && n.a < 2.5 && (
-                  <>
-                    {n.type && (
+                <polygon points={e.shape.tip} fill={color} className={isBorn ? styles.tipIn : undefined} />
+              </g>
+            );
+          })}
+        </g>
+        <g>
+          {nodes.map((n) => {
+            const color = n.type ? CADENCES[n.type].colorVar : null;
+            const centreness = clamp01(1 - n.a);
+            const solid = clamp01(n.a - 2);
+            const tint = (24 + 76 * solid) * (1 - centreness);
+            const fill = color
+              ? `color-mix(in srgb, ${color} ${tint}%, var(--element-fill))`
+              : 'var(--element-fill)';
+            const stroke = color
+              ? `color-mix(in srgb, ${color} ${(1 - centreness) * 100}%, var(--element-stroke-hover))`
+              : 'var(--element-stroke-hover)';
+            const label = labelFor(n.pc);
+            // Every labelled layer shows its function under the name (I, IV, ♭VII…).
+            const showSub = !!label.sub && n.a < 2.6;
+            // Deeper nodes are small: keep the second line readable.
+            const subSize = n.font * (n.a > 1.5 ? 0.6 : 0.5);
+            const clickable =
+              interactive && idle && n.rel.length >= 1 && n.rel.length <= 2 && n.labelOpacity > 0.5;
+            const relKey = n.rel.join();
+            return (
+              <g
+                key={`n${n.posKey}`}
+                transform={`translate(${n.x} ${n.y})`}
+                opacity={n.opacity * dimFor(n.rel)}
+                className={styles.node}
+                data-clickable={clickable || undefined}
+                onPointerEnter={interactive && idle ? () => setHovered(relKey) : undefined}
+                onPointerLeave={interactive ? () => setHovered((h) => (h === relKey ? null : h)) : undefined}
+                onPointerDown={clickable ? (ev) => ev.stopPropagation() : undefined}
+                onClick={
+                  clickable
+                    ? (ev) => {
+                        ev.stopPropagation();
+                        window.clearTimeout(clickTimer.current);
+                        if (!onNodeDoubleClick) onNodeClick?.(n.rel);
+                        else if (ev.detail < 2) clickTimer.current = window.setTimeout(() => onNodeClick?.(n.rel), DOUBLE_CLICK_MS);
+                      }
+                    : undefined
+                }
+                onDoubleClick={
+                  clickable && onNodeDoubleClick
+                    ? (ev) => {
+                        ev.stopPropagation();
+                        window.clearTimeout(clickTimer.current);
+                        onNodeDoubleClick(n.rel);
+                      }
+                    : undefined
+                }
+              >
+                <g className={born(`n${n.posKey}`) ? styles.pop : undefined}>
+                  <circle
+                    r={n.r}
+                    style={{ fill, stroke }}
+                    strokeWidth={n.a < 2.5 ? 1.4 : 0}
+                    opacity={1 - 0.45 * clamp01(n.a - 2)}
+                  />
+                  {glass && n.a < 2.5 && (
+                    <>
+                      {n.type && (
+                        <circle
+                          r={Math.max(0, n.r - 0.7)}
+                          fill={`url(#glass-${n.type}${uid})`}
+                          opacity={1 - centreness}
+                          pointerEvents="none"
+                        />
+                      )}
                       <circle
                         r={Math.max(0, n.r - 0.7)}
-                        fill={`url(#glass-${n.type}${uid})`}
-                        opacity={1 - centreness}
+                        fill={`url(#glass-centre${uid})`}
+                        opacity={n.type ? centreness : 1}
                         pointerEvents="none"
                       />
-                    )}
-                    <circle
-                      r={Math.max(0, n.r - 0.7)}
-                      fill={`url(#glass-centre${uid})`}
-                      opacity={n.type ? centreness : 1}
-                      pointerEvents="none"
-                    />
-                  </>
-                )}
-                {n.labelOpacity > 0.01 && (
-                  <g
-                    key={`${n.pc}${label.main}`}
-                    opacity={n.labelOpacity / Math.max(n.opacity, 0.001)}
-                    className={born(`l${n.posKey}${n.pc}${label.main}`) ? styles.labelIn : undefined}
-                  >
-                    <text
-                      className={styles.label}
-                      data-serif={n.a < 0.5 || undefined}
-                      y={showSub ? -n.font * 0.18 : 0}
-                      style={{ fontSize: n.font }}
-                      dominantBaseline="central"
-                      textAnchor="middle"
+                    </>
+                  )}
+                  {n.labelOpacity > 0.01 && (
+                    <g
+                      key={`${n.pc}${label.main}`}
+                      opacity={n.labelOpacity / Math.max(n.opacity, 0.001)}
+                      className={born(`l${n.posKey}${n.pc}${label.main}`) ? styles.labelIn : undefined}
                     >
-                      <Glyphs text={label.main} />
-                    </text>
-                    {showSub && (
                       <text
-                        className={styles.sub}
-                        y={n.font * 0.5}
-                        style={{ fontSize: n.font * 0.5 }}
+                        className={styles.label}
+                        data-serif={n.a < 0.5 || undefined}
+                        y={showSub ? -n.font * 0.2 : 0}
+                        style={{ fontSize: n.font }}
                         dominantBaseline="central"
                         textAnchor="middle"
                       >
-                        {label.sub}
+                        <Glyphs text={label.main} />
                       </text>
-                    )}
-                  </g>
-                )}
+                      {showSub && (
+                        <text
+                          className={styles.sub}
+                          y={n.font * 0.2 + subSize * 0.75}
+                          style={{ fontSize: subSize }}
+                          dominantBaseline="central"
+                          textAnchor="middle"
+                        >
+                          {label.sub}
+                        </text>
+                      )}
+                    </g>
+                  )}
+                </g>
               </g>
-            </g>
-          );
-        })}
+            );
+          })}
+        </g>
       </g>
     </svg>
   );

@@ -22,7 +22,7 @@ export const RATIO = 0.45;
 /** Relative bow of every road; clears the inward-facing child of each corner. */
 export const BOW = 0.32;
 
-const RADII = [34, 27, 19, 4.5];
+const RADII = [34, 27, 21, 4.5];
 const FONTS = [26, 21, 15, 15];
 const STROKES = [2.6, 2.6, 1.7, 0.9];
 

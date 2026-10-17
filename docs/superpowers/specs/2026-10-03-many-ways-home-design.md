@@ -89,7 +89,8 @@ interface WaysHomeElement extends ElementBase {
 - Every arrow connects fully and bows the same way (a pinwheel at every level), so each road passes beside its corner's inward-facing child and the layout stays self-similar for the zoom.
 - The fourth level is hidden at rest and fades in during a zoom (slide 6 shows it as faint dots).
 - Labels: the centre node in the display serif, every other node in the UI sans (as on the other cards). Accidentals are set in a tight span, since the faces have no ♭/♯.
-- Legend: each colour's name and move ("Dominant V→I") sits in the corner that move points to. Toggleable per card.
+- Legend: each colour's name and move ("Dominant V→I") sits in the corner that move points to. Toggleable per card; hiding it scales the fractal up into the freed corners.
+- With a key set, every labelled layer (including the corners of corners) shows its function (I, IV, ♭VII…) under the chord name.
 - Glass surfaces: each node gets a subtle radial wash of its own colour, brighter top-left and deepening into a tinted rim (the inner shadow); never white.
 - Breadcrumb top-left, Explorer-style: `I › V › II`. A flip in the walk shows as a turn marker between crumbs. Clicking a crumb zooms back out to that level.
 - Bottom: a two-way switch, "Ways in ⇄ Homes".

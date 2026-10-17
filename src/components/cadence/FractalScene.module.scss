@@ -10,6 +10,11 @@
   transition: opacity var(--dur-med) var(--ease-out);
 }
 
+.scaled {
+  transform-origin: 300px 300px; // viewBox centre
+  transition: transform 0.6s var(--ease-in-out);
+}
+
 .node[data-clickable] {
   cursor: pointer;
 }
@@ -37,7 +42,9 @@
 }
 
 .sub {
-  fill: var(--text-muted);
+  // a step brighter than muted so it holds up on the coloured glass nodes
+  fill: var(--text-secondary);
+  opacity: 0.72;
   font-family: var(--font-body);
   font-weight: var(--weight-medium);
 }
