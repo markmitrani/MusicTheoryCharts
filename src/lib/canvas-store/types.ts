@@ -87,6 +87,16 @@ export interface WaysHomeElement extends ElementBase {
 }
 
 /**
+ * Roads: the circle of fifths as a road map around a centre key. Shows the
+ * centre's ways in, its homes, or both; neighbour roads run both ways.
+ */
+export interface RoadsElement extends ElementBase {
+  kind: 'roads';
+  centerKey: NoteName;
+  show: 'in' | 'out' | 'both';
+}
+
+/**
  * Named region drawn with the frame tool. Acts as a group: dragging it
  * moves every element fully enclosed in its area. Renders beneath elements.
  */
@@ -114,6 +124,7 @@ export type CanvasElement =
   | CircleElement
   | PitchAxisElement
   | WaysHomeElement
+  | RoadsElement
   | ImageElement
   | SectionElement
   | StubElement;

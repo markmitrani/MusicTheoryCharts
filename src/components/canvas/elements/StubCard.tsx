@@ -31,6 +31,7 @@ const MORE_KINDS = [
   { id: 'circle', label: 'Circle of Fifths' },
   { id: 'pitchaxis', label: 'Pitch Axis' },
   { id: 'wayshome', label: 'Ways Home' },
+  { id: 'roads', label: 'Roads' },
 ] as const;
 
 type StubKind =
@@ -40,7 +41,7 @@ type StubKind =
 const isMoreKind = (k: StubKind) => MORE_KINDS.some((m) => m.id === k);
 
 // "Instant" kinds need no root/type choice — confirm spawns them as-is.
-const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome'] as const;
+const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome', 'roads'] as const;
 const isInstantKind = (k: StubKind): k is (typeof INSTANT_KINDS)[number] =>
   (INSTANT_KINDS as readonly string[]).includes(k);
 
@@ -48,6 +49,7 @@ const INSTANT_LABEL: Record<string, string> = {
   circle: 'Circle of Fifths',
   pitchaxis: 'Pitch Axis',
   wayshome: 'Ways Home',
+  roads: 'Roads',
 };
 
 const INSTANT_NOTE: Record<string, string> = {
@@ -57,6 +59,8 @@ const INSTANT_NOTE: Record<string, string> = {
     "Bartók's pitch axis – the 12 notes grouped into tonic, subdominant and dominant functions, independent of mode. Confirm above to place it.",
   wayshome:
     'The many ways home – every chord’s four ways in and four homes, as a fractal you can zoom through. Opens with an explainer. Confirm above to place it.',
+  roads:
+    'The circle of fifths as a road map – every cadence a road, every key a stop. Neighbours share one road driven both ways. Confirm above to place it.',
 };
 
 /**

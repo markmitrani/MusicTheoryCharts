@@ -21,6 +21,7 @@ import { HarmonyCard } from './elements/HarmonyCard';
 import { CircleCard } from './elements/CircleCard';
 import { PitchAxisCard } from './elements/PitchAxisCard';
 import { WaysHomeCard } from './elements/WaysHomeCard';
+import { RoadsCard } from './elements/RoadsCard';
 import { ImageCard } from './elements/ImageCard';
 import { SectionCard } from './elements/SectionCard';
 import { StubCard } from './elements/StubCard';
@@ -330,6 +331,8 @@ export function CanvasApp() {
                 return <PitchAxisCard key={el.id} el={el} {...common} />;
               case 'wayshome':
                 return <WaysHomeCard key={el.id} el={el} {...common} />;
+              case 'roads':
+                return <RoadsCard key={el.id} el={el} {...common} />;
               case 'image':
                 return <ImageCard key={el.id} el={el} {...common} />;
               case 'stub':

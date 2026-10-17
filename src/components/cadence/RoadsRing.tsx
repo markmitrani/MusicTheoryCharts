@@ -5,7 +5,7 @@ import { gsap } from 'gsap';
 import { CADENCES, mod12, numeral, rootName, type CadenceType } from '@/lib/theory/cadence';
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import { useSurfaces } from '@/lib/use-surfaces';
-import { Glyphs } from './FractalScene';
+import { Glyphs, GlassGradient } from './FractalScene';
 import styles from './RoadsRing.module.scss';
 
 /** A directed road between two keys, pitch classes relative to the centre. */
@@ -36,21 +36,33 @@ const NODE_R = 31;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 /** Fifths steps from the centre for a relative pitch class (C→G is +1). */
 const fifthsOf = (pc: number) => mod12(pc * 7);
+const isNeighbour = (r: { from: number; to: number }) => {
+  const d = fifthsOf(r.to - r.from);
+  return d === 1 || d === 11;
+};
 
 function place(pc: number, rot: number) {
   const a = rad(-90 + fifthsOf(pc) * 30 + rot);
   return { x: C + R * Math.cos(a), y: C + R * Math.sin(a) };
 }
 
-/** Bowed road from a to b, curving to the left of travel so two-way pairs separate. */
-function roadPath(a: { x: number; y: number }, b: { x: number; y: number }) {
+/**
+ * Bowed road from a to b. Neighbour roads curve to the left of travel so the
+ * two directions of one road separate; longer roads curve toward the ring's
+ * centre so they never run through the stops in between.
+ */
+function roadPath(a: { x: number; y: number }, b: { x: number; y: number }, neighbours: boolean) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len = Math.hypot(dx, dy);
   const ux = dx / len;
   const uy = dy / len;
   const h = Math.min(0.22 * len, 36);
-  const q = { x: (a.x + b.x) / 2 + uy * h, y: (a.y + b.y) / 2 - ux * h };
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  const towardCentre = (C - mx) * uy - (C - my) * ux > 0 ? 1 : -1;
+  const side = neighbours ? 1 : towardCentre;
+  const q = { x: mx + uy * h * side, y: my - ux * h * side };
   const trim = (p: { x: number; y: number }, r: number) => {
     const vx = q.x - p.x;
     const vy = q.y - p.y;
@@ -117,20 +129,14 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
     <svg viewBox={`0 0 ${VIEW} ${VIEW}`} width="100%" role="img" aria-label={ariaLabel ?? 'Roads on the circle of fifths'} className={styles.svg}>
       {glass && (
         <defs>
-          <radialGradient id={`gloss${uid}`} cx="0.34" cy="0.3" r="0.62">
-            <stop offset="0" style={{ stopColor: 'var(--node-gloss)' }} />
-            <stop offset="1" style={{ stopColor: 'var(--node-gloss)', stopOpacity: 0 }} />
-          </radialGradient>
-          <radialGradient id={`rim${uid}`} cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0.62" style={{ stopColor: 'var(--node-rim)', stopOpacity: 0 }} />
-            <stop offset="1" style={{ stopColor: 'var(--node-rim)' }} />
-          </radialGradient>
+          <GlassGradient id={`glass${uid}`} color="var(--accent-warm)" quiet />
+          <GlassGradient id={`glassc${uid}`} color="var(--accent)" quiet />
         </defs>
       )}
       <circle cx={C} cy={C} r={R} className={styles.ring} />
 
       {ghosts.filter((g) => !isLive(g)).map((g) => {
-        const p = roadPath(place(g.from, rot), place(g.to, rot));
+        const p = roadPath(place(g.from, rot), place(g.to, rot), true);
         return (
           <g key={`g${g.from}-${g.to}`} className={styles.ghost} style={{ color: CADENCES[g.type].colorVar }}>
             <path d={p.d} />
@@ -140,7 +146,7 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
       })}
 
       {roads.map((r, i) => {
-        const p = roadPath(place(r.from, rot), place(r.to, rot));
+        const p = roadPath(place(r.from, rot), place(r.to, rot), isNeighbour(r));
         const dim = hover !== null && hover !== i;
         return (
           <g
@@ -193,12 +199,7 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
             }
           >
             <circle r={NODE_R} className={styles.disc} />
-            {glass && (
-              <>
-                <circle r={NODE_R} fill={`url(#rim${uid})`} pointerEvents="none" />
-                <circle r={NODE_R} fill={`url(#gloss${uid})`} pointerEvents="none" />
-              </>
-            )}
+            {glass && <circle r={NODE_R - 0.7} fill={`url(#${isCentre ? 'glassc' : 'glass'}${uid})`} pointerEvents="none" />}
             <text className={styles.name} data-serif={isCentre || undefined} y={-5} dominantBaseline="central" textAnchor="middle">
               <Glyphs text={rootName(pc, centre)} />
             </text>

@@ -15,6 +15,7 @@ import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
  *   pitchax = p + center1 + x2 + y2             (6 chars)
  *   wayshome = w + flags1 + key1 + x2 + y2 + steps (7 + n chars; flags = out + noLegend*2;
  *             key = pitch class, or 'c' functional; step = dirBit*4 + cadence index)
+ *   roads   = r + center1 + show1 + x2 + y2     (7 chars; show 0 both / 1 in / 2 out)
  *   section = f + x2 + y2 + w2 + h2 + escapedName (9+ chars; name may be empty)
  *
  * v2 vs v1: pitched elements encode only the pitch class (pc1, 1 char) — the
@@ -48,6 +49,7 @@ const BUCKET_V2 = 24;
 const BUCKET_V1 = 16;
 const DEFAULT_OCTAVE = 3;
 const MAX_WALK = 12;
+const ROADS_SHOW = ['both', 'in', 'out'] as const;
 
 export interface DocSnapshot {
   pages: readonly Page[];
@@ -90,7 +92,7 @@ export function encodeDoc(doc: DocSnapshot): string {
         e,
       ): e is Extract<
         CanvasElement,
-        { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'pitchaxis' | 'wayshome' | 'section' }
+        { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'pitchaxis' | 'wayshome' | 'roads' | 'section' }
       > =>
         e.kind === 'scale' ||
         e.kind === 'chord' ||
@@ -98,6 +100,7 @@ export function encodeDoc(doc: DocSnapshot): string {
         e.kind === 'circle' ||
         e.kind === 'pitchaxis' ||
         e.kind === 'wayshome' ||
+        e.kind === 'roads' ||
         e.kind === 'section',
     );
     const minX = Math.min(...serializable.map((e) => e.x), 0);
@@ -118,6 +121,9 @@ export function encodeDoc(doc: DocSnapshot): string {
         }
         if (e.kind === 'pitchaxis') {
           return `p${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${x}${y}`;
+        }
+        if (e.kind === 'roads') {
+          return `r${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${ROADS_SHOW.indexOf(e.show)}${x}${y}`;
         }
         if (e.kind === 'wayshome') {
           const key = e.key ? b36(NOTE_NAMES.indexOf(e.key), 1) : 'c';
@@ -192,6 +198,15 @@ function decodeV2(body: string): DecodedDoc | null {
           return {
             id: freshId(), kind: 'pitchaxis', z: i + 1, centerKey: center,
             x: px(code.slice(2, 4)), y: px(code.slice(4, 6)),
+          };
+        }
+        if (kind === 'r' && code.length === 7) {
+          const center = parsePc(code[1]);
+          const show = ROADS_SHOW[parseInt(code[2], 36)];
+          if (!center || !show) throw new Error(`bad roads: ${code}`);
+          return {
+            id: freshId(), kind: 'roads', z: i + 1, centerKey: center, show,
+            x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };
         }
         if (kind === 'w' && code.length >= 7 && code.length <= 7 + MAX_WALK) {

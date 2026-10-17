@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { CADENCES, type CadenceType, type Direction, type WalkStep } from '@/lib/theory/cadence';
+import { CADENCES, CADENCE_TYPES, type CadenceType, type Direction, type WalkStep } from '@/lib/theory/cadence';
 import { useSurfaces } from '@/lib/use-surfaces';
 import { buildScene, VIEW, type Frame } from './geometry';
 import styles from './FractalScene.module.scss';
@@ -72,6 +72,22 @@ function plan(from: Frame, to: Frame): Plan[] {
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/**
+ * Glass-mode node fill: a subtle radial wash of the node's own colour,
+ * brighter toward the top-left and deepening into a tinted rim (the inner
+ * shadow). Object-bounding-box units, so one gradient fits every radius.
+ */
+export function GlassGradient({ id, color, quiet = false }: { id: string; color: string; quiet?: boolean }) {
+  const [hi, mid, rim] = quiet ? [20, 6, 14] : [40, 22, 34];
+  return (
+    <radialGradient id={id} cx="0.36" cy="0.32" r="0.7" fx="0.32" fy="0.28">
+      <stop offset="0" style={{ stopColor: `color-mix(in srgb, ${color} ${hi}%, var(--element-fill))` }} />
+      <stop offset="0.72" style={{ stopColor: `color-mix(in srgb, ${color} ${mid}%, var(--element-fill))` }} />
+      <stop offset="1" style={{ stopColor: `color-mix(in srgb, ${color} ${rim}%, var(--canvas-bg))` }} />
+    </radialGradient>
+  );
+}
 
 /**
  * Numerals and names with their accidentals set tight: the display face has
@@ -250,14 +266,10 @@ export function FractalScene({
     >
       {glass && (
         <defs>
-          <radialGradient id={`gloss${uid}`} cx="0.34" cy="0.3" r="0.62">
-            <stop offset="0" style={{ stopColor: 'var(--node-gloss)' }} />
-            <stop offset="1" style={{ stopColor: 'var(--node-gloss)', stopOpacity: 0 }} />
-          </radialGradient>
-          <radialGradient id={`rim${uid}`} cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0.62" style={{ stopColor: 'var(--node-rim)', stopOpacity: 0 }} />
-            <stop offset="1" style={{ stopColor: 'var(--node-rim)' }} />
-          </radialGradient>
+          {CADENCE_TYPES.map((t) => (
+            <GlassGradient key={t} id={`glass-${t}${uid}`} color={CADENCES[t].colorVar} />
+          ))}
+          <GlassGradient id={`glass-centre${uid}`} color="var(--accent-warm)" quiet />
         </defs>
       )}
       <g>
@@ -326,8 +338,20 @@ export function FractalScene({
                 />
                 {glass && n.a < 2.5 && (
                   <>
-                    <circle r={n.r} fill={`url(#rim${uid})`} pointerEvents="none" />
-                    <circle r={n.r} fill={`url(#gloss${uid})`} pointerEvents="none" />
+                    {n.type && (
+                      <circle
+                        r={Math.max(0, n.r - 0.7)}
+                        fill={`url(#glass-${n.type}${uid})`}
+                        opacity={1 - centreness}
+                        pointerEvents="none"
+                      />
+                    )}
+                    <circle
+                      r={Math.max(0, n.r - 0.7)}
+                      fill={`url(#glass-centre${uid})`}
+                      opacity={n.type ? centreness : 1}
+                      pointerEvents="none"
+                    />
                   </>
                 )}
                 {n.labelOpacity > 0.01 && (

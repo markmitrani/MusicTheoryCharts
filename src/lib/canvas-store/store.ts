@@ -103,7 +103,7 @@ const cloneDoc = (s: DocState): DocState => ({
 const MAX_HISTORY = 100;
 
 /** Stub kinds that spawn without a root/type choice. */
-const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome'];
+const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome', 'roads'];
 
 export function createCanvasStore() {
   const firstPage: Page = { id: newId(), name: '', elements: [] };
@@ -176,6 +176,8 @@ export function createCanvasStore() {
               return { ...pos, kind: 'pitchaxis', centerKey: 'C' };
             case 'wayshome':
               return { ...pos, kind: 'wayshome', walk: [], dir: 'in', key: null, showLegend: true };
+            case 'roads':
+              return { ...pos, kind: 'roads', centerKey: 'C', show: 'both' };
             case 'chord':
               return { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false };
             case 'harmony':
