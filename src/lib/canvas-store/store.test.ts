@@ -94,6 +94,17 @@ describe('canvas store', () => {
     expect(store.getState().selection.has(stubId)).toBe(true);
   });
 
+  it('confirms instant stubs into rootless elements', () => {
+    const id = store.getState().addElement({ kind: 'stub', x: 0, y: 0, root: null, typeId: 'wayshome:default' });
+    store.getState().confirmStub(id);
+    expect(store.getState().activePage().elements[0]).toMatchObject({
+      kind: 'wayshome',
+      walk: [],
+      dir: 'in',
+      key: null,
+    });
+  });
+
   it('z-order: bring forward / send backward swap neighbors', () => {
     const a = store.getState().addElement(chord());
     const b = store.getState().addElement(chord({ x: 300 }));

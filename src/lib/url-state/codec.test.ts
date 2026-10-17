@@ -9,6 +9,23 @@ const page = (name: string, elements: Page['elements']): Page => ({
 });
 
 describe('url codec', () => {
+  it('round-trips Ways Home walks, direction and key', () => {
+    const walk12 = Array.from({ length: 12 }, (_, i) => ({
+      dir: i % 2 ? ('out' as const) : ('in' as const),
+      type: (['dominant', 'plagal', 'backdoor', 'tritone'] as const)[i % 4],
+    }));
+    const cases = [
+      { walk: [], dir: 'in' as const, key: null },
+      { walk: [{ dir: 'in' as const, type: 'tritone' as const }], dir: 'out' as const, key: 'D#' as const },
+      { walk: walk12, dir: 'in' as const, key: 'C' as const },
+    ];
+    for (const c of cases) {
+      const doc = { activePageId: 'p-w', pages: [page('w', [{ id: 'w', kind: 'wayshome', x: 0, y: 0, z: 1, ...c }])] } as const;
+      const decoded = decodeDoc(encodeDoc(doc))!;
+      expect(decoded.pages[0].elements[0]).toMatchObject({ kind: 'wayshome', ...c });
+    }
+  });
+
   it('round-trips pages, names, chords, and scales', () => {
     const doc = {
       activePageId: 'p-Voicings',

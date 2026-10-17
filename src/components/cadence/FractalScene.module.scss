@@ -1,0 +1,93 @@
+.svg {
+  display: block;
+  overflow: hidden; // zooms fly nodes past the edge; keep them inside the card
+  user-select: none;
+}
+
+// Hover dimming eases only at rest; mid-zoom the camera drives opacity per frame.
+.svg[data-idle] .node,
+.svg[data-idle] .edge {
+  transition: opacity var(--dur-med) var(--ease-out);
+}
+
+.node[data-clickable] {
+  cursor: pointer;
+}
+
+.label {
+  fill: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+}
+
+.acc {
+  font-family: var(--font-body);
+  font-size: 0.78em;
+  font-weight: 400;
+}
+
+.sub {
+  fill: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+}
+
+.pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 0.6s var(--ease-out) 0.08s forwards;
+}
+
+.tipIn {
+  opacity: 0;
+  animation: fadeIn 0.22s var(--ease-out) 0.5s forwards;
+}
+
+.labelIn {
+  // backwards only: the label's own opacity attribute must win once it settles
+  animation: fadeFrom 0.35s var(--ease-out) backwards;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeFrom {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .draw,
+  .tipIn,
+  .labelIn {
+    animation-duration: 1ms;
+    animation-delay: 0s;
+  }
+}

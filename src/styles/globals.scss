@@ -57,6 +57,14 @@
   --axis-subdominant: #c1272d;
   --axis-dominant: #e6a12c;
 
+  // Cadence types (Ways Home): tetradic quarters of the CMYK wheel. Warm on the
+  // dominant side (red V, yellow-orange ♭II), cool on the subdominant side
+  // (green IV, blue-violet ♭VII); complements sit across the diagonals.
+  --cadence-dominant: #e5484d;
+  --cadence-tritone: #f5c534;
+  --cadence-plagal: #46b97a;
+  --cadence-backdoor: #8a7cf5;
+
   // piano
   --key-white: #f4f0ea;
   --key-black: #1a1416;
@@ -164,6 +172,12 @@
   --axis-tonic: #013a7a;
   --axis-subdominant: #b71c2b;
   --axis-dominant: #c8851a;
+
+  // Cadence types (Ways Home), deepened for contrast on the light canvas.
+  --cadence-dominant: #d13438;
+  --cadence-tritone: #d9a20f;
+  --cadence-plagal: #1f9d61;
+  --cadence-backdoor: #5b4fd6;
 
   // piano
   --key-white: #ffffff;

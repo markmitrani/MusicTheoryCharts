@@ -1,0 +1,43 @@
+.wrap {
+  width: 480px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 30px;
+  margin-bottom: 4px;
+}
+
+.explainBtn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--element-stroke);
+  background: var(--element-fill);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.stage {
+  position: relative;
+}
+
+.bottomBar {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}

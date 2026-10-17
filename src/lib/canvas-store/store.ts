@@ -102,6 +102,9 @@ const cloneDoc = (s: DocState): DocState => ({
 
 const MAX_HISTORY = 100;
 
+/** Stub kinds that spawn without a root/type choice. */
+const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome'];
+
 export function createCanvasStore() {
   const firstPage: Page = { id: newId(), name: '', elements: [] };
   const undoStack: DocState[] = [];
@@ -160,21 +163,27 @@ export function createCanvasStore() {
         const stub = get().activePage().elements.find((e) => e.id === id);
         if (!stub || stub.kind !== 'stub' || !stub.typeId) return;
         const [kind, typeId] = stub.typeId.split(':');
-        const rootless = kind === 'circle' || kind === 'pitchaxis';
-        if (!rootless && !stub.root) return; // circle / pitch axis need no root
+        const rootless = INSTANT_KINDS.includes(kind);
+        if (!rootless && !stub.root) return; // instant kinds need no root
         snapshot();
         const pos = { id: stub.id, x: stub.x, y: stub.y, z: stub.z };
         const base = { ...pos, root: stub.root!, octave: 3 };
-        const real: CanvasElement =
-          kind === 'circle'
-            ? { ...pos, kind: 'circle', centerKey: 'C', showSignatures: false, showRelativeMinor: false }
-            : kind === 'pitchaxis'
-              ? { ...pos, kind: 'pitchaxis', centerKey: 'C' }
-              : kind === 'chord'
-                ? { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false }
-                : kind === 'harmony'
-                  ? { ...base, kind: 'harmony', scaleId: typeId }
-                  : { ...base, kind: 'scale', scaleId: typeId };
+        const real = ((): CanvasElement => {
+          switch (kind) {
+            case 'circle':
+              return { ...pos, kind: 'circle', centerKey: 'C', showSignatures: false, showRelativeMinor: false };
+            case 'pitchaxis':
+              return { ...pos, kind: 'pitchaxis', centerKey: 'C' };
+            case 'wayshome':
+              return { ...pos, kind: 'wayshome', walk: [], dir: 'in', key: null };
+            case 'chord':
+              return { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false };
+            case 'harmony':
+              return { ...base, kind: 'harmony', scaleId: typeId };
+            default:
+              return { ...base, kind: 'scale', scaleId: typeId };
+          }
+        })();
         mutatePage((p) => ({
           ...p,
           elements: p.elements.map((e) => (e.id === id ? real : e)),
