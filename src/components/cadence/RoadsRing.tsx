@@ -5,7 +5,7 @@ import { gsap } from 'gsap';
 import { CADENCES, mod12, numeral, rootName, type CadenceType } from '@/lib/theory/cadence';
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import { useSurfaces } from '@/lib/use-surfaces';
-import { Glyphs, GlassGradient } from './FractalScene';
+import { Glyphs, GlassGradient, HaloFilter } from './FractalScene';
 import styles from './RoadsRing.module.scss';
 
 /** A stop lit while its chord sounds; `road` (see roadId) carries the travelling pulse. */
@@ -219,6 +219,9 @@ export function RoadsRing({
           <GlassGradient id={`glassc${uid}`} color="var(--accent)" quiet />
         </defs>
       )}
+      <defs>
+        <HaloFilter id={`halo${uid}`} />
+      </defs>
       <circle cx={C} cy={C} r={R} className={styles.ring} />
 
       {ghosts.filter((g) => !isLive(g)).map((g) => {
@@ -302,7 +305,7 @@ export function RoadsRing({
               data-lit={isLit || undefined}
             >
               <g className={styles.haloWrap}>
-                <circle r={NODE_R} className={styles.halo} />
+                <circle r={NODE_R} className={styles.halo} filter={`url(#halo${uid})`} />
               </g>
               <circle r={NODE_R} className={styles.disc} />
               {glass && (

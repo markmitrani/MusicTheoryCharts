@@ -2,7 +2,7 @@
 
 .svg {
   display: block;
-  overflow: hidden;
+  overflow: visible; // the top stop's glow spreads past the edge
   user-select: none;
 }
 

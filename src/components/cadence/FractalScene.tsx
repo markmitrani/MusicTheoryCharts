@@ -82,6 +82,15 @@ function plan(from: Frame, to: Frame): Plan[] {
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const DOUBLE_CLICK_MS = 240;
 
+/** Soft blur for the playing halo, with room for it to spread past small nodes. */
+export function HaloFilter({ id }: { id: string }) {
+  return (
+    <filter id={id} x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="4" />
+    </filter>
+  );
+}
+
 /**
  * Glass-mode node fill: a subtle radial wash of the node's own colour,
  * brighter toward the top-left and deepening into a tinted rim (the inner
@@ -298,6 +307,9 @@ export function FractalScene({
       data-idle={idle || undefined}
       style={{ opacity: fade }}
     >
+      <defs>
+        <HaloFilter id={`halo${uid}`} />
+      </defs>
       {glass && (
         <defs>
           {CADENCE_TYPES.map((t) => (
@@ -404,7 +416,7 @@ export function FractalScene({
                   >
                     {n.a < 2.5 && (
                       <g className={styles.haloWrap}>
-                        <circle r={n.r} className={styles.halo} />
+                        <circle r={n.r} className={styles.halo} filter={`url(#halo${uid})`} />
                       </g>
                     )}
                     <circle
