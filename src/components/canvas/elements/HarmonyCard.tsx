@@ -86,7 +86,7 @@ export function HarmonyCard({ el, selected, soloSelected }: HarmonyCardProps) {
             setExpanded((v) => !v);
           }}
         >
-          <ChevronDownIcon width={18} height={18} />
+          <ChevronDownIcon width={12} height={12} />
         </button>
       }
     >

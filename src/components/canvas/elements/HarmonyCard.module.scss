@@ -151,50 +151,60 @@
   color: var(--text-primary);
 }
 
-// Expand toggle: centered under the card, shown only when focused.
+// Drawer tab: hangs from the card's bottom edge, shown only when focused.
+// top offsets the selected card's -2px lift so the tab stays fused to it.
 .expandToggle {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% - 2px);
   left: 50%;
   translate: -50% 0;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--hairline);
-  background: var(--chrome-fill);
-  backdrop-filter: blur(var(--chrome-blur));
+  width: 64px;
+  height: 13px;
+  border: 1px solid var(--element-stroke-selected);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
   color: var(--text-secondary);
-  box-shadow: var(--shadow-sm);
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
-    rotate var(--dur-med) var(--ease-out);
+  transform-origin: top;
+  animation: drawerIn var(--dur-med) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out);
+
+  svg {
+    transition: rotate var(--dur-med) var(--ease-out);
+  }
 
   &:hover {
     color: var(--accent);
-    border-color: var(--element-stroke-hover);
   }
 
-  &[data-open] {
+  &[data-open] svg {
     rotate: 180deg;
   }
 
-  // Larger tap target on phones without growing the visible button.
+  // Larger tap target on phones without growing the visible tab.
   @media (max-width: 640px) {
     &::before {
       content: '';
       position: absolute;
-      inset: -10px;
+      inset: -4px -12px -8px;
     }
   }
 }
 
-// Leaves room for the toggle between card and panel.
+@keyframes drawerIn {
+  from {
+    scale: 1 0;
+    opacity: 0;
+  }
+}
+
+// Clears the drawer tab, so the chords stay close once it hides.
 .chordPanel {
   position: absolute;
-  top: calc(100% + 54px);
+  top: calc(100% + 22px);
   left: 50%;
   translate: -50% 0;
   display: flex;
