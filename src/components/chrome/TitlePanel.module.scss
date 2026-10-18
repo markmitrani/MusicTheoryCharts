@@ -131,3 +131,43 @@
     background: var(--accent-warm-soft);
   }
 }
+
+// Phone: full-width, clears the corner buttons and the toolbar, scrolls inside.
+@media (max-width: 640px) {
+  .panel {
+    top: 66px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-height: calc(100dvh - 66px - 100px);
+    padding: 20px 20px 18px;
+    z-index: 105; // over the page rail
+  }
+
+  .bulb {
+    top: 66px;
+    right: 16px;
+  }
+
+  .title {
+    font-size: var(--text-xl);
+  }
+
+  .body p {
+    margin-top: 12px;
+    line-height: 1.55;
+  }
+
+  .body .featuresLead {
+    margin-top: 14px;
+  }
+
+  .body ul li {
+    line-height: 1.5;
+  }
+
+  // Keyboard shortcuts mean nothing on a phone.
+  .shortcutsBtn {
+    display: none;
+  }
+}

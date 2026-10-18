@@ -17,7 +17,7 @@ class AudioEngine implements AudioSink {
   private starting = false;
   private volume = 0.9;
   private muted = false;
-  private sound: SoundId = 'pad';
+  private sound: SoundId = 'piano';
 
   private master: Tone.Gain;
   private limiter: Tone.Limiter;
@@ -36,6 +36,14 @@ class AudioEngine implements AudioSink {
   // reverb for an expansive shimmer.
   private pianoFlanger: Tone.Chorus;
   private piano: Tone.Sampler;
+  // Electric piano: sampled Rhodes-style EP (FluidR3 GM, CC BY 3.0) through
+  // light drive and a stereo tremolo, like a Suitcase. Samples load lazily on
+  // first selection so boot doesn't pay for them.
+  private epDrive: Tone.Chebyshev;
+  private epTremolo: Tone.Tremolo;
+  private epChorus: Tone.Chorus;
+  private epiano: Tone.Sampler | null = null;
+  private epianoLoaded = false;
 
   constructor() {
     this.master = new Tone.Gain(this.volume);
@@ -96,10 +104,17 @@ class AudioEngine implements AudioSink {
     this.piano.chain(this.pianoFlanger, this.master);
     this.pianoFlanger.connect(this.reverbSend);
 
+    this.epDrive = new Tone.Chebyshev({ order: 2, wet: 0.12 });
+    this.epTremolo = new Tone.Tremolo({ frequency: 4.5, depth: 0.4, spread: 180 });
+    this.epChorus = new Tone.Chorus({ frequency: 0.5, delayTime: 3, depth: 0.4, wet: 0.2 });
+    this.epDrive.chain(this.epTremolo, this.epChorus, this.master);
+    this.epChorus.connect(this.reverbSend);
+
     // Feed the analyser the dry voices only (post-chorus/flanger, pre-reverb),
     // so the harmonics wave tracks the notes and fades with their release.
     this.chorus.connect(this.waveform);
     this.pianoFlanger.connect(this.waveform);
+    this.epChorus.connect(this.waveform);
     this.sub.connect(this.waveform);
 
     // barely-there triangle pluck for chrome interactions (reference ui.js feel)
@@ -124,6 +139,8 @@ class AudioEngine implements AudioSink {
       this.padFilterLFO.start();
       this.chorus.start();
       this.pianoFlanger.start();
+      this.epTremolo.start();
+      this.epChorus.start();
       this.started = true;
     } finally {
       this.starting = false;
@@ -132,6 +149,29 @@ class AudioEngine implements AudioSink {
 
   setSound(sound: SoundId) {
     this.sound = sound;
+    if (sound === 'epiano') this.loadEpiano();
+  }
+
+  private loadEpiano() {
+    if (this.epiano) return;
+    this.epiano = new Tone.Sampler({
+      urls: {
+        A0: 'A0.mp3', C1: 'C1.mp3', 'D#1': 'Ds1.mp3', 'F#1': 'Fs1.mp3', A1: 'A1.mp3',
+        C2: 'C2.mp3', 'D#2': 'Ds2.mp3', 'F#2': 'Fs2.mp3', A2: 'A2.mp3',
+        C3: 'C3.mp3', 'D#3': 'Ds3.mp3', 'F#3': 'Fs3.mp3', A3: 'A3.mp3',
+        C4: 'C4.mp3', 'D#4': 'Ds4.mp3', 'F#4': 'Fs4.mp3', A4: 'A4.mp3',
+        C5: 'C5.mp3', 'D#5': 'Ds5.mp3', 'F#5': 'Fs5.mp3', A5: 'A5.mp3',
+        C6: 'C6.mp3', 'D#6': 'Ds6.mp3', 'F#6': 'Fs6.mp3', A6: 'A6.mp3',
+        C7: 'C7.mp3',
+      },
+      baseUrl: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/samples/epiano/`,
+      release: 0.8,
+      onload: () => {
+        this.epianoLoaded = true;
+      },
+    });
+    this.epiano.volume.value = 1;
+    this.epiano.connect(this.epDrive);
   }
 
   /** Latest time-domain samples (-1..1) from the master bus; ~silence when idle. */
@@ -139,8 +179,9 @@ class AudioEngine implements AudioSink {
     return this.waveform.getValue() as Float32Array;
   }
 
-  /** The polyphonic voice for the active sound (pad synth or sampled piano). */
+  /** The polyphonic voice for the active sound; EP falls back to piano while its samples load. */
   private get voice(): Tone.PolySynth<Tone.Synth> | Tone.Sampler {
+    if (this.sound === 'epiano') return this.epianoLoaded && this.epiano ? this.epiano : this.piano;
     return this.sound === 'piano' ? this.piano : this.pad;
   }
 
@@ -159,6 +200,7 @@ class AudioEngine implements AudioSink {
     if (!this.started) return;
     this.pad.releaseAll(Tone.now());
     this.piano.releaseAll(Tone.now());
+    this.epiano?.releaseAll(Tone.now());
     this.sub.triggerRelease(Tone.now());
   }
 

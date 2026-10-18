@@ -1,6 +1,8 @@
+@use './lit' as *;
+
 .svg {
   display: block;
-  overflow: hidden;
+  overflow: visible; // the top stop's glow spreads past the edge
   user-select: none;
 }
 
@@ -135,3 +137,6 @@
     animation-delay: 0s;
   }
 }
+
+// Last, so a lit stop's outline beats the resting centre/quiet rings.
+@include lit-parts;

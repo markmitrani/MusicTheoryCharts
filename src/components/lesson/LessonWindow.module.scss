@@ -130,3 +130,49 @@
     translate: 0 10px;
   }
 }
+
+// Phone: near-full-screen window; the slide scrolls, arrows sit by the dots.
+@media (max-width: 640px) {
+  .backdrop {
+    padding: 6px;
+  }
+
+  .window {
+    width: 100%;
+    height: calc(100dvh - 12px);
+    padding: 44px 12px 8px;
+    border-radius: var(--radius-md);
+  }
+
+  .body {
+    overflow-y: auto;
+    touch-action: pan-y;
+  }
+
+  .close {
+    top: 8px;
+    right: 8px;
+  }
+
+  .arrow {
+    top: auto;
+    bottom: 6px;
+    width: 36px;
+    height: 36px;
+    translate: none;
+  }
+
+  .prev {
+    left: 8px;
+  }
+
+  .next {
+    right: 8px;
+  }
+
+  .dots {
+    min-height: 36px;
+    align-items: center;
+    padding-top: 6px;
+  }
+}

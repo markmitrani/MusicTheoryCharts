@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { useIsMobile } from '@/lib/use-mobile';
 import { uiTick } from '@/lib/playback/playback';
 import { PlusIcon } from './icons';
 import styles from './PageRail.module.scss';
@@ -29,6 +30,11 @@ const barWidth = (distance: number, hovered: boolean) => {
 export function PageRail() {
   const pages = useCanvas((s) => s.pages);
   const activePageId = useCanvas((s) => s.activePageId);
+  // Phone: step back while an element is selected or being added; it clashes otherwise.
+  const busy = useCanvas(
+    (s) => s.selection.size > 0 || s.activePage().elements.some((el) => el.kind === 'stub'),
+  );
+  const recede = useIsMobile() && busy;
   const [hovered, setHovered] = useState<string | null>(null);
   // Step state: resting vs expanded. Flipped once the pointer crosses the
   // proximity threshold; CSS eases the size/gap/label change.
@@ -158,6 +164,7 @@ export function PageRail() {
       ref={railRef}
       className={styles.rail}
       aria-label="Pages"
+      data-recede={recede || undefined}
       style={{ gap: near ? GAP + 5 : GAP }}
     >
       <button

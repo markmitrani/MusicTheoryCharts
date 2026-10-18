@@ -158,3 +158,12 @@ $kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
     transform: scale(1.08);
   }
 }
+
+// Phone: open leftward so the menu stays on screen.
+@media (max-width: 640px) {
+  .moreMenu {
+    left: auto;
+    right: 0;
+    transform-origin: top right;
+  }
+}

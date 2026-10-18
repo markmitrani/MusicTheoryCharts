@@ -12,7 +12,7 @@ import {
 import type { RoadsElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { playProgression, uiTick } from '@/lib/playback/playback';
-import { RoadsRing, type Road } from '@/components/cadence/RoadsRing';
+import { RoadsRing, roadLights, type Road, type RingLight } from '@/components/cadence/RoadsRing';
 import { Acc } from '@/components/cadence/Acc';
 import { InfoIcon } from '@/components/chrome/icons';
 import { ElementShell } from '../ElementShell';
@@ -40,6 +40,7 @@ const MOVE = { dominant: 'V→I', plagal: 'IV→I', backdoor: '♭VII→I', trit
  * both ways (dominant in, plagal out). Double-click a key to make it the centre.
  */
 export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
+  const [playingStop, setPlayingStop] = useState<RingLight | null>(null);
   const [info, setInfo] = useState(false);
 
   const roads: Road[] = [
@@ -62,7 +63,15 @@ export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
       ],
       el.centerKey,
     );
-    playProgression(chords, { onStep: () => {}, onDone: () => {} }, CHORD_MS);
+    const lights = roadLights(road);
+    playProgression(
+      chords,
+      {
+        onStep: (j) => setPlayingStop(j < 0 ? null : (lights[j] ?? null)),
+        onDone: () => setPlayingStop(null),
+      },
+      CHORD_MS,
+    );
   };
 
   return (
@@ -111,6 +120,7 @@ export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
             centre={el.centerKey}
             roads={roads}
             onRoadClick={playRoad}
+            playing={playingStop}
             onKeyDoubleClick={(key) => {
               uiTick(1);
               update({ centerKey: key });

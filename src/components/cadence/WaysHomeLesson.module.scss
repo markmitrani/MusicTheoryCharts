@@ -160,3 +160,30 @@
     translate: 0 8px;
   }
 }
+
+// Phone: one scrolling column, text first, the visual below it.
+@media (max-width: 640px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    height: auto;
+  }
+
+  .text {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .stageCol {
+    --stage: 100cqw;
+    container-type: inline-size;
+    padding-bottom: 8px;
+  }
+
+  .explorerBar,
+  .switchRow {
+    &[data-hidden] {
+      display: none;
+    }
+  }
+}

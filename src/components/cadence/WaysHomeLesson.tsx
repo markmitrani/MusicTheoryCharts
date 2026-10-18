@@ -25,6 +25,7 @@ import { PianoKeys } from '@/components/canvas/PianoKeys';
 import { PlayButton } from '@/components/canvas/elements/PlayButton';
 import { CHORD_MS } from '@/components/canvas/elements/WaysHomeCard';
 import { CadenceStage } from './CadenceStage';
+import { moveLights, walkLights, type LitNode } from './lights';
 import { ChainStrip } from './ChainStrip';
 import { Breadcrumb } from './Breadcrumb';
 import { DirectionSwitch } from './DirectionSwitch';
@@ -32,7 +33,8 @@ import { CornerLegend } from './CornerLegend';
 import { Acc } from './Acc';
 import { KeyPicker } from './KeyPicker';
 import type { NodeLabel } from './FractalScene';
-import type { Road } from './RoadsRing';
+import { roadLights, type Road, type RingLight } from './RoadsRing';
+import { useIsMobile } from '@/lib/use-mobile';
 import styles from './WaysHomeLesson.module.scss';
 
 const NO_PITCHES = new Set<number>();
@@ -44,6 +46,7 @@ export function WaysHomeLesson() {
   const sourceId = useLesson((s) => s.sourceId);
   const slide = WAYS_HOME_SLIDES[slideIdx];
   const stage = slide.stage;
+  const mobile = useIsMobile();
 
   // The finale speaks the launching card's key; the narrative is in C.
   const sourceKey = (() => {
@@ -57,6 +60,8 @@ export function WaysHomeLesson() {
   const [growLevel, setGrowLevel] = useState(1);
   const [active, setActive] = useState<{ id: string; index: number } | null>(null);
   const [lit, setLit] = useState<ReadonlySet<number>>(NO_PITCHES);
+  const [playingNode, setPlayingNode] = useState<LitNode | null>(null);
+  const [playingStop, setPlayingStop] = useState<RingLight | null>(null);
 
   useEffect(() => {
     if (stage.scene !== 'fractal' || !stage.grow) return;
@@ -76,7 +81,8 @@ export function WaysHomeLesson() {
     [finale, finaleKey],
   );
 
-  const play = (id: string, chords: ChordSpec[]) => {
+  /** `lights`: the fractal node to light at each chord, when the chords live on the graph. */
+  const play = (id: string, chords: ChordSpec[], lights: LitNode[] = [], stops: RingLight[] = []) => {
     const voiced = voiceProgression(chords, key ?? 'C');
     playProgression(
       voiced,
@@ -84,10 +90,14 @@ export function WaysHomeLesson() {
         onStep: (i) => {
           setActive(i < 0 ? null : { id, index: i });
           setLit(i < 0 ? NO_PITCHES : new Set(voiced[i]));
+          setPlayingNode(i < 0 ? null : (lights[i] ?? null));
+          setPlayingStop(i < 0 ? null : (stops[i] ?? null));
         },
         onDone: () => {
           setActive(null);
           setLit(NO_PITCHES);
+          setPlayingNode(null);
+          setPlayingStop(null);
         },
       },
       CHORD_MS,
@@ -97,7 +107,7 @@ export function WaysHomeLesson() {
   const onNodeClick = (rel: CadenceType[]) => {
     const frame = finale ? explorer : stage.scene === 'fractal' ? stage : null;
     if (!frame) return;
-    play('node', runToProgression(walkPcs(frame.walk).at(-1)!, frame.dir, rel));
+    play('node', runToProgression(walkPcs(frame.walk).at(-1)!, frame.dir, rel), moveLights(frame.walk, frame.dir, rel));
   };
 
   const onNodeDoubleClick = (rel: CadenceType[]) => {
@@ -107,10 +117,15 @@ export function WaysHomeLesson() {
   };
 
   const onRoadClick = (road: Road) =>
-    play('road', [
-      { pc: road.from, quality: CADENCES[road.type].approachQuality },
-      { pc: road.to, quality: 'maj7' },
-    ]);
+    play(
+      'road',
+      [
+        { pc: road.from, quality: CADENCES[road.type].approachQuality },
+        { pc: road.to, quality: 'maj7' },
+      ],
+      [],
+      roadLights(road),
+    );
 
   const legendTypes =
     stage.scene === 'roads'
@@ -163,7 +178,11 @@ export function WaysHomeLesson() {
               <Acc text={slide.drill} />
             </p>
           </div>
-          {!finale && <p className={styles.hint}>Click any arrow or chord on the right to hear it.</p>}
+          {!finale && (
+            <p className={styles.hint}>
+              {mobile ? 'Tap any arrow or chord below to hear it.' : 'Click any arrow or chord on the right to hear it.'}
+            </p>
+          )}
         </article>
 
         <div className={styles.stageCol}>
@@ -193,7 +212,7 @@ export function WaysHomeLesson() {
                   'Functional'
                 )}
               </button>
-              <PlayButton playing={active?.id === 'walk'} onClick={() => play('walk', walkToProgression(explorer.walk))} />
+              <PlayButton playing={active?.id === 'walk'} onClick={() => play('walk', walkToProgression(explorer.walk), walkLights(explorer.walk))} />
               {picking && (
                 <KeyPicker
                   value={finaleKey}
@@ -212,6 +231,8 @@ export function WaysHomeLesson() {
               explorer={explorer}
               growLevel={growLevel}
               labelFor={labelFor}
+              playing={playingNode}
+              playingStop={playingStop}
               onNodeClick={onNodeClick}
               onNodeDoubleClick={onNodeDoubleClick}
               onRoadClick={onRoadClick}

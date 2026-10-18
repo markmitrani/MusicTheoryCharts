@@ -59,6 +59,12 @@ export const PlusIcon = (p: IconProps) => (
   </svg>
 );
 
+export const TrashIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12.5h11l1-12.5M9 7V4.5h6V7" />
+  </svg>
+);
+
 export const GearIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="3.2" />

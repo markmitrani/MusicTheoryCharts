@@ -150,3 +150,125 @@
   font-weight: var(--weight-medium);
   color: var(--text-primary);
 }
+
+// Drawer tab: hangs from the card's bottom edge, shown only when focused.
+// top offsets the selected card's -2px lift so the tab stays fused to it.
+.expandToggle {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 13px;
+  border: 1px solid var(--element-stroke-selected);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  color: var(--text-secondary);
+  transform-origin: top;
+  animation: drawerIn var(--dur-med) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out);
+
+  svg {
+    transition: rotate var(--dur-med) var(--ease-out);
+  }
+
+  &:hover {
+    color: var(--accent);
+  }
+
+  &[data-open] svg {
+    rotate: 180deg;
+  }
+
+  // Larger tap target on phones without growing the visible tab.
+  @media (max-width: 640px) {
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -4px -12px -8px;
+    }
+  }
+}
+
+@keyframes drawerIn {
+  from {
+    scale: 1 0;
+    opacity: 0;
+  }
+}
+
+// Clears the drawer tab, so the chords stay close once it hides.
+.chordPanel {
+  position: absolute;
+  top: calc(100% + 22px);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.chordRow {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.miniChord {
+  --chip-color: var(--degree-major);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 196px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--element-stroke);
+  background: var(--card-sheen), var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
+    translate var(--dur-fast) var(--ease-out);
+
+  &[data-quality='min'] {
+    --chip-color: var(--degree-minor);
+  }
+
+  &[data-quality='dim'] {
+    --chip-color: var(--degree-dim);
+  }
+
+  &[data-quality='aug'] {
+    --chip-color: var(--degree-aug);
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--chip-color) 60%, transparent);
+    translate: 0 -1px;
+  }
+
+  &[data-active] {
+    border-color: var(--chip-color);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--chip-color) 35%, transparent);
+  }
+}
+
+.miniLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.miniKeys {
+  display: block;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 6px 0;
+}

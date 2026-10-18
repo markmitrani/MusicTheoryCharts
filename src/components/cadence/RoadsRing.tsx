@@ -5,8 +5,30 @@ import { gsap } from 'gsap';
 import { CADENCES, mod12, numeral, rootName, type CadenceType } from '@/lib/theory/cadence';
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import { useSurfaces } from '@/lib/use-surfaces';
-import { Glyphs, GlassGradient } from './FractalScene';
+import { Glyphs, GlassGradient, HaloFilter } from './FractalScene';
 import styles from './RoadsRing.module.scss';
+
+/** A stop lit while its chord sounds; `road` (see roadId) carries the travelling pulse. */
+export interface RingLight {
+  pc: number;
+  color: string;
+  /** Carries the travelling pulse (first stop only). */
+  road?: string;
+  /** The road being played: the others dim until it ends. */
+  focus?: string;
+}
+
+export const roadId = (r: { from: number; to: number; type: CadenceType }) => `${r.from}-${r.to}-${r.type}`;
+
+/** Lights for playing a road: its start stop (with the pulse along it), then its end stop. */
+export function roadLights(r: Road): RingLight[] {
+  const color = CADENCES[r.type].colorVar;
+  const id = roadId(r);
+  return [
+    { pc: r.from, color, road: id, focus: id },
+    { pc: r.to, color, focus: id },
+  ];
+}
 
 /** A directed road between two keys, pitch classes relative to the centre. */
 export interface Road {
@@ -24,6 +46,8 @@ interface RoadsRingProps {
   /** Faint two-way roads between every pair of neighbours. */
   ghostNeighbours?: boolean;
   onRoadClick?: (road: Road) => void;
+  /** Stop sounding right now (pitch class relative to the centre), lit in its road's colour. */
+  playing?: RingLight | null;
   /** Double click a key: make it the centre. */
   onKeyDoubleClick?: (key: NoteName) => void;
   ariaLabel?: string;
@@ -140,8 +164,18 @@ function roadPath(a: Pt, b: Pt, type: CadenceType, neighbours: boolean) {
  * backdoor skips two stops; the tritone sub crosses the circle. The ring
  * rotates (shortest way) to keep the centre key on top.
  */
-export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick, onKeyDoubleClick, ariaLabel }: RoadsRingProps) {
+export function RoadsRing({
+  centre,
+  roads,
+  ghostNeighbours = false,
+  onRoadClick,
+  playing = null,
+  onKeyDoubleClick,
+  ariaLabel,
+}: RoadsRingProps) {
   const glass = useSurfaces() === 'glass';
+  // Last colour each stop glowed in, so it fades out in that colour.
+  const litColors = useRef(new Map<number, string>());
   const uid = useId().replace(/[:]/g, '');
   const centreIdx = NOTE_NAMES.indexOf(centre);
   // Rotation in degrees; labels and roads are recomputed per frame while it turns.
@@ -185,6 +219,9 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
           <GlassGradient id={`glassc${uid}`} color="var(--accent)" quiet />
         </defs>
       )}
+      <defs>
+        <HaloFilter id={`halo${uid}`} />
+      </defs>
       <circle cx={C} cy={C} r={R} className={styles.ring} />
 
       {ghosts.filter((g) => !isLive(g)).map((g) => {
@@ -199,7 +236,7 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
 
       {roads.map((r, i) => {
         const p = roadPath(place(r.from, rot), place(r.to, rot), r.type, isNeighbour(r));
-        const dim = hover !== null && hover !== i;
+        const dim = playing?.focus ? playing.focus !== roadId(r) : hover !== null && hover !== i;
         return (
           <g
             key={`${centre}-${r.from}-${r.to}-${r.type}`}
@@ -222,6 +259,16 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
             <path d={p.d} className={styles.hit} />
             <path d={p.d} pathLength={1} className={styles.line} />
             <polygon points={p.tip} className={styles.tip} />
+            {playing?.road === roadId(r) && (
+              <path
+                key={`t${playing.pc}`}
+                d={p.d}
+                pathLength={1}
+                strokeWidth={5.5}
+                className={styles.travel}
+                style={{ ['--lit' as string]: playing.color }}
+              />
+            )}
           </g>
         );
       })}
@@ -232,6 +279,8 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
         const isCentre = pc === 0;
         const touched = roads.some((r) => r.from === pc || r.to === pc);
         const key = NOTE_NAMES[mod12(centreIdx + pc)];
+        const isLit = playing?.pc === pc;
+        if (isLit) litColors.current.set(pc, playing!.color);
         return (
           <g
             key={i}
@@ -250,21 +299,31 @@ export function RoadsRing({ centre, roads, ghostNeighbours = false, onRoadClick,
                 : undefined
             }
           >
-            <circle r={NODE_R} className={styles.disc} />
-            {glass && (
-              <circle
-                r={NODE_R - 0.7}
-                fill={`url(#${isCentre ? 'glassc' : 'glass'}${uid})`}
-                opacity={!touched && !isCentre ? 0.45 : 1}
-                pointerEvents="none"
-              />
-            )}
-            <text className={styles.name} data-serif={isCentre || undefined} y={-5} dominantBaseline="central" textAnchor="middle">
-              <Glyphs text={rootName(pc, centre)} />
-            </text>
-            <text className={styles.numeral} y={13} dominantBaseline="central" textAnchor="middle">
-              {numeral(pc)}
-            </text>
+            <g
+              className={styles.bloom}
+              style={{ ['--lit' as string]: litColors.current.get(pc) ?? 'var(--accent)' }}
+              data-lit={isLit || undefined}
+            >
+              <g className={styles.haloWrap}>
+                <circle r={NODE_R} className={styles.halo} filter={`url(#halo${uid})`} />
+              </g>
+              <circle r={NODE_R} className={styles.disc} />
+              {glass && (
+                <circle
+                  r={NODE_R - 0.7}
+                  fill={`url(#${isCentre ? 'glassc' : 'glass'}${uid})`}
+                  opacity={!touched && !isCentre ? 0.45 : 1}
+                  pointerEvents="none"
+                />
+              )}
+              <circle r={NODE_R - 1.3} className={styles.litWash} />
+              <text className={styles.name} data-serif={isCentre || undefined} y={-5} dominantBaseline="central" textAnchor="middle">
+                <Glyphs text={rootName(pc, centre)} />
+              </text>
+              <text className={styles.numeral} y={13} dominantBaseline="central" textAnchor="middle">
+                {numeral(pc)}
+              </text>
+            </g>
           </g>
         );
       })}

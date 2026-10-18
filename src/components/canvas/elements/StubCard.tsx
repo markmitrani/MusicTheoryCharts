@@ -8,6 +8,8 @@ import { chordDisplayName } from '@/lib/theory/chords';
 import type { StubElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { ElementShell } from '../ElementShell';
+import { useCamera } from '../Viewport';
+import { isMobile } from '@/lib/use-mobile';
 import { TypePicker } from './TypePicker';
 import { CheckIcon, EllipsisIcon } from '@/components/chrome/icons';
 import chordStyles from './ChordCard.module.scss';
@@ -81,6 +83,31 @@ export function StubCard({ el }: { el: StubElement }) {
   // returns to life at 75%/s.
   const wrapRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(true);
+  const camera = useCamera();
+
+  // Phone: keep the whole stub on screen as it opens and whenever it resizes.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap || !isMobile()) return;
+    const fit = () => {
+      const { x, y } = canvasStore.getState().activePage().elements.find((e) => e.id === el.id) ?? el;
+      const box = { left: 12, top: 66, right: window.innerWidth - 12, bottom: window.innerHeight - 12 };
+      const s = camera.camera;
+      const w = wrap.offsetWidth;
+      const h = wrap.offsetHeight;
+      const onScreen =
+        s.k >= 0.75 &&
+        s.x + x * s.k >= box.left &&
+        s.y + y * s.k >= box.top &&
+        s.x + (x + w) * s.k <= box.right &&
+        s.y + (y + h) * s.k <= box.bottom;
+      if (!onScreen) camera.reveal({ x, y, w, h }, box);
+    };
+    const ro = new ResizeObserver(fit);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
@@ -157,6 +184,18 @@ export function StubCard({ el }: { el: StubElement }) {
               onClick={(e) => {
                 e.stopPropagation();
                 canvasStore.getState().confirmStub(el.id);
+                if (isMobile()) {
+                  // Phone: frame the placed element, which can be wider than the stub.
+                  requestAnimationFrame(() => {
+                    const shell = document.querySelector<HTMLElement>(`[data-element-id="${el.id}"]`);
+                    const placed = canvasStore.getState().activePage().elements.find((e) => e.id === el.id);
+                    if (!shell || !placed) return;
+                    camera.reveal(
+                      { x: placed.x, y: placed.y, w: shell.offsetWidth, h: shell.offsetHeight },
+                      { left: 12, top: 66, right: window.innerWidth - 12, bottom: window.innerHeight - 90 },
+                    );
+                  });
+                }
               }}
             >
               <CheckIcon width={16} height={16} />

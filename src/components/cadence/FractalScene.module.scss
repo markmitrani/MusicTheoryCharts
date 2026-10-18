@@ -1,7 +1,14 @@
+@use './lit' as *;
+
 .svg {
   display: block;
-  overflow: hidden; // zooms fly nodes past the edge; keep them inside the card
+  overflow: visible; // at rest, glows may spread past the edge
   user-select: none;
+
+  // Zooms fly nodes past the edge; keep them inside the card meanwhile.
+  &:not([data-idle]) {
+    overflow: hidden;
+  }
 }
 
 // Hover dimming eases only at rest; mid-zoom the camera drives opacity per frame.
@@ -18,6 +25,7 @@
 .node[data-clickable] {
   cursor: pointer;
 }
+
 
 // Sans everywhere, as on the other cards; only the centre takes the serif.
 .label {
@@ -108,3 +116,6 @@
     animation-delay: 0s;
   }
 }
+
+// Last, so the lit outline beats resting stroke rules.
+@include lit-parts;

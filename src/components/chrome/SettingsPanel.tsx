@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { useCanvas, canvasStore, type SoundId } from '@/lib/canvas-store/store';
 import {
   getTheme,
   setTheme,
@@ -10,7 +10,8 @@ import {
   type Theme,
   type Surfaces,
 } from '@/lib/theme';
-import { GearIcon, ShareIcon } from './icons';
+import { useIsMobile } from '@/lib/use-mobile';
+import { GearIcon, ShareIcon, TrashIcon } from './icons';
 import styles from './SettingsPanel.module.scss';
 
 /**
@@ -27,6 +28,8 @@ export function CornerActions() {
   const sound = useCanvas((s) => s.sound);
   const gradientMode = useCanvas((s) => s.gradientMode);
   const harmonicsViz = useCanvas((s) => s.harmonicsViz);
+  const deleteMode = useCanvas((s) => s.deleteMode);
+  const mobile = useIsMobile();
 
   // Sync from the DOM (set pre-paint by the no-flash script) on mount.
   useEffect(() => {
@@ -52,6 +55,18 @@ export function CornerActions() {
 
   return (
     <div className={styles.corner}>
+      {mobile && (
+        <button
+          className={styles.iconBtn}
+          aria-label="Delete mode: tap elements to delete them"
+          aria-pressed={deleteMode}
+          title="Delete mode"
+          data-danger={deleteMode || undefined}
+          onClick={() => canvasStore.getState().setDeleteMode(!deleteMode)}
+        >
+          <TrashIcon width={19} height={19} />
+        </button>
+      )}
       <button className={styles.iconBtn} aria-label="Copy share link" title="Share" onClick={share}>
         <ShareIcon width={19} height={19} />
       </button>
@@ -89,10 +104,11 @@ export function CornerActions() {
               className={styles.select}
               value={sound}
               aria-label="Playback sound"
-              onChange={(e) => canvasStore.getState().setSound(e.target.value as 'pad' | 'piano')}
+              onChange={(e) => canvasStore.getState().setSound(e.target.value as SoundId)}
             >
               <option value="pad">Pad</option>
               <option value="piano">Piano</option>
+              <option value="epiano">Electric Piano</option>
             </select>
           </label>
 

@@ -7,6 +7,7 @@ import type { CircleElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { uiTick } from '@/lib/playback/playback';
 import { ElementShell } from '../ElementShell';
+import { isMobile, useIsMobile } from '@/lib/use-mobile';
 import { PlusIcon, InfoIcon } from '@/components/chrome/icons';
 import chordStyles from './ChordCard.module.scss';
 import styles from './CircleCard.module.scss';
@@ -145,10 +146,13 @@ export function CircleCard({ el, selected, soloSelected }: CircleCardProps) {
     setMenuOpen(false);
     const s = canvasStore.getState();
     s.removeUnconfirmedStubs();
+    // Phone: no room beside the circle, so the stub drops in below it.
+    const shell = document.querySelector<HTMLElement>(`[data-element-id="${el.id}"]`);
+    const below = isMobile() && shell;
     s.addElement({
       kind: 'stub',
-      x: el.x + 440,
-      y: el.y + 40,
+      x: below ? el.x + (shell.offsetWidth - 300) / 2 : el.x + 440,
+      y: below ? el.y + shell.offsetHeight + 24 : el.y + 40,
       root: el.centerKey,
       typeId: null,
       kindHint: kind,
@@ -397,6 +401,8 @@ function KeySignatureStaff({ count, type }: { count: number; type: 'sharp' | 'fl
 
 function RadialMenu({ onPick }: { onPick: (kind: 'scale' | 'chord' | 'harmony') => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Phone: a straight row under the +, on the card instead of off-screen above it.
+  const row = useIsMobile();
 
   useEffect(() => {
     gsap.fromTo(
@@ -417,7 +423,7 @@ function RadialMenu({ onPick }: { onPick: (kind: 'scale' | 'chord' | 'harmony') 
   ];
 
   return (
-    <div ref={ref} className={styles.radial}>
+    <div ref={ref} className={row ? styles.radialRow : styles.radial}>
       {ITEMS.map(({ kind, label, angle }) => {
         const x = RADIUS * Math.cos(rad(angle));
         const y = RADIUS * Math.sin(rad(angle));
@@ -425,7 +431,7 @@ function RadialMenu({ onPick }: { onPick: (kind: 'scale' | 'chord' | 'harmony') 
           <button
             key={kind}
             className={styles.radialItem}
-            style={{ translate: `${x}px ${y}px` }}
+            style={row ? undefined : { translate: `${x}px ${y}px` }}
             onClick={(e) => {
               e.stopPropagation();
               onPick(kind);
