@@ -5,6 +5,10 @@ import { posKeyOf } from './geometry';
 export interface LitNode {
   key: string;
   color: string;
+  /** Road to the next chord (posKey of its child end), lit by a travelling pulse. */
+  road?: string;
+  /** Every node of the progression: kept bright while the rest of the graph dims. */
+  path?: string[];
 }
 
 /**
@@ -15,11 +19,16 @@ export interface LitNode {
  */
 export function moveLights(walk: WalkStep[], dir: Direction, rel: CadenceType[]): LitNode[] {
   const base = walk.map((s) => s.type);
-  return Array.from({ length: rel.length + 1 }, (_, j) => {
+  const lights = Array.from({ length: rel.length + 1 }, (_, j) => {
     const path = dir === 'in' ? rel.slice(0, rel.length - j) : rel.slice(0, j);
     const type = path.length ? path[path.length - 1] : rel[0];
-    return { key: posKeyOf([...base, ...path]), color: CADENCES[type].colorVar };
+    const last = j === rel.length;
+    // Roads are keyed by their child end: inward that's this node, outward the next one.
+    const road = last ? undefined : posKeyOf([...base, ...(dir === 'in' ? path : rel.slice(0, j + 1))]);
+    return { key: posKeyOf([...base, ...path]), color: CADENCES[type].colorVar, road };
   });
+  const path = lights.map((l) => l.key);
+  return lights.map((l) => ({ ...l, path }));
 }
 
 /** The walk's nodes in the order walkToProgression plays them (its last run). */
@@ -34,5 +43,11 @@ export function walkLights(walk: WalkStep[]): LitNode[] {
     color: CADENCES[i > start ? types[i - 1] : types[start]].colorVar,
   });
   const order = Array.from({ length: walk.length - start + 1 }, (_, j) => start + j);
-  return (last === 'in' ? order.reverse() : order).map(node);
+  const seq = last === 'in' ? order.reverse() : order;
+  const path = seq.map((i) => posKeyOf(types.slice(0, i)));
+  return seq.map((i, j) => {
+    const next = seq[j + 1];
+    const road = next === undefined ? undefined : posKeyOf(types.slice(0, Math.max(i, next)));
+    return { ...node(i), road, path };
+  });
 }

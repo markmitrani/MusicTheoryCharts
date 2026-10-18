@@ -5,7 +5,7 @@ import type { CadenceType, Direction, WalkStep } from '@/lib/theory/cadence';
 import type { StageState } from '@/lessons/ways-home';
 import { FractalScene, type NodeLabel } from './FractalScene';
 import type { LitNode } from './lights';
-import { RoadsRing, type Road } from './RoadsRing';
+import { RoadsRing, type Road, type RingLight } from './RoadsRing';
 import styles from './CadenceStage.module.scss';
 
 type FractalProps = { walk: WalkStep[]; dir: Direction; corners: CadenceType[] | null; maxLevel: number };
@@ -23,6 +23,8 @@ interface CadenceStageProps {
   scale?: number;
   /** Node sounding right now. */
   playing?: LitNode | null;
+  /** Roads-ring stop sounding right now. */
+  playingStop?: RingLight | null;
 }
 
 export const INTERLUDE_ROADS: Road[] = [
@@ -45,6 +47,7 @@ export function CadenceStage({
   onRoadClick,
   scale = 1,
   playing = null,
+  playingStop = null,
 }: CadenceStageProps) {
   const lastFractal = useRef<FractalProps>({ walk: [], dir: 'in', corners: ['dominant'], maxLevel: 1 });
   if (stage.scene === 'fractal') {
@@ -77,7 +80,7 @@ export function CadenceStage({
       </div>
       {roads && (
         <div className={`${styles.layer} ${styles.over}`}>
-          <RoadsRing centre="C" roads={INTERLUDE_ROADS} ghostNeighbours onRoadClick={onRoadClick} />
+          <RoadsRing centre="C" roads={INTERLUDE_ROADS} ghostNeighbours onRoadClick={onRoadClick} playing={playingStop} />
         </div>
       )}
     </div>

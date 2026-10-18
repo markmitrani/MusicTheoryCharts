@@ -98,7 +98,7 @@ interface WaysHomeElement extends ElementBase {
 **Interactions.**
 
 - Hover a node → its full path to the centre lights up; everything else dims.
-- Click a node → play the move(s) between it and the centre (e.g. V7→Imaj7, or centre→home when viewing homes). Each node lights as its chord sounds (outline, glow and wash in its own colour, like a playing harmony chip); walk playback lights its nodes the same way.
+- Click a node → play the move(s) between it and the centre (e.g. V7→Imaj7, or centre→home when viewing homes). Each node lights as its chord sounds (outline, glow and wash in its own colour, like a playing harmony chip, with a soft breathing halo that fades in fast and out slowly), a bright pulse runs along the road to the next chord, and the rest of the graph dims as on hover until the move ends. Walk playback lights its nodes the same way; on the Roads ring a played road lights its two stops and dims the other roads.
 - Double-click a node → zoom into it, then re-root seamlessly; the walk grows by that node's path (one step for a corner, two for a corner's corner). Only a double-click re-centres. Fourth-level dots are not clickable.
 - Flip → every arrow reverses (animated draw-on in the new direction) and corner labels cross-fade to their new values; the walk records the turn.
 - Play button → plays the walk as a progression. A ways-in run plays from its furthest chord back to where the run started (walk I › V › II plays II–V–I); a homes run plays forward from where it started (walk I › IV › ♭VII plays C–F–B♭). After a flip, playback covers the steps since the last turn.

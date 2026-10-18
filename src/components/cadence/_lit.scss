@@ -1,0 +1,109 @@
+// Playing highlight shared by the fractal and the roads ring: outline, glow and
+// wash in the node's own colour (--lit), as on the harmony chips. It lights up
+// fast and lets go slowly, so consecutive chords read as one travelling gesture.
+// Markup: .bloom[data-lit] > .disc, .litWash. Include it last in a module so the
+// lit outline wins over resting stroke rules of equal specificity.
+@mixin lit-parts {
+  .bloom {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: scale 0.7s var(--ease-out);
+
+    &[data-lit] {
+      scale: 1.07;
+      transition-duration: 0.28s;
+    }
+  }
+
+  .disc {
+    transition:
+      stroke 0.7s var(--ease-out),
+      stroke-width 0.7s var(--ease-out),
+      filter 0.8s var(--ease-out);
+  }
+
+  .bloom[data-lit] > .disc {
+    stroke: var(--lit);
+    stroke-width: 2.6;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--lit) 65%, transparent));
+    transition-duration: 0.22s, 0.22s, 0.3s;
+  }
+
+  // A soft halo behind the disc breathes while the chord sounds. The wrapper
+  // fades it in and out; the pulse itself just pauses when unlit.
+  .haloWrap {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s var(--ease-out);
+  }
+
+  .bloom[data-lit] > .haloWrap {
+    opacity: 1;
+    transition-duration: 0.25s;
+  }
+
+  .halo {
+    fill: color-mix(in srgb, var(--lit) 75%, transparent);
+    filter: blur(7px);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: breathe 0.95s ease-in-out infinite alternate;
+    animation-play-state: paused;
+  }
+
+  .bloom[data-lit] > .haloWrap > .halo {
+    animation-play-state: running;
+  }
+
+  // A bright pulse runs along the road to the next chord while this one sounds.
+  .travel {
+    fill: none;
+    stroke: var(--lit);
+    stroke-linecap: round;
+    stroke-dasharray: 0.16 1.2;
+    stroke-dashoffset: 0.16;
+    filter: drop-shadow(0 0 5px var(--lit));
+    pointer-events: none;
+    animation: travel 0.95s var(--ease-in-out) forwards;
+  }
+
+  @keyframes breathe {
+    from {
+      opacity: 0.5;
+      scale: 1;
+    }
+    to {
+      opacity: 0.95;
+      scale: 1.3;
+    }
+  }
+
+  @keyframes travel {
+    to {
+      stroke-dashoffset: -1;
+    }
+  }
+
+  .litWash {
+    fill: color-mix(in srgb, var(--lit) 30%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.7s var(--ease-out);
+  }
+
+  .bloom[data-lit] > .litWash {
+    opacity: 1;
+    transition-duration: 0.22s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bloom[data-lit] {
+      scale: 1;
+    }
+
+    .halo,
+    .travel {
+      animation: none;
+    }
+  }
+}

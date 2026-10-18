@@ -33,7 +33,7 @@ import { CornerLegend } from './CornerLegend';
 import { Acc } from './Acc';
 import { KeyPicker } from './KeyPicker';
 import type { NodeLabel } from './FractalScene';
-import type { Road } from './RoadsRing';
+import { roadLights, type Road, type RingLight } from './RoadsRing';
 import { useIsMobile } from '@/lib/use-mobile';
 import styles from './WaysHomeLesson.module.scss';
 
@@ -61,6 +61,7 @@ export function WaysHomeLesson() {
   const [active, setActive] = useState<{ id: string; index: number } | null>(null);
   const [lit, setLit] = useState<ReadonlySet<number>>(NO_PITCHES);
   const [playingNode, setPlayingNode] = useState<LitNode | null>(null);
+  const [playingStop, setPlayingStop] = useState<RingLight | null>(null);
 
   useEffect(() => {
     if (stage.scene !== 'fractal' || !stage.grow) return;
@@ -81,7 +82,7 @@ export function WaysHomeLesson() {
   );
 
   /** `lights`: the fractal node to light at each chord, when the chords live on the graph. */
-  const play = (id: string, chords: ChordSpec[], lights: LitNode[] = []) => {
+  const play = (id: string, chords: ChordSpec[], lights: LitNode[] = [], stops: RingLight[] = []) => {
     const voiced = voiceProgression(chords, key ?? 'C');
     playProgression(
       voiced,
@@ -90,11 +91,13 @@ export function WaysHomeLesson() {
           setActive(i < 0 ? null : { id, index: i });
           setLit(i < 0 ? NO_PITCHES : new Set(voiced[i]));
           setPlayingNode(i < 0 ? null : (lights[i] ?? null));
+          setPlayingStop(i < 0 ? null : (stops[i] ?? null));
         },
         onDone: () => {
           setActive(null);
           setLit(NO_PITCHES);
           setPlayingNode(null);
+          setPlayingStop(null);
         },
       },
       CHORD_MS,
@@ -114,10 +117,15 @@ export function WaysHomeLesson() {
   };
 
   const onRoadClick = (road: Road) =>
-    play('road', [
-      { pc: road.from, quality: CADENCES[road.type].approachQuality },
-      { pc: road.to, quality: 'maj7' },
-    ]);
+    play(
+      'road',
+      [
+        { pc: road.from, quality: CADENCES[road.type].approachQuality },
+        { pc: road.to, quality: 'maj7' },
+      ],
+      [],
+      roadLights(road),
+    );
 
   const legendTypes =
     stage.scene === 'roads'
@@ -224,6 +232,7 @@ export function WaysHomeLesson() {
               growLevel={growLevel}
               labelFor={labelFor}
               playing={playingNode}
+              playingStop={playingStop}
               onNodeClick={onNodeClick}
               onNodeDoubleClick={onNodeDoubleClick}
               onRoadClick={onRoadClick}

@@ -163,6 +163,8 @@ export function FractalScene({
   const runRef = useRef(0);
   // A single click waits out the double-click window so the two never both fire.
   const clickTimer = useRef<number | undefined>(undefined);
+  // Last colour each node glowed in, so it fades out in that colour.
+  const litColors = useRef(new Map<string, string>());
 
   // Mount animations only for elements that appear while idle (reveals,
   // flips) — never for nodes born mid-zoom, whose opacity the camera drives.
@@ -278,7 +280,13 @@ export function FractalScene({
     const parts = lit === '' ? [] : lit.split(',');
     for (let i = 0; i <= parts.length; i++) litSet.add(parts.slice(0, i).join());
   }
-  const dimFor = (rel: CadenceType[]) => (lit === null || litSet.has(rel.join()) ? 1 : 0.22);
+  // While a cadence plays, its whole path stays bright and the rest steps back (as on hover).
+  const playKeys = playing?.path ? new Set(playing.path) : null;
+  const parentKey = (key: string) => (key.length > 1 ? key.slice(0, -1) : '.');
+  const dimFor = (rel: CadenceType[], posKey: string, edge = false) => {
+    if (playKeys) return playKeys.has(posKey) && (!edge || playKeys.has(parentKey(posKey))) ? 1 : 0.22;
+    return lit === null || litSet.has(rel.join()) ? 1 : 0.22;
+  };
 
   return (
     <svg
@@ -310,7 +318,7 @@ export function FractalScene({
             const isBorn = born(`e${e.posKey}${root.dir}`);
             const litEdge = lit !== null && litSet.has(e.rel.join());
             return (
-              <g key={`e${e.posKey}${root.dir}`} className={styles.edge} opacity={e.opacity * dimFor(e.rel)}>
+              <g key={`e${e.posKey}${root.dir}`} className={styles.edge} opacity={e.opacity * dimFor(e.rel, e.posKey, true)}>
                 <path
                   d={e.shape.d}
                   stroke={color}
@@ -321,6 +329,16 @@ export function FractalScene({
                   className={isBorn ? styles.draw : undefined}
                 />
                 <polygon points={e.shape.tip} fill={color} className={isBorn ? styles.tipIn : undefined} />
+                {playing?.road === e.posKey && (
+                  <path
+                    key={`t${playing.key}`}
+                    d={e.shape.d}
+                    pathLength={1}
+                    strokeWidth={e.width + 2.4}
+                    className={styles.travel}
+                    style={{ ['--lit' as string]: playing.color }}
+                  />
+                )}
               </g>
             );
           })}
@@ -346,11 +364,13 @@ export function FractalScene({
               interactive && idle && n.rel.length >= 1 && n.rel.length <= 2 && n.labelOpacity > 0.5;
             const relKey = n.rel.join();
             const isLit = playing?.key === n.posKey && n.a < 2.5;
+            if (isLit) litColors.current.set(n.posKey, playing!.color);
+            const litColor = litColors.current.get(n.posKey) ?? color ?? 'var(--accent-warm)';
             return (
               <g
                 key={`n${n.posKey}`}
                 transform={`translate(${n.x} ${n.y})`}
-                opacity={n.opacity * dimFor(n.rel)}
+                opacity={n.opacity * dimFor(n.rel, n.posKey)}
                 className={styles.node}
                 data-clickable={clickable || undefined}
                 onPointerEnter={interactive && idle ? () => setHovered(relKey) : undefined}
@@ -376,66 +396,73 @@ export function FractalScene({
                     : undefined
                 }
               >
-                <g
-                  className={born(`n${n.posKey}`) ? styles.pop : undefined}
-                  style={isLit ? { ['--lit' as string]: playing!.color } : undefined}
-                  data-lit={isLit || undefined}
-                >
-                  <circle
-                    r={n.r}
-                    className={styles.disc}
-                    style={{ fill, stroke: isLit ? playing!.color : stroke }}
-                    strokeWidth={isLit ? 2.6 : n.a < 2.5 ? 1.4 : 0}
-                    opacity={1 - 0.45 * clamp01(n.a - 2)}
-                  />
-                  {glass && n.a < 2.5 && (
-                    <>
-                      {n.type && (
+                <g className={born(`n${n.posKey}`) ? styles.pop : undefined}>
+                  <g
+                    className={styles.bloom}
+                    style={{ ['--lit' as string]: litColor }}
+                    data-lit={isLit || undefined}
+                  >
+                    {n.a < 2.5 && (
+                      <g className={styles.haloWrap}>
+                        <circle r={n.r} className={styles.halo} />
+                      </g>
+                    )}
+                    <circle
+                      r={n.r}
+                      className={styles.disc}
+                      style={{ fill, stroke: isLit ? litColor : stroke }}
+                      strokeWidth={n.a < 2.5 ? 1.4 : 0}
+                      opacity={1 - 0.45 * clamp01(n.a - 2)}
+                    />
+                    {glass && n.a < 2.5 && (
+                      <>
+                        {n.type && (
+                          <circle
+                            r={Math.max(0, n.r - 0.7)}
+                            fill={`url(#glass-${n.type}${uid})`}
+                            opacity={1 - centreness}
+                            pointerEvents="none"
+                          />
+                        )}
                         <circle
                           r={Math.max(0, n.r - 0.7)}
-                          fill={`url(#glass-${n.type}${uid})`}
-                          opacity={1 - centreness}
+                          fill={`url(#glass-centre${uid})`}
+                          opacity={n.type ? centreness : 1}
                           pointerEvents="none"
                         />
-                      )}
-                      <circle
-                        r={Math.max(0, n.r - 0.7)}
-                        fill={`url(#glass-centre${uid})`}
-                        opacity={n.type ? centreness : 1}
-                        pointerEvents="none"
-                      />
-                    </>
-                  )}
-                  {isLit && <circle r={Math.max(0, n.r - 1.3)} className={styles.litWash} pointerEvents="none" />}
-                  {n.labelOpacity > 0.01 && (
-                    <g
-                      key={`${n.pc}${label.main}`}
-                      opacity={n.labelOpacity / Math.max(n.opacity, 0.001)}
-                      className={born(`l${n.posKey}${n.pc}${label.main}`) ? styles.labelIn : undefined}
-                    >
-                      <text
-                        className={styles.label}
-                        data-serif={n.a < 0.5 || undefined}
-                        y={showSub ? -n.font * 0.2 : 0}
-                        style={{ fontSize: n.font }}
-                        dominantBaseline="central"
-                        textAnchor="middle"
+                      </>
+                    )}
+                    {n.a < 2.5 && <circle r={Math.max(0, n.r - 1.3)} className={styles.litWash} />}
+                    {n.labelOpacity > 0.01 && (
+                      <g
+                        key={`${n.pc}${label.main}`}
+                        opacity={n.labelOpacity / Math.max(n.opacity, 0.001)}
+                        className={born(`l${n.posKey}${n.pc}${label.main}`) ? styles.labelIn : undefined}
                       >
-                        <Glyphs text={label.main} />
-                      </text>
-                      {showSub && (
                         <text
-                          className={styles.sub}
-                          y={n.font * 0.2 + subSize * 0.75}
-                          style={{ fontSize: subSize }}
+                          className={styles.label}
+                          data-serif={n.a < 0.5 || undefined}
+                          y={showSub ? -n.font * 0.2 : 0}
+                          style={{ fontSize: n.font }}
                           dominantBaseline="central"
                           textAnchor="middle"
                         >
-                          {label.sub}
+                          <Glyphs text={label.main} />
                         </text>
-                      )}
-                    </g>
-                  )}
+                        {showSub && (
+                          <text
+                            className={styles.sub}
+                            y={n.font * 0.2 + subSize * 0.75}
+                            style={{ fontSize: subSize }}
+                            dominantBaseline="central"
+                            textAnchor="middle"
+                          >
+                            {label.sub}
+                          </text>
+                        )}
+                      </g>
+                    )}
+                  </g>
                 </g>
               </g>
             );
