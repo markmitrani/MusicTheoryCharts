@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useCanvas, canvasStore } from '@/lib/canvas-store/store';
+import { useCanvas, canvasStore, type SoundId } from '@/lib/canvas-store/store';
 import {
   getTheme,
   setTheme,
@@ -104,10 +104,11 @@ export function CornerActions() {
               className={styles.select}
               value={sound}
               aria-label="Playback sound"
-              onChange={(e) => canvasStore.getState().setSound(e.target.value as 'pad' | 'piano')}
+              onChange={(e) => canvasStore.getState().setSound(e.target.value as SoundId)}
             >
               <option value="pad">Pad</option>
               <option value="piano">Piano</option>
+              <option value="epiano">Electric Piano</option>
             </select>
           </label>
 

@@ -33,3 +33,5 @@ The previous HTML/CSS/JS implementation lives in [`legacy/`](legacy/) as referen
 ## Acknowledgements
 
 Type set in [Fraunces](https://fonts.google.com/specimen/Fraunces) and [Inter](https://fonts.google.com/specimen/Inter).
+
+Electric piano samples from the Fluid (R3) General MIDI SoundFont by Frank Wen, licensed [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), rendered to mp3 by [gleitz/midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts).

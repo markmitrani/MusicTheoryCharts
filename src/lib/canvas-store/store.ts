@@ -6,8 +6,8 @@ import type { CanvasElement, Page, Tool } from './types';
 /** Omit that distributes over union members (plain Omit collapses the union). */
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 
-/** Playback voice. 'pad' = the warm detuned-saw pad; 'piano' = flanged piano. */
-export type SoundId = 'pad' | 'piano';
+/** Playback voice. 'pad' = warm detuned-saw pad; 'piano' = flanged piano; 'epiano' = Rhodes-style EP. */
+export type SoundId = 'pad' | 'piano' | 'epiano';
 
 /**
  * Experimental gradient backdrop style. 'off' = none; 'perlin' = domain-warped
@@ -136,7 +136,7 @@ export function createCanvasStore() {
       deleteMode: false,
       muted: false,
       tempoMs: 180,
-      sound: 'pad',
+      sound: 'piano',
       gradientMode: 'off',
       harmonicsViz: false,
 
