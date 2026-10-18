@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import type { CadenceType, Direction, WalkStep } from '@/lib/theory/cadence';
 import type { StageState } from '@/lessons/ways-home';
 import { FractalScene, type NodeLabel } from './FractalScene';
+import type { LitNode } from './lights';
 import { RoadsRing, type Road } from './RoadsRing';
 import styles from './CadenceStage.module.scss';
 
@@ -20,6 +21,8 @@ interface CadenceStageProps {
   onRoadClick: (road: Road) => void;
   /** Camera scale for sparse slides; eases back to 1 as the map fills in. */
   scale?: number;
+  /** Node sounding right now. */
+  playing?: LitNode | null;
 }
 
 export const INTERLUDE_ROADS: Road[] = [
@@ -41,6 +44,7 @@ export function CadenceStage({
   onNodeDoubleClick,
   onRoadClick,
   scale = 1,
+  playing = null,
 }: CadenceStageProps) {
   const lastFractal = useRef<FractalProps>({ walk: [], dir: 'in', corners: ['dominant'], maxLevel: 1 });
   if (stage.scene === 'fractal') {
@@ -66,6 +70,7 @@ export function CadenceStage({
           maxLevel={f.maxLevel}
           labelFor={labelFor}
           interactive={!roads}
+          playing={playing}
           onNodeClick={onNodeClick}
           onNodeDoubleClick={stage.scene === 'explorer' ? onNodeDoubleClick : undefined}
         />

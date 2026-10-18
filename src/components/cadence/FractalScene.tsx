@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { CADENCES, CADENCE_TYPES, type CadenceType, type Direction, type WalkStep } from '@/lib/theory/cadence';
 import { useSurfaces } from '@/lib/use-surfaces';
 import { buildScene, VIEW, type Frame } from './geometry';
+import type { LitNode } from './lights';
 import styles from './FractalScene.module.scss';
 
 export interface NodeLabel {
@@ -30,6 +31,8 @@ interface FractalSceneProps {
   highlight?: CadenceType[] | null;
   /** Scale about the centre, e.g. to fill corners a hidden legend frees up. */
   scale?: number;
+  /** Node sounding right now: outlined and glowing in its colour, like a playing chip. */
+  playing?: LitNode | null;
   ariaLabel?: string;
 }
 
@@ -144,6 +147,7 @@ export function FractalScene({
   corners = null,
   highlight = null,
   scale = 1,
+  playing = null,
   ariaLabel = 'Ways home fractal',
 }: FractalSceneProps) {
   const glass = useSurfaces() === 'glass';
@@ -341,6 +345,7 @@ export function FractalScene({
             const clickable =
               interactive && idle && n.rel.length >= 1 && n.rel.length <= 2 && n.labelOpacity > 0.5;
             const relKey = n.rel.join();
+            const isLit = playing?.key === n.posKey && n.a < 2.5;
             return (
               <g
                 key={`n${n.posKey}`}
@@ -371,11 +376,16 @@ export function FractalScene({
                     : undefined
                 }
               >
-                <g className={born(`n${n.posKey}`) ? styles.pop : undefined}>
+                <g
+                  className={born(`n${n.posKey}`) ? styles.pop : undefined}
+                  style={isLit ? { ['--lit' as string]: playing!.color } : undefined}
+                  data-lit={isLit || undefined}
+                >
                   <circle
                     r={n.r}
-                    style={{ fill, stroke }}
-                    strokeWidth={n.a < 2.5 ? 1.4 : 0}
+                    className={styles.disc}
+                    style={{ fill, stroke: isLit ? playing!.color : stroke }}
+                    strokeWidth={isLit ? 2.6 : n.a < 2.5 ? 1.4 : 0}
                     opacity={1 - 0.45 * clamp01(n.a - 2)}
                   />
                   {glass && n.a < 2.5 && (
@@ -396,6 +406,7 @@ export function FractalScene({
                       />
                     </>
                   )}
+                  {isLit && <circle r={Math.max(0, n.r - 1.3)} className={styles.litWash} pointerEvents="none" />}
                   {n.labelOpacity > 0.01 && (
                     <g
                       key={`${n.pc}${label.main}`}

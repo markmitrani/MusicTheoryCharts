@@ -25,6 +25,7 @@ import { PianoKeys } from '@/components/canvas/PianoKeys';
 import { PlayButton } from '@/components/canvas/elements/PlayButton';
 import { CHORD_MS } from '@/components/canvas/elements/WaysHomeCard';
 import { CadenceStage } from './CadenceStage';
+import { moveLights, walkLights, type LitNode } from './lights';
 import { ChainStrip } from './ChainStrip';
 import { Breadcrumb } from './Breadcrumb';
 import { DirectionSwitch } from './DirectionSwitch';
@@ -59,6 +60,7 @@ export function WaysHomeLesson() {
   const [growLevel, setGrowLevel] = useState(1);
   const [active, setActive] = useState<{ id: string; index: number } | null>(null);
   const [lit, setLit] = useState<ReadonlySet<number>>(NO_PITCHES);
+  const [playingNode, setPlayingNode] = useState<LitNode | null>(null);
 
   useEffect(() => {
     if (stage.scene !== 'fractal' || !stage.grow) return;
@@ -78,7 +80,8 @@ export function WaysHomeLesson() {
     [finale, finaleKey],
   );
 
-  const play = (id: string, chords: ChordSpec[]) => {
+  /** `lights`: the fractal node to light at each chord, when the chords live on the graph. */
+  const play = (id: string, chords: ChordSpec[], lights: LitNode[] = []) => {
     const voiced = voiceProgression(chords, key ?? 'C');
     playProgression(
       voiced,
@@ -86,10 +89,12 @@ export function WaysHomeLesson() {
         onStep: (i) => {
           setActive(i < 0 ? null : { id, index: i });
           setLit(i < 0 ? NO_PITCHES : new Set(voiced[i]));
+          setPlayingNode(i < 0 ? null : (lights[i] ?? null));
         },
         onDone: () => {
           setActive(null);
           setLit(NO_PITCHES);
+          setPlayingNode(null);
         },
       },
       CHORD_MS,
@@ -99,7 +104,7 @@ export function WaysHomeLesson() {
   const onNodeClick = (rel: CadenceType[]) => {
     const frame = finale ? explorer : stage.scene === 'fractal' ? stage : null;
     if (!frame) return;
-    play('node', runToProgression(walkPcs(frame.walk).at(-1)!, frame.dir, rel));
+    play('node', runToProgression(walkPcs(frame.walk).at(-1)!, frame.dir, rel), moveLights(frame.walk, frame.dir, rel));
   };
 
   const onNodeDoubleClick = (rel: CadenceType[]) => {
@@ -199,7 +204,7 @@ export function WaysHomeLesson() {
                   'Functional'
                 )}
               </button>
-              <PlayButton playing={active?.id === 'walk'} onClick={() => play('walk', walkToProgression(explorer.walk))} />
+              <PlayButton playing={active?.id === 'walk'} onClick={() => play('walk', walkToProgression(explorer.walk), walkLights(explorer.walk))} />
               {picking && (
                 <KeyPicker
                   value={finaleKey}
@@ -218,6 +223,7 @@ export function WaysHomeLesson() {
               explorer={explorer}
               growLevel={growLevel}
               labelFor={labelFor}
+              playing={playingNode}
               onNodeClick={onNodeClick}
               onNodeDoubleClick={onNodeDoubleClick}
               onRoadClick={onRoadClick}

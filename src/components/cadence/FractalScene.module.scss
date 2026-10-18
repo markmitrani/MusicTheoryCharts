@@ -19,6 +19,23 @@
   cursor: pointer;
 }
 
+// Playing: outline and glow in the node's own colour, as on the harmony chips.
+.disc {
+  transition:
+    stroke 0.12s var(--ease-out),
+    stroke-width 0.12s var(--ease-out),
+    filter 0.25s var(--ease-out);
+}
+
+[data-lit] > .disc {
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--lit) 60%, transparent));
+}
+
+.litWash {
+  fill: color-mix(in srgb, var(--lit) 30%, transparent);
+  animation: fadeFrom 0.12s var(--ease-out) backwards;
+}
+
 // Sans everywhere, as on the other cards; only the centre takes the serif.
 .label {
   fill: var(--text-primary);

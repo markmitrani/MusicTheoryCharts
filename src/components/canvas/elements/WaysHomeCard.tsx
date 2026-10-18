@@ -10,12 +10,14 @@ import {
   walkPcs,
   walkToProgression,
   type CadenceType,
+  type ChordSpec,
 } from '@/lib/theory/cadence';
 import type { WaysHomeElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { lessonStore } from '@/lib/lesson/store';
 import { playProgression, uiTick } from '@/lib/playback/playback';
 import { FractalScene, type NodeLabel } from '@/components/cadence/FractalScene';
+import { moveLights, walkLights, type LitNode } from '@/components/cadence/lights';
 import { Breadcrumb } from '@/components/cadence/Breadcrumb';
 import { DirectionSwitch } from '@/components/cadence/DirectionSwitch';
 import { CornerLegend } from '@/components/cadence/CornerLegend';
@@ -45,6 +47,7 @@ export const CHORD_MS = 950;
  */
 export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) {
   const [playingCrumb, setPlayingCrumb] = useState(-1);
+  const [playingNode, setPlayingNode] = useState<LitNode | null>(null);
   const [picking, setPicking] = useState(false);
   const pcs = walkPcs(el.walk);
   const focus = pcs[pcs.length - 1];
@@ -59,10 +62,24 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
   const update = (patch: Partial<WaysHomeElement>) =>
     canvasStore.getState().updateElement(el.id, patch, { commit: true });
 
-  const listen = (rel: CadenceType[]) => {
-    const chords = voiceProgression(runToProgression(focus, el.dir, rel), key ?? 'C');
-    playProgression(chords, { onStep: () => {}, onDone: () => {} }, CHORD_MS);
-  };
+  // Each chord lights its node as it sounds, so you can follow the move.
+  const play = (chords: ChordSpec[], lights: LitNode[], onStep?: (j: number) => void, onDone?: () => void) =>
+    playProgression(
+      voiceProgression(chords, key ?? 'C'),
+      {
+        onStep: (j) => {
+          setPlayingNode(j < 0 ? null : (lights[j] ?? null));
+          onStep?.(j);
+        },
+        onDone: () => {
+          setPlayingNode(null);
+          onDone?.();
+        },
+      },
+      CHORD_MS,
+    );
+
+  const listen = (rel: CadenceType[]) => play(runToProgression(focus, el.dir, rel), moveLights(el.walk, el.dir, rel));
 
   const travel = (rel: CadenceType[]) => {
     if (el.walk.length + rel.length > MAX_WALK) return;
@@ -77,13 +94,11 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
     while (start > 0 && el.walk[start - 1].dir === el.walk[el.walk.length - 1].dir) start--;
     const inward = el.walk.length > 0 && el.walk[el.walk.length - 1].dir === 'in';
     const crumbOf = (j: number) => (el.walk.length === 0 ? 0 : inward ? pcs.length - 1 - j : start + j);
-    playProgression(
-      voiceProgression(progression, key ?? 'C'),
-      {
-        onStep: (j) => setPlayingCrumb(j < 0 ? -1 : crumbOf(j)),
-        onDone: () => setPlayingCrumb(-1),
-      },
-      CHORD_MS,
+    play(
+      progression,
+      walkLights(el.walk),
+      (j) => setPlayingCrumb(j < 0 ? -1 : crumbOf(j)),
+      () => setPlayingCrumb(-1),
     );
   };
 
@@ -158,6 +173,7 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
               dir={el.dir}
               labelFor={labelFor}
               interactive
+              playing={playingNode}
               onNodeClick={listen}
               onNodeDoubleClick={travel}
               scale={el.showLegend ? 1 : LEGENDLESS_SCALE}

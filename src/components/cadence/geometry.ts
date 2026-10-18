@@ -173,6 +173,12 @@ export interface SceneEdge {
 
 const startsWith = (p: CadenceType[], prefix: CadenceType[]) => prefix.every((t, i) => p[i] === t);
 
+/**
+ * A node's stable identity: the moves from I to it. It survives re-rooting,
+ * so a node keeps its key (and its highlight) through a zoom.
+ */
+export const posKeyOf = (types: CadenceType[]) => types.map((t) => t[0]).join('') || '.';
+
 function enumerate(base: CadenceType[], depth: number, out: CadenceType[][]) {
   out.push(base);
   if (depth === 0) return;
@@ -181,7 +187,7 @@ function enumerate(base: CadenceType[], depth: number, out: CadenceType[][]) {
 
 export function buildScene({ root, target, maxLevel, corners }: SceneParams): { nodes: SceneNode[]; edges: SceneEdge[] } {
   const rootPc = walkPcs(root.walk).at(-1)!;
-  const rootKey = root.walk.map((s) => s.type[0]).join('');
+  const rootTypes = root.walk.map((s) => s.type);
   const k = target?.rel.length ?? 0;
   const e = target?.e ?? 0;
   const cam: Camera = target ? zoomCamera(worldPos(target.rel), k, e, target.mode) : { c: { x: 0, y: 0 }, z: 0 };
@@ -216,7 +222,7 @@ export function buildScene({ root, target, maxLevel, corners }: SceneParams): { 
     for (const t of rel) pc = stepOf(pc, root.dir, t);
     const p = toScreen(worldPos(rel), cam);
     const node: SceneNode = {
-      posKey: rootKey + rel.map((t) => t[0]).join('') || '.',
+      posKey: posKeyOf([...rootTypes, ...rel]),
       pc,
       rel,
       type: rel.length ? rel[rel.length - 1] : null,
