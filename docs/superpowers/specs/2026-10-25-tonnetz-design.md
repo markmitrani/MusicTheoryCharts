@@ -106,7 +106,15 @@ triad1  = base36(root * 2 + minor), or 'z' = none
 
 A full-window overlay above the canvas, opened from the card's "3D" button. Closes with Esc or a close button, writing the current triad back to the card.
 
-**Scene.** The lattice rendered in WebGL with three.js, loaded with a dynamic import only when the pop-out opens (so the canvas page doesn't pay for it). Dark backdrop, unlit flat colours for triangles so major/minor colours stay true. Chord-name text uses the same "Chord names" setting as the card.
+**Stack.** Match phantom.land. Detected from its live bundles on 2026-10-25: Next.js (App Router) + React, three.js r175, React Three Fiber, `postprocessing` (EffectComposer), GSAP, Motion, custom `ShaderMaterial`s and `InstancedMesh`. This app already runs Next.js and React 19, so it adds:
+
+- `three`, `@react-three/fiber` (v9, React 19), `@react-three/drei` (SDF text via troika)
+- `postprocessing` / `@react-three/postprocessing` for bloom on the playback glow
+- `gsap` for discrete transitions (step snapping, move travel, open/close)
+
+Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-window canvas with no page scroll. The whole 3D bundle loads with a dynamic import only when the pop-out opens, so the canvas page doesn't pay for it.
+
+**Scene.** Dark backdrop, unlit flat colours for triangles so major/minor colours stay true. Chord-name text uses the same "Chord names" setting as the card.
 
 **Shape.** A literal torus: the 24 triangles wrapped once around it, the small loop holding 3 major-third steps and the large loop 4 minor-third steps. Camera placement is open decision D1. The phantom.land feel sets the bar for motion and polish.
 
@@ -116,14 +124,23 @@ A full-window overlay above the canvas, opened from the card's "3D" button. Clos
 - **W / S** → rotate the surface around the small loop (the tube's cross-section, like a ring of constant size orbiting the torus's body), clockwise / counterclockwise.
 - The small loop carries the 3-step major-third cycle and the large loop the 4-step minor-third cycle, so each loop wraps after a whole number of lattice steps.
 - A tap moves one lattice step and settles on it; holding keeps moving with eased momentum and settles on the nearest step when released.
-- Drag → spin the same two axes with eased momentum; release glides to a stop.
+- Click + drag does the same as the keys: horizontal drag = A / D, vertical drag = W / S. Release throws with the drag's velocity, glides with momentum and settles on the nearest step, exactly like releasing a held key.
 - Move bar: six buttons P L R N S H, each with a tooltip naming the move and its result ("R – A minor"). Keyboard: Shift + the letter (plain S is taken by WASD).
 - A move animates the camera along `movePath`, lighting each triangle passed, then plays old → new triad. The current triad stays centred and lit with the playback glow.
 - Click a triangle → travel to it and play it.
 - History strip along the bottom (C › Am › F › …); clicking an entry travels back.
 - Reduced motion: no momentum, moves cross-fade instead of travelling.
 
-**Performance.** Target 60 fps on a recent phone. Instanced geometry for triangles, signed-distance-field text for labels, one draw call per layer where possible.
+**Smoothness (acceptance bar: on par with phantom.land side by side).**
+
+- Every frame runs in R3F's `useFrame`, mutating refs and uniforms; no React state updates or re-renders while moving.
+- Motion is frame-rate independent: damping uses `1 - exp(-k · dt)`, so 60 Hz and 120 Hz displays move identically and a dropped frame doesn't jolt.
+- Torus rotation is two continuous angles (large loop, small loop) with velocity; keys, drag and snapping all feed the same angles, so switching input mid-motion never jumps.
+- Drag uses pointer capture and samples velocity over the last ~100 ms for the throw.
+- Snap to the nearest step with a critically damped spring (no overshoot wobble); move travel (P/L/R…) uses GSAP timelines on the same angles.
+- Instanced triangles, one draw call per layer; SDF labels; device pixel ratio capped at 2; geometry and materials built once.
+- Targets: 60 fps on a recent phone, 120 fps on ProMotion, no long frames (>16 ms) in a Chrome performance trace while dragging, input reflected on the next frame.
+- Reduced motion: no momentum or travel; steps cross-fade.
 
 ## Phasing
 
@@ -139,7 +156,7 @@ A full-window overlay above the canvas, opened from the card's "3D" button. Clos
 4. **Compound moves skip triangles.** S, N and H must choose a route and travel it readably. Major and minor triangles point opposite ways, so keeping the current one centred and upright rotates the camera on every move, which can disorient.
 5. **Spelling.** G♯m and A♭m are one triangle; each label has to pick a spelling until the app-wide decision lands.
 6. **Colour under lighting.** Shading pulls major and minor colours together; triangles need unlit colour.
-7. **Cost and smoothness.** three.js is large (dynamic import only). Crisp 3D text needs SDF tooling. The phantom.land feel comes from heavy motion tuning, and phones need care. Reduced motion needs its own path. Porting the playback glow into 3D is extra work.
+7. **Cost and smoothness.** The 3D stack (three.js, R3F, postprocessing, GSAP) is large; dynamic import only. Crisp 3D text needs SDF tooling. The phantom.land feel comes from heavy motion tuning, and phones need care. Reduced motion needs its own path. Porting the playback glow into 3D is extra work.
 
 ## Open decisions (check-in before building)
 
