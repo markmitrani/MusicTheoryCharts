@@ -108,12 +108,16 @@ A full-window overlay above the canvas, opened from the card's "3D" button. Clos
 
 **Scene.** The lattice rendered in WebGL with three.js, loaded with a dynamic import only when the pop-out opens (so the canvas page doesn't pay for it). Dark backdrop, unlit flat colours for triangles so major/minor colours stay true. Chord-name text uses the same "Chord names" setting as the card.
 
-**Shape.** See open decision D1. The recommended model is a phantom.land-style surface: the endlessly repeating lattice seen from inside a curved surface, with a lens bend at the edges. Because the lattice wraps, the view reads as toroidal without the literal donut's distortion.
+**Shape.** A literal torus: the 24 triangles wrapped once around it, the small loop holding 3 major-third steps and the large loop 4 minor-third steps. Camera placement is open decision D1. The phantom.land feel sets the bar for motion and polish.
 
 **Interactions.**
 
-- Drag → spin/pan with eased momentum; release glides to a stop.
-- Move bar: six buttons P L R N S H, each with a tooltip naming the move and its result ("R – A minor"). Keyboard: the same letters.
+- **A / D** → travel around the torus's large loop (around the hole), left / right.
+- **W / S** → rotate the surface around the small loop (the tube's cross-section, like a ring of constant size orbiting the torus's body), clockwise / counterclockwise.
+- The small loop carries the 3-step major-third cycle and the large loop the 4-step minor-third cycle, so each loop wraps after a whole number of lattice steps.
+- A tap moves one lattice step and settles on it; holding keeps moving with eased momentum and settles on the nearest step when released.
+- Drag → spin the same two axes with eased momentum; release glides to a stop.
+- Move bar: six buttons P L R N S H, each with a tooltip naming the move and its result ("R – A minor"). Keyboard: Shift + the letter (plain S is taken by WASD).
 - A move animates the camera along `movePath`, lighting each triangle passed, then plays old → new triad. The current triad stays centred and lit with the playback glow.
 - Click a triangle → travel to it and play it.
 - History strip along the bottom (C › Am › F › …); clicking an entry travels back.
@@ -125,7 +129,7 @@ A full-window overlay above the canvas, opened from the card's "3D" button. Clos
 
 - **v1:** theory core + Tonnetz card (flat view, recentre, chord names, playback, codec).
 - **v2:** 3D pop-out with drag, momentum and the six moves.
-- **v3:** polish to the phantom.land bar (lens bend, motion tuning, glow), the literal-torus view if chosen in D1, and history.
+- **v3:** polish to the phantom.land bar (motion tuning, glow) and history.
 
 ## Challenges
 
@@ -139,7 +143,7 @@ A full-window overlay above the canvas, opened from the card's "3D" button. Clos
 
 ## Open decisions (check-in before building)
 
-- **D1 – 3D shape.** (A) Recommended: phantom.land-style curved endless lattice as the main 3D view, plus a small literal torus spun from outside as a "show the shape" toggle. (B) Literal torus only, camera inside the tube. (C) Literal torus only, seen from outside.
-- **D2 – Drag axes.** Map drag to fifths (horizontal) and major thirds (diagonal) like the flat card, or to the torus's two loops (major thirds and minor thirds).
+- **D1 – 3D shape.** WASD navigation (decided 2026-10-25) assumes a literal torus with a large and a small loop, which rules out a flat curved plane alone. Still open: camera outside the torus, or inside the tube. Either way, the phantom.land feel applies to motion and polish.
+- **D2 – Drag axes.** Decided 2026-10-25: drag and WASD both follow the torus's two loops (minor thirds around the large loop, major thirds around the small loop).
 - **D3 – Upright vs fixed camera.** Rotate the camera so the current triangle stays upright, or keep the world fixed and let triangles flip.
 - **D4 – Moves on the flat card.** Keep P/L/R/N/S/H in the 3D view only, or add the move bar to the card too.
