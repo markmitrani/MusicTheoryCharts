@@ -115,7 +115,16 @@ A full-window overlay above the canvas, opened from the card's "3D" button. Clos
 
 Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-window canvas with no page scroll. The whole 3D bundle loads with a dynamic import only when the pop-out opens, so the canvas page doesn't pay for it.
 
-**Scene.** Dark backdrop, unlit flat colours for triangles so major/minor colours stay true. Chord-name text uses the same "Chord names" setting as the card.
+**Reuse, don't reinvent.** The pop-out inherits the app's settings and scene primitives:
+
+- **Audio:** the same engine and the user's chosen sound (`getAudioEngine()` in `src/lib/audio/engine.ts`, `sound` in the canvas store), with the same voice-leading and `playProgression`.
+- **Theme:** colours come from the `globals.scss` tokens for the active theme (`--accent`, `--accent-glow`, neutrals, backdrop), read from computed styles and re-read whenever the theme changes, so the 3D view never goes stale (unlike HarmonicsBackdrop, which reads `--accent` once).
+- **Primitives:** the same glass node treatment and playback glow as Ways Home and the harmony chips, translated into shaders rather than redesigned.
+
+**Scene.** Backdrop from the theme. Unlit flat colours so theme and major/minor colours stay true. Chord-name text uses the same "Chord names" setting as the card.
+
+- **Colour rule:** nodes and edges of the focused and selected triangles are in the active (accent) colour; all other nodes and edges are neutral.
+- **Note labels:** the note name inside each node is rotated about 35° upwards (counterclockwise) from horizontal.
 
 **Shape.** A literal torus with the camera inside the tube, looking along it. The phantom.land feel sets the bar for motion and polish.
 
@@ -132,9 +141,14 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 - The small loop carries the major-third cycle and the large loop the minor-third cycle, so each loop closes after a whole number of lattice steps at any wrap count.
 - A tap moves one lattice step and settles on it; holding keeps moving with eased momentum and settles on the nearest step when released.
 - Click + drag does the same as the keys: horizontal drag = A / D, vertical drag = W / S. Release throws with the drag's velocity, glides with momentum and settles on the nearest step, exactly like releasing a held key.
-- Move bar: six buttons P L R N S H, each with a tooltip naming the move and its result ("R – A minor"). Keyboard: Shift + the letter (plain S is taken by WASD).
-- A move animates the camera along `movePath`, lighting each triangle passed, then plays old → new triad. The current triad stays centred and lit with the playback glow.
-- Click a triangle → travel to it and play it.
+- **Focus and selection.** One triangle has focus (the cursor/navigator); any number can be selected.
+  - **Arrow keys** move focus to the neighbouring triangle: ← / → across the sloped edges, ↑ / ↓ across the horizontal edge. Moving without Shift clears the selection, leaving only the new focus.
+  - **Shift + arrow** moves focus and adds each triangle it reaches to the selection, starting from the last focused triangle. Shift traversal never unselects, even when it revisits a triangle.
+  - **Click** a triangle focuses it and clears the selection; **Shift + click** adds it.
+  - **Space** plays the selection as a progression, in the order selected, voice-led.
+  - The camera follows focus when it leaves the central view.
+- Move bar: six buttons P L R N S H, each with a tooltip naming the move and its result ("R – A minor"). They act on the focused triangle. Keyboard: Shift + the letter (plain S is taken by WASD).
+- A move animates the camera along `movePath`, lighting each triangle passed, then plays old → new triad and focuses the new one.
 - History strip along the bottom (C › Am › F › …); clicking an entry travels back.
 - Reduced motion: no momentum, moves cross-fade instead of travelling.
 
@@ -154,6 +168,7 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 - **v1:** theory core + Tonnetz card (flat view, recentre, chord names, playback, codec).
 - **v2:** 3D pop-out with drag, momentum and the six moves.
 - **v3:** polish to the phantom.land bar (motion tuning, glow) and history.
+- **Later (ask Mark for input before designing):** plot well-known chord progressions on the Tonnetz, and double-click a triad to tonicize it (make C, Cm, Am, A… the tonic, relabelling everything relative to it).
 
 ## Challenges
 
