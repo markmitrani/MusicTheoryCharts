@@ -70,10 +70,11 @@ interface TonnetzElement extends ElementBase {
   centre: number;        // pitch class of the centre note
   triad: Triad | null;   // selected triad; the 3D view opens here
   showChords: boolean;   // "Chord names" checkbox
+  wraps: 1 | 2 | 3;      // 3D view: times the lattice wraps each loop of the torus
 }
 ```
 
-**Spawning.** New instant kind in the stub's "more" menu ("Tonnetz"), next to Pitch Axis and Ways Home. `confirmStub` creates `{ kind: 'tonnetz', centre: 0, triad: null, showChords: false }`.
+**Spawning.** New instant kind in the stub's "more" menu ("Tonnetz"), next to Pitch Axis and Ways Home. `confirmStub` creates `{ kind: 'tonnetz', centre: 0, triad: null, showChords: false, wraps: 2 }`.
 
 **Shell.** House pattern: folder tab "Tonnetz – <centre>", fixed-size card, play button floating top-right (plays the selected triad). A top bar holds the "Chord names" checkbox and a "3D" button that opens the pop-out.
 
@@ -97,7 +98,7 @@ interface TonnetzElement extends ElementBase {
 
 ```
 tonnetz = t + flags1 + centre1 + triad1 + x2 + y2   (7 chars)
-flags1  = (showChords ? 1 : 0)
+flags1  = (showChords ? 1 : 0) + (wraps - 1) * 2
 centre1 = pitch class 0–b
 triad1  = base36(root * 2 + minor), or 'z' = none
 ```
@@ -116,13 +117,19 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 
 **Scene.** Dark backdrop, unlit flat colours for triangles so major/minor colours stay true. Chord-name text uses the same "Chord names" setting as the card.
 
-**Shape.** A literal torus: the 24 triangles wrapped once around it, the small loop holding 3 major-third steps and the large loop 4 minor-third steps. Camera placement is open decision D1. The phantom.land feel sets the bar for motion and polish.
+**Shape.** A literal torus with the camera inside the tube, looking along it. The phantom.land feel sets the bar for motion and polish.
+
+**Wraps.** A "Wraps" option (1, 2 or 3) sets how many times the lattice wraps around each loop. At 1 the 24 triangles appear once (small loop 3 major-third steps, large loop 4 minor-third steps); this is the faithful view but feels tight from inside. At 2 or 3 the torus holds 2×2 or 3×3 copies (small loop 6 or 9 steps, large loop 8 or 12), an expansive alternative view. Triangle size stays constant; the torus grows. Default 2. The setting lives in the pop-out's top bar and is saved on the card.
+
+- **Seams are evident.** Where one copy meets the next, a thin seam line runs around the torus in both loops, and each copy carries a faint tint of its own so the tiling reads at a glance.
+- **Repeats light together.** The current triad lights in every copy (the one under the camera brightest), so it's clear they are the same chord.
+- One key press is still one lattice step, so a full trip around a loop takes more presses at higher wraps.
 
 **Interactions.**
 
 - **A / D** → travel around the torus's large loop (around the hole), left / right.
 - **W / S** → rotate the surface around the small loop (the tube's cross-section, like a ring of constant size orbiting the torus's body), clockwise / counterclockwise.
-- The small loop carries the 3-step major-third cycle and the large loop the 4-step minor-third cycle, so each loop wraps after a whole number of lattice steps.
+- The small loop carries the major-third cycle and the large loop the minor-third cycle, so each loop closes after a whole number of lattice steps at any wrap count.
 - A tap moves one lattice step and settles on it; holding keeps moving with eased momentum and settles on the nearest step when released.
 - Click + drag does the same as the keys: horizontal drag = A / D, vertical drag = W / S. Release throws with the drag's velocity, glides with momentum and settles on the nearest step, exactly like releasing a held key.
 - Move bar: six buttons P L R N S H, each with a tooltip naming the move and its result ("R – A minor"). Keyboard: Shift + the letter (plain S is taken by WASD).
@@ -150,8 +157,8 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 
 ## Challenges
 
-1. **The real torus is tiny.** 12 notes and 24 triangles form a 3×4 grid. A literal donut is lumpy and low-poly, inner-side triangles get squashed, and labels crowd or hide.
-2. **Faithful vs immersive.** An "every chord once" torus is too small to feel endless; from inside the tube it is a 3-triangle-wide tunnel. Lushness needs repeated copies of the lattice, which hides the "each chord once" idea.
+1. **The real torus is tiny.** 12 notes and 24 triangles form a 3×4 grid. At 1 wrap the tube is lumpy, inner-side triangles get squashed, and labels crowd or hide. The Wraps option mitigates this.
+2. **Faithful vs immersive.** At 1 wrap the view from inside the tube is a 3-triangle-wide tunnel. Wraps 2 and 3 add copies, which hide the "each chord once" idea unless seams and shared lighting make the repetition obvious.
 3. **Spin vs pan.** Spinning a donut from outside and panning a curved plane are different gestures. On the torus, drag directions map to major and minor thirds; fifths run diagonally and are hard to follow by dragging.
 4. **Compound moves skip triangles.** S, N and H must choose a route and travel it readably. Major and minor triangles point opposite ways, so keeping the current one centred and upright rotates the camera on every move, which can disorient.
 5. **Spelling.** G♯m and A♭m are one triangle; each label has to pick a spelling until the app-wide decision lands.
@@ -160,7 +167,7 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 
 ## Open decisions (check-in before building)
 
-- **D1 – 3D shape.** WASD navigation (decided 2026-10-25) assumes a literal torus with a large and a small loop, which rules out a flat curved plane alone. Still open: camera outside the torus, or inside the tube. Either way, the phantom.land feel applies to motion and polish.
+- **D1 – 3D shape.** Decided 2026-10-25: literal torus, camera inside the tube, with a Wraps option (1–3).
 - **D2 – Drag axes.** Decided 2026-10-25: drag and WASD both follow the torus's two loops (minor thirds around the large loop, major thirds around the small loop).
 - **D3 – Upright vs fixed camera.** Rotate the camera so the current triangle stays upright, or keep the world fixed and let triangles flip.
 - **D4 – Moves on the flat card.** Keep P/L/R/N/S/H in the 3D view only, or add the move bar to the card too.
