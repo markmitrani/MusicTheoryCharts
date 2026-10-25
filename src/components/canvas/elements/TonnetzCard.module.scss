@@ -1,0 +1,287 @@
+.wrap {
+  width: 384px;
+}
+
+// Top bar: "Chord names" checkbox and the 3D button.
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.box {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1px solid var(--element-stroke-hover);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 4.5px;
+    top: 1.5px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--on-accent);
+    border-width: 0 1.6px 1.6px 0;
+    rotate: 45deg;
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+}
+
+.check input:checked + .box {
+  background: var(--accent);
+  border-color: var(--accent);
+
+  &::after {
+    opacity: 1;
+  }
+}
+
+.check input:focus-visible + .box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pill {
+  padding: 3px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--element-stroke);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 560;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 14px var(--accent-glow);
+  }
+}
+
+.stage {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.svg {
+  display: block;
+}
+
+// ---- lattice ----
+
+// Faded repeat around the central torus copy.
+.svg [data-ring='1'] {
+  opacity: 0.4;
+}
+
+.tri {
+  fill: transparent;
+  stroke: var(--hairline);
+  stroke-width: 1;
+  cursor: pointer;
+  transition:
+    fill var(--dur-fast) var(--ease-out),
+    stroke 0.6s var(--ease-out),
+    opacity var(--dur-med) var(--ease-out);
+
+  &:hover {
+    fill: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  }
+}
+
+.svg[data-chords] .tri {
+  fill: color-mix(in srgb, var(--tonnetz-major) 24%, transparent);
+
+  &[data-minor] {
+    fill: color-mix(in srgb, var(--tonnetz-minor) 24%, transparent);
+  }
+
+  &:hover {
+    fill: color-mix(in srgb, var(--tonnetz-major) 40%, transparent);
+  }
+
+  &[data-minor]:hover {
+    fill: color-mix(in srgb, var(--tonnetz-minor) 40%, transparent);
+  }
+}
+
+// Selected triad: outlined and washed in the accent, in every copy.
+.tri[data-selected],
+.svg[data-chords] .tri[data-selected] {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+// Playing: lights fast, lets go slowly (as the harmony chips).
+.tri[data-lit],
+.svg[data-chords] .tri[data-lit] {
+  fill: color-mix(in srgb, var(--accent) 38%, transparent);
+  stroke: var(--accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+  transition-duration: 0.2s;
+}
+
+.chordLabel {
+  fill: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  font-weight: 500;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+
+  &[data-selected] {
+    fill: var(--text-primary);
+    font-weight: 700;
+  }
+}
+
+.seam {
+  fill: none;
+  stroke: var(--element-stroke-hover);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  pointer-events: none;
+}
+
+// Hover a note: its fifths, major-third and minor-third axes light through it.
+.axis {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.node {
+  cursor: pointer;
+
+  .disc {
+    fill: var(--element-fill);
+    stroke: var(--element-stroke-hover);
+    stroke-width: 1;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      stroke 0.6s var(--ease-out),
+      scale var(--dur-fast) var(--ease-out);
+  }
+
+  &:hover .disc {
+    scale: 1.15;
+  }
+
+  &[data-tone] .disc {
+    stroke: var(--accent);
+    stroke-width: 1.6;
+  }
+
+  &[data-lit] .disc {
+    stroke: var(--accent);
+    stroke-width: 2.4;
+    filter: drop-shadow(0 0 5px var(--accent-glow));
+    transition-duration: 0.15s;
+  }
+}
+
+.noteLabel {
+  fill: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+}
+
+.node[data-centre] .noteLabel {
+  fill: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 560;
+}
+
+.node[data-tone] .noteLabel {
+  fill: var(--text-primary);
+}
+
+// ---- move bar ----
+
+.moves {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.move {
+  width: 30px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid var(--element-stroke);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 560;
+  color: var(--text-secondary);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+
+  &:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.current {
+  margin-left: auto;
+  padding-right: 2px;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 560;
+  color: var(--text-primary);
+}

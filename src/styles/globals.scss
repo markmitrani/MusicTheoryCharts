@@ -51,6 +51,10 @@
   --degree-dim: #a8a29e; // stone-400
   --degree-aug: #b08bc9;
 
+  // Tonnetz triangles by quality, matching the harmony chips' degree colours.
+  --tonnetz-major: var(--degree-major);
+  --tonnetz-minor: var(--degree-minor);
+
   // Bartók pitch-axis functions, a primary-triad palette matching Ways Home:
   // sky tonic (the ♭VII blue), true primary red dominant (V), Mondrian gold (a
   // hair toward orange) subdominant (IV). -up tokens are glass highlight tones.
@@ -171,6 +175,10 @@
   --degree-minor: #cf7150;
   --degree-dim: #8a9298;
   --degree-aug: #9466bf;
+
+  // Tonnetz triangles by quality, matching the harmony chips' degree colours.
+  --tonnetz-major: var(--degree-major);
+  --tonnetz-minor: var(--degree-minor);
 
   // Bartók pitch-axis functions, a primary-triad palette (deepened for contrast
   // on the light canvas).
