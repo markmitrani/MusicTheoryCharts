@@ -163,7 +163,7 @@ export function CanvasApp() {
         const pitched = s.activePage().elements.some(
           (el) =>
             s.selection.has(el.id) &&
-            (el.kind === 'scale' || el.kind === 'chord' || el.kind === 'harmony'),
+            (el.kind === 'scale' || el.kind === 'chord' || el.kind === 'harmony' || el.kind === 'tonnetz'),
         );
         if (pitched) {
           // Transpose the selection: ±1 semitone, or ±a fifth with Shift.
