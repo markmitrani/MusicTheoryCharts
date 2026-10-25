@@ -11,7 +11,6 @@ import {
   pcAt,
   sameTriad,
   triadName,
-  triadPcs,
   triadPitches,
   triangleAt,
   triangleCentroid,
@@ -42,10 +41,10 @@ interface TonnetzCardProps {
 
 const W = 356;
 const H = 280;
-const E = 44; // edge length in px
+const E = 50; // edge length in px
 const CX = W / 2;
 const CY = H / 2;
-const R_NODE = 10.5;
+const R_NODE = 11;
 
 /** Lattice coordinate → stage px (y up), shifted by the recentre slide. */
 const toPx = (i: number, j: number, off: { x: number; y: number }) => {
@@ -340,7 +339,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                 {nodes.map((n) => {
                   const p = toPx(n.i, n.j, off);
                   const isCentre = n.i === 0 && n.j === 0;
-                  const inTriad = el.triad ? isTone(el.triad, n.pc) : false;
+                  const inTriad = el.triad ? touches(el.centre, n.i, n.j, el.triad) : false;
                   const r = isCentre ? R_NODE + 2.5 : R_NODE;
                   return (
                     <g
@@ -407,4 +406,13 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
   );
 }
 
-const isTone = (t: Triad, pc: number) => triadPcs(t).includes(pc);
+/** Is the note at (i, j) a corner of a copy of `t`? (6 triangles meet at a node.) */
+const touches = (centre: number, i: number, j: number, t: Triad) =>
+  [
+    { i, j, up: true },
+    { i: i - 1, j, up: true },
+    { i, j: j - 1, up: true },
+    { i: i - 1, j, up: false },
+    { i, j: j - 1, up: false },
+    { i: i - 1, j: j - 1, up: false },
+  ].some((p) => sameTriad(triangleAt(centre, p), t));

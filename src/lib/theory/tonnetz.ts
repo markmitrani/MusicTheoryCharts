@@ -7,8 +7,8 @@ import { NOTE_NAMES } from './note';
  *
  * Flat layout (i, j) = (fifths, major thirds): pc = centre + 7i + 4j.
  * Screen basis e_i = (1, 0), e_j = (1/2, √3/2).
- * Up triangle at (i, j): corners (i,j) (i+1,j) (i,j+1) — major, root at (i,j).
- * Down triangle at (i, j): corners (i+1,j) (i,j+1) (i+1,j+1) — minor, root at (i,j+1).
+ * Up triangle at (i, j): corners (i,j) (i+1,j) (i,j+1): major, root at (i,j).
+ * Down triangle at (i, j): corners (i+1,j) (i,j+1) (i+1,j+1): minor, root at (i,j+1).
  * The lattice repeats by (0, 3) (three major thirds) and (4, −4) (four minor
  * thirds): folded, it is a torus of 12 notes and 24 triangles.
  */
