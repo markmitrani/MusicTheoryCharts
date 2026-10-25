@@ -182,7 +182,9 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 
 ## Open decisions (check-in before building)
 
-- **D1 – 3D shape.** Decided 2026-10-25: literal torus, camera inside the tube, with a Wraps option (1–3).
-- **D2 – Drag axes.** Decided 2026-10-25: drag and WASD both follow the torus's two loops (minor thirds around the large loop, major thirds around the small loop).
-- **D3 – Upright vs fixed camera.** Rotate the camera so the current triangle stays upright, or keep the world fixed and let triangles flip.
-- **D4 – Moves on the flat card.** Keep P/L/R/N/S/H in the 3D view only, or add the move bar to the card too.
+- **D1 – 3D shape.** Revised 2026-10-25 (supersedes the literal torus and Wraps): an endless curved plane in the phantom.land manner, which is the torus unrolled, with seams and tinted copies. Zooming out rolls one copy into the literal torus, seen from outside. Reason: with constant triangle size the literal torus has R/r = 4/3 at every wrap count (nearly a horn torus), so Wraps can't fix the squashing, and phantom.land is a front-facing plane, not a tunnel. Wraps is dropped.
+- **D2 – Drag axes.** Decided 2026-10-25: WASD follows the two loops (W/S major thirds, A/D minor thirds). Drag pans freely (direct manipulation).
+- **D3 – Upright vs fixed camera.** Decided 2026-10-25: fixed world.
+- **D4 – Moves on the flat card.** Decided 2026-10-25: the card gets a compact move bar too. Typing the letters performs the move on the card and in 3D (in 3D, Slide is Shift+S because plain S pans).
+
+The implementation plan (`docs/superpowers/plans/2026-10-25-tonnetz.md`) supersedes the Wraps, `wraps` field and codec flag details above.
