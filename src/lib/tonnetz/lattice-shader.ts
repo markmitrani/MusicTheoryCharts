@@ -4,8 +4,9 @@
  * corner (−2, 1)), tiled by instances around the camera. Everything else is
  * procedural in the fragment shader from the continuous lattice coordinate:
  * triangle fills, anti-aliased edges and seams (all lattice edges lie on
- * integer lines of i, j or i + j), glass nodes, atlas labels, copy tints and
- * per-triad highlights. Repeats of a triad light together for free, because
+ * integer lines of i, j or i + j), glass nodes, atlas labels, per-triad
+ * highlights, and a dashed outline and alternating tint per repetition (the
+ * card's 4 × 3 brick). Repeats of a triad light together for free, because
  * lighting is looked up by triad, not by position.
  *
  * Layout is the Wikipedia orientation (fifths →, major thirds ↘, minor thirds
@@ -29,7 +30,6 @@ uniform vec2 uCopyBase;
 uniform float uCurve;
 
 varying vec2 vLat;
-varying vec2 vCopy;
 varying vec2 vRel;
 
 const float S3 = 0.8660254;
@@ -41,7 +41,6 @@ void main() {
   vec2 xy = vec2(rel.x + 0.5 * rel.y, -S3 * rel.y);
   vec3 P = vec3(xy, -uCurve * dot(xy, xy));
   vLat = lat;
-  vCopy = copy;
   vRel = xy;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(P, 1.0);
 }
@@ -70,7 +69,6 @@ uniform vec3 uMinor;
 uniform sampler2D uAtlas;
 
 varying vec2 vLat;
-varying vec2 vCopy;
 varying vec2 vRel;
 
 const float S3 = 0.8660254;
@@ -131,7 +129,10 @@ void main() {
 
   // ---- fill ----
   vec3 col = mix(uBg, uFill, 0.45);
-  float checker = mod(vCopy.x + vCopy.y, 2.0);
+  // Brick (repetition) index, for the alternating tint and the outlines below.
+  float brickA = floor((L.x + 2.0) / 4.0);
+  float brickB = floor((L.y + 1.0 + brickA) / 3.0);
+  float checker = mod(brickA + brickB, 2.0);
   col = mix(col, uTint, 0.07 * checker);
   if (uShowChords > 0.5) col = mix(col, isMajor ? uMajor : uMinor, 0.2);
   col = mix(col, uAccent, 0.13 * lit + 0.12 * focusCopy + 0.32 * play);
@@ -152,16 +153,16 @@ void main() {
   col = mix(col, uAccent, rim * 0.9);
   col = mix(col, uAccent, edge * glow);
 
-  // ---- outline of each repetition (torus copy), dashed like the card's ----
-  // Copy borders: lines i ≡ −2 (mod 4) run along j; lines i + j ≡ −1 (mod 3)
-  // run along the minor thirds. Each is dashed along its own direction.
-  float su = abs(mod(L.x + L.y + 1.0 + 1.5, 3.0) - 1.5);
+  // ---- outline of each repetition, dashed like the card's border ----
+  // The repetition is the card's brick: 4 fifths by 3 major thirds (cells
+  // i ∈ [−2, 2), j ∈ [−1, 2)), tiled by (0, 3) and (4, −1). Brick sides are
+  // the lines i ≡ −2 (mod 4) along the major thirds; brick tops are horizontal,
+  // at j ≡ −1 − a (mod 3) in brick column a (columns are staggered by a row).
   float sv = abs(mod(L.x + 2.0 + 2.0, 4.0) - 2.0);
-  float dashU = dashAA(L.x * 2.6);
-  float dashV = dashAA(L.y * 2.6);
+  float sh = abs(mod(L.y + 1.0 + brickA + 1.5, 3.0) - 1.5);
   float seam = max(
-    lineAA(su, max(0.017, fwk * 0.75), fwk) * dashU,
-    lineAA(sv, max(0.017, fwi * 0.75), fwi) * dashV
+    lineAA(sh, max(0.017, fwj * 0.75), fwj) * dashAA(L.x * 2.6),
+    lineAA(sv, max(0.017, fwi * 0.75), fwi) * dashAA(L.y * 2.6)
   );
   col = mix(col, uSeam, seam * 0.95);
 

@@ -10,8 +10,9 @@ import { TRIADS, triadName } from '@/lib/theory/tonnetz';
  */
 export const ATLAS_COLS = 8;
 export const ATLAS_ROWS = 5;
-export const CELL_W = 192;
-export const CELL_H = 96;
+// High resolution so labels stay crisp when zoomed in (mipmaps cover zoomed out).
+export const CELL_W = 384;
+export const CELL_H = 192;
 
 const family = (token: string, fallback: string) => {
   const v = getComputedStyle(document.body).getPropertyValue(token).trim();
@@ -57,9 +58,9 @@ export function drawAtlas(canvas: HTMLCanvasElement): HTMLCanvasElement {
   const strings = [...NOTE_NAMES, ...TRIADS.map(triadName)];
   strings.forEach((s, k) => {
     const cx = (k % ATLAS_COLS) * CELL_W + CELL_W / 2;
-    const cy = Math.floor(k / ATLAS_COLS) * CELL_H + CELL_H / 2 + 3;
-    if (k < 12) drawLabel(ctx, s, cx, cy, display, body, 64, 560);
-    else drawLabel(ctx, s, cx, cy, body, body, 52, 500);
+    const cy = Math.floor(k / ATLAS_COLS) * CELL_H + CELL_H / 2 + 6;
+    if (k < 12) drawLabel(ctx, s, cx, cy, display, body, 128, 560);
+    else drawLabel(ctx, s, cx, cy, body, body, 104, 500);
   });
   return canvas;
 }

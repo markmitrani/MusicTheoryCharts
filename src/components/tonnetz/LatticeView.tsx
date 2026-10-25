@@ -74,9 +74,12 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
     const host = hostRef.current;
     if (!host) return;
 
-    // ---- renderer: MSAA, capped DPR, sRGB output, no tone mapping (flat UI colours) ----
+    // ---- renderer: MSAA plus supersampling, sRGB output, no tone mapping (flat UI colours) ----
+    // Rendered above the screen's own resolution (at least 2×, up to 3×) and
+    // downsampled by the browser, so edges and text stay crisp on any display.
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const pixelRatio = () => Math.min(3, Math.max(2, window.devicePixelRatio * 1.5));
+    renderer.setPixelRatio(pixelRatio());
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NoToneMapping;
     renderer.domElement.style.display = 'block';
@@ -90,7 +93,7 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
     atlas.generateMipmaps = true;
     atlas.minFilter = THREE.LinearMipmapLinearFilter;
     atlas.magFilter = THREE.LinearFilter;
-    atlas.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    atlas.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
     const u: Record<string, THREE.IUniform> = {
       uCam: { value: new THREE.Vector2() },
@@ -147,6 +150,9 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
     const resize = () => {
       const w = Math.max(host.clientWidth, 1);
       const h = Math.max(host.clientHeight, 1);
+      // Follows a move to another display; capped at ~16 MP so very large
+      // screens stay within GPU drawing-buffer limits.
+      renderer.setPixelRatio(Math.min(pixelRatio(), Math.sqrt(16e6 / (w * h))));
       renderer.setSize(w, h, false);
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';

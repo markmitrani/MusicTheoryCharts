@@ -8,7 +8,6 @@ import {
   applyMove,
   latticeToXY,
   xyToLattice,
-  SQRT3_2,
   moveLabel,
   pcAt,
   sameTriad,
@@ -42,16 +41,25 @@ interface TonnetzCardProps {
   soloSelected: boolean;
 }
 
-/** Window: notes i, j ∈ [−N, N], a parallelogram with horizontal top and bottom (as Wikipedia's figure). */
-const N = 3;
+/**
+ * Window: one exact repetition of the lattice, framed like Wikipedia's figure
+ * (horizontal top and bottom, sides along the major thirds). Cells i ∈ [−2, 2),
+ * j ∈ [−1, 2): 4 fifths by 3 major thirds. These bricks tile the plane by the
+ * periods (0, 3) and (4, −1), so each of the 24 triads appears inside exactly
+ * once, and C major's triangle is the one touching the centre note.
+ */
+const I0 = -2;
+const I1 = 2;
+const J0 = -1;
+const J1 = 2;
 const E = 52; // edge length in px
-/** Room around the window where the lattice carries on, faded. */
-const PAD_X = 58;
-const PAD_Y = 52;
-const W = E * (2 * N + N) + PAD_X * 2; // row span 2N plus the slant N (half a step per row)
-const H = E * 2 * N * SQRT3_2 + PAD_Y * 2;
-const CX = W / 2;
-const CY = H / 2;
+// Stage keeps its earlier size; the lattice carries on, faded, around the window.
+const W = 584;
+const H = 374;
+/** Window centre (lattice (0, ½)) sits at the stage centre. */
+const CENTRE = latticeToXY((I0 + I1) / 2, (J0 + J1) / 2);
+const CX = W / 2 - E * CENTRE.x;
+const CY = H / 2 + E * CENTRE.y;
 const R_NODE = 13;
 
 /** Lattice coordinate → stage px (world y is up, SVG y is down), shifted by the recentre slide. */
@@ -64,19 +72,17 @@ const fromPx = (x: number, y: number) => xyToLattice((x - CX) / E, -(y - CY) / E
 
 /** The window outline in lattice coordinates, grown by `d` steps on every side. */
 const windowCorners = (d: number): [number, number][] => [
-  [-N - d, -N - d],
-  [N + d, -N - d],
-  [N + d, N + d],
-  [-N - d, N + d],
+  [I0 - d, J0 - d],
+  [I1 + d, J0 - d],
+  [I1 + d, J1 + d],
+  [I0 - d, J1 + d],
 ];
-const inWindow = (i: number, j: number, d = 0) => i >= -N - d && i <= N + d && j >= -N - d && j <= N + d;
+const inWindow = (i: number, j: number, d = 0) => i >= I0 - d && i <= I1 + d && j >= J0 - d && j <= J1 + d;
 /** Is a stage point inside the window? (Where an element is drawn now, slide included.) */
 const pxInWindow = (p: { x: number; y: number }, d = 0) => {
   const l = fromPx(p.x, p.y);
   return inWindow(l.i, l.j, d);
 };
-/** Rim nodes stay whole in the window: grow it by a node radius (lattice lines are 0.866·E apart). */
-const NODE_GROW = (R_NODE + 3) / (E * SQRT3_2);
 const inStage = (p: { x: number; y: number }, m: number) => p.x > -m && p.x < W + m && p.y > -m && p.y < H + m;
 
 interface Tri {
@@ -99,8 +105,8 @@ const MOVE_KEYS: Record<string, Move> = { p: 'P', l: 'L', r: 'R', n: 'N', s: 'S'
 /**
  * Tonnetz card: the flat lattice in the familiar Wikipedia orientation, fifths
  * (→), major thirds (↘) and minor thirds (↗), every triangle a triad (▽ major,
- * △ minor), framed as the figure's parallelogram with a dashed border, the
- * lattice carrying on beyond it, faded.
+ * △ minor). A dashed border frames one exact repetition (every chord once);
+ * the repeats carry on around it, faded, with a soft vignette at the card's edges.
  * Double-click a note to recentre on it; click a triangle to select and play
  * it; the move bar (or typing P L R N S H) walks to a neighbouring triad.
  */
@@ -126,7 +132,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
   const { tris, nodes } = useMemo(() => {
     const tris: Tri[] = [];
     const nodes: Node[] = [];
-    const m = E * (sliding ? 2 * N + 2 : 1);
+    const m = E * (sliding ? 6 : 1);
     const zero = { x: 0, y: 0 };
     for (let i = -16; i <= 16; i++) {
       for (let j = -12; j <= 12; j++) {
@@ -289,20 +295,11 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
               data-chords={el.showChords || undefined}
             >
               <defs>
-                {/* Fade the lattice toward the stage edges, never inside the window. */}
-                <radialGradient id={`fade${uid}`} cx="0.5" cy="0.5" r="0.5">
-                  <stop offset="0.7" stopColor="#fff" />
-                  <stop offset="1" stopColor="#000" />
-                </radialGradient>
-                <mask id={`mask${uid}`} maskUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
-                  <rect width={W} height={H} fill={`url(#fade${uid})`} />
-                  <polygon points={outline(NODE_GROW)} fill="#fff" />
-                </mask>
                 {glass && <GlassGradient id={`glass${uid}`} color="var(--text-muted)" quiet />}
                 {glass && <GlassGradient id={`glassLit${uid}`} color="var(--accent)" />}
               </defs>
 
-              <g mask={`url(#mask${uid})`}>
+              <g>
                 {tris.map((t) => {
                   const pts = triangleCorners(t.pos)
                     .map(([i, j]) => toPx(i, j, off))

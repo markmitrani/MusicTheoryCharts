@@ -103,8 +103,16 @@
   overflow: hidden;
 }
 
+// Vignette: a soft band on all four edges (corners included), well clear of
+// the window, so nothing inside the perimeter ever fades.
+$vignette: 40px;
+
 .svg {
   display: block;
+  mask-image:
+    linear-gradient(to right, transparent, #000 $vignette, #000 calc(100% - #{$vignette}), transparent),
+    linear-gradient(to bottom, transparent, #000 $vignette, #000 calc(100% - #{$vignette}), transparent);
+  mask-composite: intersect;
 }
 
 // ---- lattice ----
