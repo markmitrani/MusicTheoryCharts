@@ -70,6 +70,24 @@
   --cadence-plagal-up: #f2b84f;
   --cadence-backdoor: #0ea5e9;
 
+  // Circle of fifths, merged diagram: sky majors, red minors, amber V7/vi, and
+  // rose / pink / purple for the three diminished families (viiø).
+  --circle-major: #0ea5e9;
+  --circle-minor: #e5534f;
+  --circle-dom7: #e6a12c;
+  --circle-dim-0: #fb7185;
+  --circle-dim-1: #ec4899;
+  --circle-dim-2: #a855f7;
+  // Function colours for the focused key (Ways Home hues): V red, IV yellow,
+  // I cyan, vi indigo, ii orange, iii purple, vii the tritone-sub lime.
+  --fn-I: #22d3ee;
+  --fn-ii: #f97316;
+  --fn-iii: #a855f7;
+  --fn-IV: #e6a12c;
+  --fn-V: #e5534f;
+  --fn-vi: #818cf8;
+  --fn-vii: #84cc16;
+
   // piano
   --key-white: #f4f0ea;
   --key-black: #1a1416;
@@ -187,6 +205,20 @@
   --cadence-plagal: #c8851a;
   --cadence-plagal-up: #dc9c34;
   --cadence-backdoor: #0284c7;
+
+  --circle-major: #0284c7;
+  --circle-minor: #b71c2b;
+  --circle-dom7: #c8851a;
+  --circle-dim-0: #e11d48;
+  --circle-dim-1: #db2777;
+  --circle-dim-2: #9333ea;
+  --fn-I: #0891b2;
+  --fn-ii: #ea580c;
+  --fn-iii: #9333ea;
+  --fn-IV: #c8851a;
+  --fn-V: #b71c2b;
+  --fn-vi: #4f46e5;
+  --fn-vii: #65a30d;
 
   // piano
   --key-white: #ffffff;

@@ -39,14 +39,36 @@ export interface ImageElement extends ElementBase {
   aspectRatio: number;
 }
 
+/**
+ * How much of the merged circle to draw: only the major keys, plus their
+ * relative minors, or the whole diagram (also each key's viiø and V7/vi).
+ */
+export type CircleComplexity = 'basic' | 'intermediate' | 'advanced';
+
 /** Interactive circle of fifths; clicking a key rotates it to the top. */
 export interface CircleElement extends ElementBase {
   kind: 'circle';
+  /** The wedge at the top. With `minorCenter`, its relative minor is the key. */
   centerKey: NoteName;
   /** Show each key's signature (♯/♭ count with treble clef) on an outer ring. */
   showSignatures: boolean;
-  /** Show the relative minor of each key on an inner ring. */
-  showRelativeMinor: boolean;
+  complexity: CircleComplexity;
+  /** Colour the focused key's chords by harmonic function (I, IV, V, vi…). */
+  functionColors: boolean;
+  /** The centred key is the relative minor of `centerKey` rather than the major. */
+  minorCenter: boolean;
+  /**
+   * The clicked key, highlighted wherever it sits: its chords show their
+   * numerals and the rest go quiet. Null = a general view that merely sits in
+   * `centerKey`. Clicking selects; double-clicking re-centres (as on Roads).
+   */
+  focus: CircleFocus | null;
+}
+
+/** A focused key: the wedge of major `key`, read as its relative minor if `minor`. */
+export interface CircleFocus {
+  key: NoteName;
+  minor: boolean;
 }
 
 /** The seven diatonic degree chords of a scale, as playable chips. */
