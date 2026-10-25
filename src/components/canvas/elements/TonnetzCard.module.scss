@@ -1,5 +1,5 @@
 .wrap {
-  width: 384px;
+  width: 588px;
 }
 
 // Top bar: "Chord names" checkbox and the 3D button.
@@ -109,11 +109,6 @@
 
 // ---- lattice ----
 
-// Faded repeat around the central torus copy.
-.svg [data-ring='1'] {
-  opacity: 0.4;
-}
-
 .tri {
   fill: transparent;
   stroke: var(--hairline);
@@ -166,7 +161,7 @@
 .chordLabel {
   fill: var(--text-secondary);
   font-family: var(--font-body);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 500;
   text-anchor: middle;
   pointer-events: none;
@@ -179,10 +174,18 @@
 }
 
 .seam {
-  fill: none;
   stroke: var(--element-stroke-hover);
   stroke-width: 1;
   stroke-dasharray: 3 4;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+// The figure's parallelogram outline.
+.frame {
+  fill: none;
+  stroke: var(--element-stroke-hover);
+  stroke-width: 1;
   pointer-events: none;
 }
 
@@ -229,7 +232,7 @@
 .noteLabel {
   fill: var(--text-secondary);
   font-family: var(--font-body);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 500;
   text-anchor: middle;
   pointer-events: none;
@@ -239,7 +242,7 @@
 .node[data-centre] .noteLabel {
   fill: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 560;
 }
 
@@ -260,17 +263,18 @@
   pointer-events: none;
 }
 
+// The figure's free corners: the key top right, the moves bottom left.
 .legendKey {
   top: 6px;
-  right: 40px; // clear of the transpose control
-  width: 150px;
+  right: 6px;
+  width: 148px;
 }
 
 .legendMoves {
   bottom: 6px;
-  right: 6px;
-  transform: scale(0.9);
-  transform-origin: bottom right;
+  left: 6px;
+  transform: scale(0.85);
+  transform-origin: bottom left;
 }
 
 // ---- move bar ----

@@ -40,12 +40,15 @@ interface TonnetzCardProps {
   soloSelected: boolean;
 }
 
-const W = 356;
-const H = 280;
-const E = 50; // edge length in px
+/** Window: notes i, j ∈ [−N, N], a parallelogram with horizontal top and bottom (as Wikipedia's figure). */
+const N = 3;
+const E = 56; // edge length in px
+const PAD = 24;
+const W = E * (2 * N + N) + PAD * 2; // row span 2N plus the slant N (half a step per row)
+const H = E * 2 * N * (Math.sqrt(3) / 2) + PAD * 2;
 const CX = W / 2;
 const CY = H / 2;
-const R_NODE = 11;
+const R_NODE = 13;
 
 /** Lattice coordinate → stage px (world y is up, SVG y is down), shifted by the recentre slide. */
 const toPx = (i: number, j: number, off: { x: number; y: number }) => {
@@ -53,35 +56,30 @@ const toPx = (i: number, j: number, off: { x: number; y: number }) => {
   return { x: CX + E * p.x + off.x, y: CY - E * p.y + off.y };
 };
 
+/** The window outline in lattice coordinates, grown by `d` steps on every side. */
+const windowCorners = (d: number): [number, number][] => [
+  [-N - d, -N - d],
+  [N + d, -N - d],
+  [N + d, N + d],
+  [-N - d, N + d],
+];
+const inWindow = (i: number, j: number, d = 0) => i >= -N - d && i <= N + d && j >= -N - d && j <= N + d;
+/** Nodes on the rim stay whole: their clip grows by a node radius (lattice lines are 0.866·E apart). */
+const NODE_GROW = (R_NODE + 3) / (E * (Math.sqrt(3) / 2));
+
 /**
- * Which torus copy a lattice point falls in. One copy is the parallelogram
- * spanned by the period vectors (4, −4) and (0, 3) from corner (−2, 1), its
- * sides on lattice lines (a minor-third line and a major-third line):
- * 12 notes and all 24 triads exactly once. Returns the copy index (0, 0) for
- * the central copy; a tiny bias makes boundary notes belong to one copy.
+ * Torus seams (where the 12-note lattice repeats): lines i ≡ −2 (mod 4) run
+ * along the major thirds, lines i + j ≡ −1 (mod 3) along the minor thirds.
  */
-const copyOf = (i: number, j: number) => {
-  const s = (i + 2 + 1e-6) / 4;
-  const t = (j - 1 + 4 * s + 1e-6) / 3;
-  return { a: Math.floor(s), b: Math.floor(t) };
-};
-const ringOf = (i: number, j: number) => {
-  const c = copyOf(i, j);
-  return Math.max(Math.abs(c.a), Math.abs(c.b));
-};
-/** Central-copy outline, as lattice corners. */
-const SEAM: [number, number][] = [
-  [-2, 1],
-  [2, -3],
-  [2, 0],
-  [-2, 4],
+const SEAMS: [number, number, number, number][] = [
+  ...[-6, -2, 2, 6].map((i) => [i, -12, i, 12] as [number, number, number, number]),
+  ...[-10, -7, -4, -1, 2, 5, 8].map((u) => [u + 12, -12, u - 12, 12] as [number, number, number, number]),
 ];
 
 interface Tri {
   key: string;
   pos: TriPos;
   triad: Triad;
-  ring: number;
 }
 
 interface Node {
@@ -89,7 +87,6 @@ interface Node {
   i: number;
   j: number;
   pc: number;
-  ring: number;
 }
 
 const MOVE_KEYS: Record<string, Move> = { p: 'P', l: 'L', r: 'R', n: 'N', s: 'S', h: 'H' };
@@ -97,8 +94,8 @@ const MOVE_KEYS: Record<string, Move> = { p: 'P', l: 'L', r: 'R', n: 'N', s: 'S'
 /**
  * Tonnetz card: the flat lattice in the familiar Wikipedia orientation, fifths
  * (→), major thirds (↘) and minor thirds (↗), every triangle a triad (▽ major,
- * △ minor). One torus copy shows at full
- * strength – each note and chord once – with the repeat around it fading out.
+ * △ minor), framed as the figure's parallelogram with dashed seams where the
+ * 12-note lattice repeats.
  * Double-click a note to recentre on it; click a triangle to select and play
  * it; the move bar (or typing P L R N S H) walks to a neighbouring triad.
  */
@@ -118,27 +115,23 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
   const tweenRef = useRef<gsap.core.Tween | null>(null);
   useEffect(() => () => void tweenRef.current?.kill(), []);
 
+  // While sliding, draw a margin beyond the window (clipped) so content moves through it.
+  const margin = off.x !== 0 || off.y !== 0 ? 2 * N + 1 : 0;
   const { tris, nodes } = useMemo(() => {
     const tris: Tri[] = [];
     const nodes: Node[] = [];
-    for (let i = -9; i <= 9; i++) {
-      for (let j = -7; j <= 7; j++) {
-        const p = toPx(i, j, { x: 0, y: 0 });
-        const inStage = p.x > -E && p.x < W + E && p.y > -E && p.y < H + E;
-        if (inStage && ringOf(i, j) <= 1) nodes.push({ key: `${i},${j}`, i, j, pc: pcAt(el.centre, i, j), ring: ringOf(i, j) });
+    for (let i = -N - margin; i <= N + margin; i++) {
+      for (let j = -N - margin; j <= N + margin; j++) {
+        nodes.push({ key: `${i},${j}`, i, j, pc: pcAt(el.centre, i, j) });
+        if (i === N + margin || j === N + margin) continue;
         for (const major of [true, false]) {
           const pos = { i, j, major };
-          const c = triangleCentroid(pos);
-          const cp = toPx(c.i, c.j, { x: 0, y: 0 });
-          if (cp.x < -E || cp.x > W + E || cp.y < -E || cp.y > H + E) continue;
-          const ring = ringOf(c.i, c.j);
-          if (ring > 1) continue;
-          tris.push({ key: `${i},${j},${major ? 'M' : 'm'}`, pos, triad: triangleAt(el.centre, pos), ring });
+          tris.push({ key: `${i},${j},${major ? 'M' : 'm'}`, pos, triad: triangleAt(el.centre, pos) });
         }
       }
     }
     return { tris, nodes };
-  }, [el.centre]);
+  }, [el.centre, margin]);
 
   const store = () => canvasStore.getState();
 
@@ -221,7 +214,11 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
   };
 
   const centreName = NOTE_NAMES[el.centre];
-  const seamPts = SEAM.map(([i, j]) => toPx(i, j, off)).map((p) => `${p.x},${p.y}`).join(' ');
+  const outline = (d: number) =>
+    windowCorners(d)
+      .map(([i, j]) => toPx(i, j, { x: 0, y: 0 }))
+      .map((p) => `${p.x},${p.y}`)
+      .join(' ');
   const axisDirs: [number, number][] = [
     [1, 0],
     [0, 1],
@@ -283,18 +280,17 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
               data-chords={el.showChords || undefined}
             >
               <defs>
-                <radialGradient id={`fade${uid}`} cx="0.5" cy="0.5" r="0.62">
-                  <stop offset="0.62" stopColor="#fff" />
-                  <stop offset="1" stopColor="#000" />
-                </radialGradient>
-                <mask id={`mask${uid}`}>
-                  <rect width={W} height={H} fill={`url(#fade${uid})`} />
-                </mask>
+                <clipPath id={`win${uid}`}>
+                  <polygon points={outline(0)} />
+                </clipPath>
+                <clipPath id={`winNodes${uid}`}>
+                  <polygon points={outline(NODE_GROW)} />
+                </clipPath>
                 {glass && <GlassGradient id={`glass${uid}`} color="var(--text-muted)" quiet />}
                 {glass && <GlassGradient id={`glassLit${uid}`} color="var(--accent)" />}
               </defs>
 
-              <g mask={`url(#mask${uid})`}>
+              <g clipPath={`url(#win${uid})`}>
                 {tris.map((t) => {
                   const pts = triangleCorners(t.pos)
                     .map(([i, j]) => toPx(i, j, off))
@@ -308,7 +304,6 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                       points={pts}
                       className={styles.tri}
                       data-minor={t.triad.minor || undefined}
-                      data-ring={t.ring}
                       data-selected={isSel || undefined}
                       data-lit={isLit || undefined}
                       onPointerDown={(e) => e.stopPropagation()}
@@ -330,9 +325,8 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                       <text
                         key={`l${t.key}`}
                         x={p.x}
-                        y={p.y + 3.5}
+                        y={p.y + 4}
                         className={styles.chordLabel}
-                        data-ring={t.ring}
                         data-selected={sameTriad(t.triad, el.triad) || undefined}
                       >
                         {triadName(t.triad)}
@@ -340,7 +334,11 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     );
                   })}
 
-                <polygon points={seamPts} className={styles.seam} />
+                {SEAMS.map(([i1, j1, i2, j2], k) => {
+                  const a = toPx(i1, j1, off);
+                  const b = toPx(i2, j2, off);
+                  return <line key={`s${k}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={styles.seam} />;
+                })}
 
                 {hover &&
                   axisDirs.map(([di, dj], k) => {
@@ -349,6 +347,10 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     return <line key={k} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={styles.axis} data-axis={k} />;
                   })}
 
+              </g>
+              <polygon points={outline(0)} className={styles.frame} />
+
+              <g clipPath={`url(#winNodes${uid})`}>
                 {nodes.map((n) => {
                   const p = toPx(n.i, n.j, off);
                   const isCentre = n.i === 0 && n.j === 0;
@@ -358,7 +360,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     <g
                       key={n.key}
                       className={styles.node}
-                      data-ring={n.ring}
+                      data-edge={!inWindow(n.i, n.j) || undefined}
                       data-centre={isCentre || undefined}
                       data-tone={inTriad || undefined}
                       data-lit={litNote === n.pc || undefined}
@@ -384,7 +386,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                           pointerEvents="none"
                         />
                       )}
-                      <text x={p.x} y={p.y + (isCentre ? 4.5 : 3.6)} className={styles.noteLabel}>
+                      <text x={p.x} y={p.y + (isCentre ? 5.5 : 4.2)} className={styles.noteLabel}>
                         {NOTE_NAMES[n.pc]}
                       </text>
                     </g>
