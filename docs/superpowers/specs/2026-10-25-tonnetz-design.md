@@ -187,4 +187,6 @@ Lenis (phantom.land's smooth scroll) isn't needed: the pop-out is a fixed full-w
 - **D3 – Upright vs fixed camera.** Decided 2026-10-25: fixed world.
 - **D4 – Moves on the flat card.** Decided 2026-10-25: the card gets a compact move bar too. Typing the letters performs the move on the card and in 3D (in 3D, Slide is Shift+S because plain S pans).
 
+- **Round 2 (Mark, after trying v2):** layout follows the Wikipedia figure (fifths →, major thirds ↘, minor thirds ↗; majors point down, red; minors point up, blue). WASD is removed, so Slide is plain S everywhere. The arrow toward a triangle's third-corner jumps straight to the Slide triangle touching it there. The torus roll-up is shelved: zooming out just widens the field, up to a limit. A legend in the Wikipedia style (triangle key top right, moves bottom right) is toggled by a "Show legend" checkbox next to "Chord names", on the card and in 3D.
+
 The implementation plan (`docs/superpowers/plans/2026-10-25-tonnetz.md`) supersedes the Wraps, `wraps` field and codec flag details above.

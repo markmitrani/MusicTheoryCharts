@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Motion, springStep, snapToCentroid, MAJOR_THIRD, THROW_OMEGA } from './motion';
+import { Motion, springStep, snapToCentroid, THROW_OMEGA } from './motion';
 
 const run = (m: Motion, seconds: number, hz: number) => {
   const dt = 1 / hz;
@@ -63,29 +63,25 @@ describe('tonnetz motion', () => {
     expect(snapped.y).toBeCloseTo(fast.y, 6);
   });
 
-  it('taps move exactly one step each, and queue', () => {
-    const m = new Motion(snapToCentroid({ x: 0, y: 0 }));
-    const start = { ...m.pos };
-    m.step(MAJOR_THIRD);
-    m.update(1 / 60);
-    m.step(MAJOR_THIRD);
+  it('a long drag tracks the pointer exactly, with no jump on release', () => {
+    const m = new Motion();
+    m.beginDrag(0);
+    // drag slowly across many torus copies, then stop and hold still
+    for (let k = 1; k <= 200; k++) m.dragTo({ x: k * 0.25, y: -k * 0.1 }, k * 0.016);
+    for (let k = 1; k <= 10; k++) m.dragTo({ x: 50, y: -20 }, 3.2 + k * 0.016);
+    expect(m.pos).toEqual({ x: 50, y: -20 });
+    m.endDrag(3.36);
     run(m, 2, 60);
-    expect(m.pos.x).toBeCloseTo(start.x + 1, 6);
-    expect(m.pos.y).toBeCloseTo(start.y + Math.sqrt(3), 6);
+    // came to rest on the triangle under the pointer, not thrown away
+    expect(Math.hypot(m.pos.x - 50, m.pos.y + 20)).toBeLessThan(0.6);
   });
 
-  it('holding cruises and release settles on a centroid ahead', () => {
-    const m = new Motion(snapToCentroid({ x: 0, y: 0 }));
-    m.setHold({ x: 1, y: 0 });
-    run(m, 1, 60);
-    const mid = m.pos.x;
-    expect(mid).toBeGreaterThan(2);
-    m.setHold({ x: 0, y: 0 });
-    run(m, 2, 60);
-    expect(m.pos.x).toBeGreaterThanOrEqual(mid);
-    const s = snapToCentroid(m.pos);
-    expect(s.x).toBeCloseTo(m.pos.x, 6);
-    expect(m.mode).toBe('idle');
+  it('travels through waypoints and stops on the last', () => {
+    const m = new Motion();
+    m.travel([{ x: 0.5, y: 0 }, { x: 1, y: 0 }, { x: 1.5, y: 0.3 }], 0.1);
+    run(m, 3, 60);
+    expect(m.pos.x).toBeCloseTo(1.5, 5);
+    expect(m.pos.y).toBeCloseTo(0.3, 5);
   });
 
   it('clamps huge frame gaps', () => {

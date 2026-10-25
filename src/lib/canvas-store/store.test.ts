@@ -120,14 +120,15 @@ describe('canvas store', () => {
       centre: 0,
       triad: null,
       showChords: false,
+      showLegend: true,
     });
   });
 
   it('transposes a tonnetz centre and selected triad, and undoes', () => {
     const a = store.getState().addElement({
-      kind: 'tonnetz', x: 0, y: 0, centre: 11, triad: { root: 9, minor: true }, showChords: true,
+      kind: 'tonnetz', x: 0, y: 0, centre: 11, triad: { root: 9, minor: true }, showChords: true, showLegend: true,
     });
-    const b = store.getState().addElement({ kind: 'tonnetz', x: 0, y: 0, centre: 0, triad: null, showChords: false });
+    const b = store.getState().addElement({ kind: 'tonnetz', x: 0, y: 0, centre: 0, triad: null, showChords: false, showLegend: false });
     store.getState().transposeElements([a, b], 2);
     const [ea, eb] = store.getState().activePage().elements;
     expect(ea).toMatchObject({ centre: 1, triad: { root: 11, minor: true } });

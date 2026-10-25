@@ -8,16 +8,17 @@
  * per-triad highlights. Repeats of a triad light together for free, because
  * lighting is looked up by triad, not by position.
  *
- * The vertex shader bends the plane away from the camera (phantom.land's
- * curved grid) and, with uRoll, rolls one copy up into the literal torus.
+ * Layout is the Wikipedia orientation (fifths →, major thirds ↘, minor thirds
+ * ↗; majors point down). The vertex shader bends the plane away from the
+ * camera, as phantom.land's curved grid.
+ *
+ * Colours arrive as raw sRGB and are mixed and written as-is, so every blend
+ * matches the card's CSS color-mix(in srgb); there is no tone mapping.
  */
 
 export const COPY_ORIGIN = { i: -2, j: 1 };
 export const PERIOD_A = { i: 4, j: -4 }; // four minor thirds
 export const PERIOD_B = { i: 0, j: 3 }; // three major thirds
-
-export const TORUS_R = 2.1;
-export const TORUS_r = 0.95;
 
 export const latticeVertex = /* glsl */ `
 attribute vec2 aLat;
@@ -26,64 +27,28 @@ attribute vec2 aCopy;
 uniform vec2 uCam;
 uniform vec2 uCopyBase;
 uniform float uCurve;
-uniform float uRoll;
 
 varying vec2 vLat;
 varying vec2 vCopy;
 varying vec2 vRel;
-varying vec3 vPos;
 
 const float S3 = 0.8660254;
-const float TAU = 6.2831853;
 
 void main() {
   vec2 copy = aCopy + uCopyBase;
   vec2 lat = aLat + copy.x * vec2(4.0, -4.0) + copy.y * vec2(0.0, 3.0);
   vec2 rel = lat - uCam;
-  vec2 xy = vec2(rel.x + 0.5 * rel.y, S3 * rel.y);
+  vec2 xy = vec2(rel.x + 0.5 * rel.y, -S3 * rel.y);
   vec3 P = vec3(xy, -uCurve * dot(xy, xy));
-
-  if (uRoll > 0.0) {
-    // Torus angles: the small loop carries major thirds (u = i + j, 3 steps),
-    // the large loop minor thirds (v = i, 4 steps). The camera's point faces us.
-    float du = rel.x + rel.y;
-    float dv = rel.x;
-    float th = TAU * du / 3.0;
-    float ph = TAU * dv / 4.0;
-    float ring = ${TORUS_R.toFixed(3)} + ${TORUS_r.toFixed(3)} * cos(th);
-    vec3 T = vec3(ring * sin(ph), ${TORUS_r.toFixed(3)} * sin(th), ring * cos(ph) - ${(TORUS_R + TORUS_r).toFixed(3)});
-    // Early in the roll, shear the torus's local frame onto the plane's so the
-    // sheet curls instead of swirling; relax to the true torus as it closes.
-    vec2 ax = vec2(0.5, -S3) / (${(TORUS_R + TORUS_r).toFixed(3)} * TAU / 4.0);
-    vec2 ay = vec2(0.5, S3) / (${TORUS_r.toFixed(3)} * TAU / 3.0);
-    float k = smoothstep(0.0, 1.0, uRoll);
-    mat2 A = mat2(mix(ax, vec2(1.0, 0.0), k), mix(ay, vec2(0.0, 1.0), k));
-    float zs = mix(sqrt(abs(ax.x * ay.y - ax.y * ay.x)), 1.0, k);
-    T = vec3(A * T.xy, T.z * zs);
-    // Tilt toward the camera so the hole shows, and centre the torus on screen.
-    float a = -1.0 * k;
-    float ca = cos(a);
-    float sa = sin(a);
-    T = vec3(T.x, T.y * ca - T.z * sa, T.y * sa + T.z * ca);
-    float cz = -${(TORUS_R + TORUS_r).toFixed(3)} * zs;
-    T.y -= k * (-cz * sa);
-    // The plane share is gone by 0.6, before the window starts discarding the
-    // other copies, so the torus is exactly periodic and shows no crack.
-    P = mix(P, T, smoothstep(0.0, 0.6, uRoll));
-  }
-
   vLat = lat;
   vCopy = copy;
   vRel = xy;
-  vPos = P;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(P, 1.0);
 }
 `;
 
 export const latticeFragment = /* glsl */ `
-uniform vec2 uCam;
 uniform float uCentre;
-uniform float uRoll;
 uniform float uTime;
 uniform float uShowChords;
 uniform float uFadeR;
@@ -107,11 +72,10 @@ uniform sampler2D uAtlas;
 varying vec2 vLat;
 varying vec2 vCopy;
 varying vec2 vRel;
-varying vec3 vPos;
 
 const float S3 = 0.8660254;
 
-vec2 toXY(vec2 l) { return vec2(l.x + 0.5 * l.y, S3 * l.y); }
+vec2 toXY(vec2 l) { return vec2(l.x + 0.5 * l.y, -S3 * l.y); }
 
 float lineAA(float d, float halfw, float fw) {
   return 1.0 - smoothstep(halfw - fw, halfw + fw, d);
@@ -126,33 +90,25 @@ float label(vec2 q, float idx, vec2 size) {
   return texture2D(uAtlas, a).a;
 }
 
-/** Light level of the triangle at lattice cell p (up or down). */
-float triGlow(vec2 p, bool isUp) {
-  vec2 r = isUp ? p : p + vec2(0.0, 1.0);
+/** Light level of the triangle at lattice cell p (major or minor). */
+float triGlow(vec2 p, bool isMajor) {
+  vec2 r = isMajor ? p : p + vec2(0.0, 1.0);
   float pc = mod(uCentre + 7.0 * r.x + 4.0 * r.y, 12.0);
-  int t = int(pc + 0.5) * 2 + (isUp ? 0 : 1);
+  int t = int(pc + 0.5) * 2 + (isMajor ? 0 : 1);
   return uLit[t] + uPlay[t];
 }
 
 void main() {
   vec2 L = vLat;
 
-  // Torus window for the rolled-up overview: one copy around the camera.
-  if (uRoll > 0.0) {
-    float du = (L.x + L.y) - (uCam.x + uCam.y);
-    float dv = L.x - uCam.x;
-    bool inside = du >= -1.5 && du < 1.5 && dv >= -2.0 && dv < 2.0;
-    if (!inside && uRoll > 0.6) discard;
-  }
-
   float fi = floor(L.x);
   float fj = floor(L.y);
   vec2 fr = L - vec2(fi, fj);
-  bool up = fr.x + fr.y < 1.0;
-  vec2 rootL = up ? vec2(fi, fj) : vec2(fi, fj + 1.0);
+  bool isMajor = fr.x + fr.y < 1.0;
+  vec2 rootL = isMajor ? vec2(fi, fj) : vec2(fi, fj + 1.0);
   float pc = mod(uCentre + 7.0 * rootL.x + 4.0 * rootL.y, 12.0);
-  int tri = int(pc + 0.5) * 2 + (up ? 0 : 1);
-  vec2 cen = up ? vec2(fi + 1.0 / 3.0, fj + 1.0 / 3.0) : vec2(fi + 2.0 / 3.0, fj + 2.0 / 3.0);
+  int tri = int(pc + 0.5) * 2 + (isMajor ? 0 : 1);
+  vec2 cen = isMajor ? vec2(fi + 1.0 / 3.0, fj + 1.0 / 3.0) : vec2(fi + 2.0 / 3.0, fj + 2.0 / 3.0);
 
   float lit = uLit[tri];
   float breathe = 0.78 + 0.22 * sin(uTime * 6.6);
@@ -160,20 +116,23 @@ void main() {
   float focusCopy = uFocus.z * (1.0 - step(0.05, length(cen - uFocus.xy)));
   float glow = clamp(lit * 0.55 + focusCopy * 0.45 + play, 0.0, 1.0);
 
+  // Screen size of one lattice step: labels fade out before they turn to mush.
+  float fwi = fwidth(L.x);
+  float fwj = fwidth(L.y);
+  float fwk = fwidth(L.x + L.y);
+  float textVis = 1.0 - smoothstep(0.016, 0.03, max(fwi, fwj));
+
   // ---- fill ----
   vec3 col = mix(uBg, uFill, 0.45);
   float checker = mod(vCopy.x + vCopy.y, 2.0);
   col = mix(col, uTint, 0.07 * checker);
-  if (uShowChords > 0.5) col = mix(col, up ? uMajor : uMinor, 0.17);
+  if (uShowChords > 0.5) col = mix(col, isMajor ? uMajor : uMinor, 0.2);
   col = mix(col, uAccent, 0.13 * lit + 0.12 * focusCopy + 0.32 * play);
 
   // ---- edges (three families of integer lines) ----
   float di = abs(fract(L.x + 0.5) - 0.5);
   float dj = abs(fract(L.y + 0.5) - 0.5);
   float dk = abs(fract(L.x + L.y + 0.5) - 0.5);
-  float fwi = fwidth(L.x);
-  float fwj = fwidth(L.y);
-  float fwk = fwidth(L.x + L.y);
   float edge = max(
     max(lineAA(di, max(0.011, fwi * 0.55), fwi), lineAA(dj, max(0.011, fwj * 0.55), fwj)),
     lineAA(dk, max(0.011, fwk * 0.55), fwk)
@@ -182,7 +141,7 @@ void main() {
 
   // Lit triangles glow along their own inner edges.
   float dEdge = min(di, min(dj, dk)) * S3;
-  float rim = glow * (1.0 - smoothstep(0.0, 0.085, dEdge));
+  float rim = glow * (1.0 - smoothstep(0.0, max(0.085, fwi * 2.0), dEdge));
   col = mix(col, uAccent, rim * 0.9);
   col = mix(col, uAccent, edge * glow);
 
@@ -193,9 +152,9 @@ void main() {
   col = mix(col, uSeam, seam * 0.55);
 
   // ---- nodes ----
-  vec2 c0 = up ? vec2(fi, fj) : vec2(fi + 1.0, fj);
-  vec2 c1 = up ? vec2(fi + 1.0, fj) : vec2(fi, fj + 1.0);
-  vec2 c2 = up ? vec2(fi, fj + 1.0) : vec2(fi + 1.0, fj + 1.0);
+  vec2 c0 = isMajor ? vec2(fi, fj) : vec2(fi + 1.0, fj);
+  vec2 c1 = isMajor ? vec2(fi + 1.0, fj) : vec2(fi, fj + 1.0);
+  vec2 c2 = isMajor ? vec2(fi, fj + 1.0) : vec2(fi + 1.0, fj + 1.0);
   vec2 n = c0;
   float dn = length(toXY(L - c0));
   float d1 = length(toXY(L - c1));
@@ -226,37 +185,21 @@ void main() {
     float ca = 0.8191520;
     float sa = 0.5735764;
     vec2 qr = vec2(ca * q.x + sa * q.y, -sa * q.x + ca * q.y);
-    float lab = label(qr, npc, vec2(0.34, 0.17));
+    float lab = label(qr, npc, vec2(0.34, 0.17)) * textVis;
     nodeCol = mix(nodeCol, mix(uText, uTextStrong, max(nlit, 0.25)), lab);
     col = mix(col, nodeCol, disc);
   }
 
   // ---- chord names ----
   if (uShowChords > 0.5) {
-    float cl = label(toXY(L - cen), 12.0 + float(tri), vec2(0.4, 0.2));
+    float cl = label(toXY(L - cen), 12.0 + float(tri), vec2(0.4, 0.2)) * textVis;
     col = mix(col, mix(uText, uTextStrong, max(glow, 0.2)), cl * (1.0 - disc));
-  }
-
-  // ---- overview ----
-  if (uRoll > 0.0) {
-    float du = (L.x + L.y) - (uCam.x + uCam.y);
-    float dv = L.x - uCam.x;
-    bool inside = du >= -1.5 && du < 1.5 && dv >= -2.0 && dv < 2.0;
-    if (!inside) col = mix(col, uBg, clamp(uRoll / 0.22, 0.0, 1.0));
-    vec3 nrm = normalize(cross(dFdx(vPos), dFdy(vPos)));
-    col *= mix(1.0, 0.5 + 0.5 * abs(nrm.z), uRoll);
-    // "you are here"
-    float r = length(vRel);
-    float mr = 0.3 * (1.0 - 0.7 * uRoll);
-    float marker = 1.0 - smoothstep(0.03 * (1.0 - 0.6 * uRoll), 0.03 * (1.0 - 0.6 * uRoll) + fwidth(r) * 1.5, abs(r - mr));
-    col = mix(col, uAccent, marker * smoothstep(0.1, 0.6, uRoll));
   }
 
   // Soft fade toward the far edges of the curved plane.
   float fade = smoothstep(uFadeR * 0.8, uFadeR * 1.08, length(vRel));
-  col = mix(col, uBg, fade * (1.0 - uRoll));
+  col = mix(col, uBg, fade);
 
-  // Colours are sRGB throughout (see LatticeScene), so no output conversion.
   gl_FragColor = vec4(col, 1.0);
 }
 `;

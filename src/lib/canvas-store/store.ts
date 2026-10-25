@@ -184,7 +184,7 @@ export function createCanvasStore() {
             case 'roads':
               return { ...pos, kind: 'roads', centerKey: 'C', show: 'both' };
             case 'tonnetz':
-              return { ...pos, kind: 'tonnetz', centre: 0, triad: null, showChords: false };
+              return { ...pos, kind: 'tonnetz', centre: 0, triad: null, showChords: false, showLegend: true };
             case 'chord':
               return { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false };
             case 'harmony':

@@ -5,10 +5,10 @@ import { NOTE_NAMES } from './note';
  * every triangle is a major or minor triad, plus the neo-Riemannian moves.
  * Pure; shared by the flat card and the 3D world.
  *
- * Flat layout (i, j) = (fifths, major thirds): pc = centre + 7i + 4j.
- * Screen basis e_i = (1, 0), e_j = (1/2, √3/2).
- * Up triangle at (i, j): corners (i,j) (i+1,j) (i,j+1): major, root at (i,j).
- * Down triangle at (i, j): corners (i+1,j) (i,j+1) (i+1,j+1): minor, root at (i,j+1).
+ * Flat layout (i, j) = (fifths, major thirds): pc = centre + 7i + 4j, drawn
+ * in the Wikipedia orientation (screen basis e_i = (1, 0), e_j = (1/2, −√3/2)).
+ * Major triangle at (i, j): corners (i,j) (i+1,j) (i,j+1), root at (i,j).
+ * Minor triangle at (i, j): corners (i+1,j) (i,j+1) (i+1,j+1), root at (i,j+1).
  * The lattice repeats by (0, 3) (three major thirds) and (4, −4) (four minor
  * thirds): folded, it is a torus of 12 notes and 24 triangles.
  */
@@ -95,25 +95,33 @@ export function pcAt(centre: number, i: number, j: number): number {
   return mod12(centre + 7 * i + 4 * j);
 }
 
-/** A triangle's place on the flat lattice. */
+/**
+ * A triangle's place on the flat lattice: the cell (i, j) and which of its two
+ * triangles. `major` triangles have corners (i,j) (i+1,j) (i,j+1); minor ones
+ * (i+1,j) (i,j+1) (i+1,j+1).
+ */
 export interface TriPos {
   i: number;
   j: number;
-  up: boolean;
+  major: boolean;
 }
 
 export const SQRT3_2 = Math.sqrt(3) / 2;
 
-/** Lattice coordinate → flat world position (edge length 1). */
-export const latticeToXY = (i: number, j: number) => ({ x: i + j / 2, y: j * SQRT3_2 });
+/**
+ * Lattice coordinate → flat world position (edge length 1, y up), in the
+ * familiar Wikipedia orientation: fifths run right, major thirds down-right,
+ * minor thirds up-right. Major triangles point down, minor ones point up.
+ */
+export const latticeToXY = (i: number, j: number) => ({ x: i + j / 2, y: -j * SQRT3_2 });
 /** Flat world position → continuous lattice coordinate. */
 export const xyToLattice = (x: number, y: number) => {
-  const j = y / SQRT3_2;
+  const j = -y / SQRT3_2;
   return { i: x - j / 2, j };
 };
 
 export function triangleCorners(p: TriPos): [number, number][] {
-  return p.up
+  return p.major
     ? [
         [p.i, p.j],
         [p.i + 1, p.j],
@@ -128,45 +136,48 @@ export function triangleCorners(p: TriPos): [number, number][] {
 
 /** Centroid in lattice coordinates. */
 export function triangleCentroid(p: TriPos): { i: number; j: number } {
-  return p.up ? { i: p.i + 1 / 3, j: p.j + 1 / 3 } : { i: p.i + 2 / 3, j: p.j + 2 / 3 };
+  return p.major ? { i: p.i + 1 / 3, j: p.j + 1 / 3 } : { i: p.i + 2 / 3, j: p.j + 2 / 3 };
 }
 
 export function triangleAt(centre: number, p: TriPos): Triad {
-  return p.up ? { root: pcAt(centre, p.i, p.j), minor: false } : { root: pcAt(centre, p.i, p.j + 1), minor: true };
+  return p.major ? { root: pcAt(centre, p.i, p.j), minor: false } : { root: pcAt(centre, p.i, p.j + 1), minor: true };
 }
 
 /** The triangle containing a continuous lattice point. */
 export function triangleContaining(fi: number, fj: number): TriPos {
   const i = Math.floor(fi);
   const j = Math.floor(fj);
-  return { i, j, up: fi - i + (fj - j) < 1 };
+  return { i, j, major: fi - i + (fj - j) < 1 };
 }
 
 export type ArrowDir = 'left' | 'right' | 'up' | 'down';
 
 /**
- * Neighbour across an edge, or null where there is no edge (a triangle has one
- * horizontal edge: ↓ on up triangles, ↑ on down ones). Up: ← R, → L, ↓ P.
- * Down: ← L, → R, ↑ P.
+ * The triangle an arrow key leads to, on screen. ← and → cross the sloped
+ * edges (major: ← R, → L; minor: ← L, → R). The flat edge is the fifth, so
+ * crossing it is P: ↑ on a major (▽), ↓ on a minor (△). The other way points
+ * at the corner holding the third, and the triangle touching it there is the
+ * Slide (same third, one common tone): ↓ on a major, ↑ on a minor.
  */
-export function neighbourPos(p: TriPos, dir: ArrowDir): TriPos | null {
-  if (p.up) {
-    if (dir === 'left') return { i: p.i - 1, j: p.j, up: false };
-    if (dir === 'right') return { i: p.i, j: p.j, up: false };
-    if (dir === 'down') return { i: p.i, j: p.j - 1, up: false };
-    return null;
+export function neighbourPos(p: TriPos, dir: ArrowDir): { pos: TriPos; move: Move } {
+  const { i, j } = p;
+  if (p.major) {
+    if (dir === 'left') return { pos: { i: i - 1, j, major: false }, move: 'R' };
+    if (dir === 'right') return { pos: { i, j, major: false }, move: 'L' };
+    if (dir === 'up') return { pos: { i, j: j - 1, major: false }, move: 'P' };
+    return { pos: { i: i - 1, j: j + 1, major: false }, move: 'S' };
   }
-  if (dir === 'left') return { i: p.i, j: p.j, up: true };
-  if (dir === 'right') return { i: p.i + 1, j: p.j, up: true };
-  if (dir === 'up') return { i: p.i, j: p.j + 1, up: true };
-  return null;
+  if (dir === 'left') return { pos: { i, j, major: true }, move: 'L' };
+  if (dir === 'right') return { pos: { i: i + 1, j, major: true }, move: 'R' };
+  if (dir === 'down') return { pos: { i, j: j + 1, major: true }, move: 'P' };
+  return { pos: { i: i + 1, j: j - 1, major: true }, move: 'S' };
 }
 
 /** The P/L/R neighbour of a placed triangle (the one sharing that edge). */
 export function stepPos(p: TriPos, step: Step): TriPos {
-  if (step === 'P') return p.up ? { i: p.i, j: p.j - 1, up: false } : { i: p.i, j: p.j + 1, up: true };
-  if (step === 'R') return p.up ? { i: p.i - 1, j: p.j, up: false } : { i: p.i + 1, j: p.j, up: true };
-  return p.up ? { i: p.i, j: p.j, up: false } : { i: p.i, j: p.j, up: true };
+  if (step === 'P') return p.major ? { i: p.i, j: p.j - 1, major: false } : { i: p.i, j: p.j + 1, major: true };
+  if (step === 'R') return p.major ? { i: p.i - 1, j: p.j, major: false } : { i: p.i + 1, j: p.j, major: true };
+  return p.major ? { i: p.i, j: p.j, major: false } : { i: p.i, j: p.j, major: true };
 }
 
 /** Placed triangles walked by a move from `p` (start included). */
@@ -186,7 +197,7 @@ export function nearestCopy(centre: number, t: Triad, fi: number, fj: number): T
   let base: TriPos | null = null;
   outer: for (let i = 0; i < 12; i++) {
     for (let j = 0; j < 3; j++) {
-      const p = { i, j, up: !t.minor };
+      const p = { i, j, major: !t.minor };
       if (sameTriad(triangleAt(centre, p), t)) {
         base = p;
         break outer;
@@ -202,7 +213,7 @@ export function nearestCopy(centre: number, t: Triad, fi: number, fj: number): T
   let bestD = Infinity;
   for (const k of [Math.floor(k0), Math.ceil(k0)]) {
     for (const a of [Math.floor(a0) - 1, Math.floor(a0), Math.ceil(a0), Math.ceil(a0) + 1]) {
-      const p = { i: b.i + 4 * k, j: b.j + 3 * a - 4 * k, up: b.up };
+      const p = { i: b.i + 4 * k, j: b.j + 3 * a - 4 * k, major: b.major };
       const pc = triangleCentroid(p);
       const d1 = latticeToXY(pc.i - fi, pc.j - fj);
       const d = d1.x * d1.x + d1.y * d1.y;

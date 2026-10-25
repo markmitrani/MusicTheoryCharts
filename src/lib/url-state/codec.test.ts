@@ -12,15 +12,16 @@ describe('url codec', () => {
   it('round-trips every tonnetz centre, triad and flag', () => {
     const triads = [null, ...Array.from({ length: 24 }, (_, k) => ({ root: k >> 1, minor: (k & 1) === 1 }))];
     for (const showChords of [false, true])
-      for (let centre = 0; centre < 12; centre++)
-        for (const triad of triads) {
-          const doc = {
-            activePageId: 'p-t',
-            pages: [page('t', [{ id: 't', kind: 'tonnetz', x: 0, y: 0, z: 1, centre, triad, showChords }])],
-          };
-          const el = decodeDoc(encodeDoc(doc))!.pages[0].elements[0];
-          expect(el).toMatchObject({ kind: 'tonnetz', centre, triad, showChords });
-        }
+      for (const showLegend of [false, true])
+        for (let centre = 0; centre < 12; centre++)
+          for (const triad of triads) {
+            const doc = {
+              activePageId: 'p-t',
+              pages: [page('t', [{ id: 't', kind: 'tonnetz', x: 0, y: 0, z: 1, centre, triad, showChords, showLegend }])],
+            };
+            const el = decodeDoc(encodeDoc(doc))!.pages[0].elements[0];
+            expect(el).toMatchObject({ kind: 'tonnetz', centre, triad, showChords, showLegend });
+          }
   });
 
   it('writes tonnetz as an 8-char t code and keeps neighbours in order', () => {
@@ -28,7 +29,7 @@ describe('url codec', () => {
       activePageId: 'p-m',
       pages: [
         page('m', [
-          { id: 't', kind: 'tonnetz', x: 48, y: 0, z: 1, centre: 9, triad: { root: 4, minor: true }, showChords: true },
+          { id: 't', kind: 'tonnetz', x: 48, y: 0, z: 1, centre: 9, triad: { root: 4, minor: true }, showChords: true, showLegend: false },
           { id: 'p', kind: 'pitchaxis', x: 0, y: 96, z: 2, centerKey: 'C' },
         ]),
       ],

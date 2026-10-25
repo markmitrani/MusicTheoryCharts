@@ -17,7 +17,7 @@ import {
   type Triad,
   type TriPos,
 } from '@/lib/theory/tonnetz';
-import { Motion, MAJOR_THIRD, MINOR_THIRD, snapToCentroid, type Vec2 } from '@/lib/tonnetz/motion';
+import { Motion, snapToCentroid, type Vec2 } from '@/lib/tonnetz/motion';
 import { COPY_ORIGIN, PERIOD_A, PERIOD_B } from '@/lib/tonnetz/lattice-shader';
 import { playChord, playProgression } from '@/lib/playback/playback';
 
@@ -25,17 +25,8 @@ export const FOV = 40;
 const TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
 export const H_MIN = 3.6;
 export const H_DEFAULT = 8.5;
-export const H_ROLL_START = 12.5;
-export const H_ROLL_END = 19;
-export const H_MAX = 21;
-
-const P_A = latticeToXY(PERIOD_A.i, PERIOD_A.j);
-const P_B = latticeToXY(PERIOD_B.i, PERIOD_B.j);
-
-const smoothstep = (a: number, b: number, x: number) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
+/** Furthest zoom-out: the lattice shrinks to a wide field, labels fade first. */
+export const H_MAX = 30;
 
 /** Torus copy index of a lattice point (same parallelogram as the shader). */
 const copyIndex = (i: number, j: number) => {
@@ -49,16 +40,23 @@ export interface WorldUiState {
   selection: Triad[];
   history: Triad[];
   playing: boolean;
-  roll: number;
+}
+
+/** What the shader needs each frame, in coordinates kept near the origin. */
+export interface FrameUniforms {
+  cam: { i: number; j: number };
+  copyBase: { a: number; b: number };
+  focus: { i: number; j: number };
 }
 
 type Listener = (s: WorldUiState) => void;
 
 /**
- * Everything the 3D world does, outside React: camera motion, zoom and roll,
- * focus / selection / history, moves and playback, picking. The scene reads
- * it once per frame (`update`) and copies it into uniforms; the DOM chrome
- * subscribes to discrete changes only, so nothing re-renders while moving.
+ * Everything the 3D world does, outside React: camera motion and zoom, focus /
+ * selection / history, moves and playback, picking. The scene reads it once
+ * per frame (`update`, `frameUniforms`) and copies it into uniforms; the DOM
+ * chrome subscribes to discrete changes only, so nothing re-renders while
+ * moving.
  */
 export class WorldController {
   readonly centre: number;
@@ -70,7 +68,6 @@ export class WorldController {
   h = H_DEFAULT;
   hTarget = H_DEFAULT;
   aspect = 1;
-  viewportH = 800;
   time = 0;
 
   focus: Triad;
@@ -82,7 +79,6 @@ export class WorldController {
   readonly lit = new Float32Array(24);
   readonly play = new Float32Array(24);
   private playTarget = new Float32Array(24);
-  private bump = 0;
   private timers: { at: number; fn: () => void }[] = [];
   private listeners = new Set<Listener>();
   private pinchStart: { dist: number; h: number } | null = null;
@@ -104,10 +100,6 @@ export class WorldController {
     return xyToLattice(this.motion.pos.x, this.motion.pos.y);
   }
 
-  get roll() {
-    return smoothstep(H_ROLL_START, H_ROLL_END, this.h);
-  }
-
   get curve() {
     return 0.2 / this.h;
   }
@@ -126,9 +118,25 @@ export class WorldController {
     return nearestCopy(this.centre, this.focus, c.i, c.j);
   }
 
-  copyBase() {
+  /**
+   * Camera and focus shifted together by whole pairs of torus periods (same
+   * pitch classes, same copy tints), so the shader's floats stay small however
+   * far you travel. The motion itself keeps exact positions, so a drag never
+   * re-bases mid-gesture.
+   */
+  frameUniforms(): FrameUniforms {
     const c = this.camLattice;
-    return copyIndex(c.i, c.j);
+    const { a, b } = copyIndex(c.i, c.j);
+    const na = 2 * Math.round(a / 2);
+    const nb = 2 * Math.round(b / 2);
+    const di = na * PERIOD_A.i + nb * PERIOD_B.i;
+    const dj = na * PERIOD_A.j + nb * PERIOD_B.j;
+    const f = triangleCentroid(nearestCopy(this.centre, this.focus, c.i, c.j));
+    return {
+      cam: { i: c.i - di, j: c.j - dj },
+      copyBase: { a: a - na, b: b - nb },
+      focus: { i: f.i - di, j: f.j - dj },
+    };
   }
 
   // ---- subscriptions ----
@@ -140,7 +148,7 @@ export class WorldController {
   }
 
   private ui(): WorldUiState {
-    return { focus: this.focus, selection: this.selection, history: this.history, playing: this.playing, roll: this.roll };
+    return { focus: this.focus, selection: this.selection, history: this.history, playing: this.playing };
   }
 
   private emit() {
@@ -148,18 +156,13 @@ export class WorldController {
     this.listeners.forEach((l) => l(s));
   }
 
-  private lastRollBucket = 0;
-
   // ---- frame ----
 
   update(dt: number) {
     this.time += dt;
-    // Zoom eases; the roll between plane and torus takes a slower, even pace.
-    const rolling = Math.max(this.h, this.hTarget) > H_ROLL_START;
-    const k = 1 - Math.exp(-dt * (rolling ? 4.5 : 10));
+    const k = 1 - Math.exp(-dt * 10);
     this.h += (this.hTarget - this.h) * (this.reducedMotion ? 1 : k);
     this.motion.update(dt);
-    this.wrap();
 
     for (let n = this.timers.length - 1; n >= 0; n--) {
       if (this.timers[n].at <= this.time) {
@@ -179,37 +182,6 @@ export class WorldController {
       const pt = this.playTarget[n];
       this.play[n] += (pt - this.play[n]) * (pt > this.play[n] ? attack : release);
     }
-
-    this.bump *= Math.exp(-dt * 9);
-    const bucket = Math.round(this.roll * 10);
-    if (bucket !== this.lastRollBucket) {
-      this.lastRollBucket = bucket;
-      this.emit();
-    }
-  }
-
-  /** Keep the camera near the origin by double periods (invisible: same pc, same tint). */
-  private wrap() {
-    const c = this.camLattice;
-    const { a, b } = copyIndex(c.i, c.j);
-    let dx = 0;
-    let dy = 0;
-    if (Math.abs(a) > 1) {
-      const n = 2 * Math.round(a / 2);
-      dx -= n * P_A.x;
-      dy -= n * P_A.y;
-    }
-    if (Math.abs(b) > 1) {
-      const n = 2 * Math.round(b / 2);
-      dx -= n * P_B.x;
-      dy -= n * P_B.y;
-    }
-    if (dx !== 0 || dy !== 0) this.motion.translate({ x: dx, y: dy });
-  }
-
-  /** Small sideways nudge of the camera when an arrow has no edge to cross. */
-  get bumpOffset() {
-    return this.bump * 0.06 * Math.sin(this.time * 40);
   }
 
   private after(seconds: number, fn: () => void) {
@@ -264,20 +236,19 @@ export class WorldController {
   }
 
   clickAt(nx: number, ny: number, shift: boolean) {
-    if (this.roll > 0.3) return;
     const p = this.pickTriangle(nx, ny);
     const t = triangleAt(this.centre, p);
     this.setFocus(t, { add: shift });
     this.playTriad(t);
   }
 
+  /**
+   * Arrow keys: across an edge to a neighbour, or (toward the corner that holds
+   * the third) straight to the Slide triangle touching it there. Either way it
+   * is one step: focus lands on it directly, with no route implied.
+   */
   arrow(dir: ArrowDir, shift: boolean) {
-    const from = this.focusPos();
-    const next = neighbourPos(from, dir);
-    if (!next) {
-      this.bump = 1;
-      return;
-    }
+    const next = neighbourPos(this.focusPos(), dir).pos;
     const t = triangleAt(this.centre, next);
     this.setFocus(t, { add: shift });
     this.follow(next);
@@ -370,35 +341,10 @@ export class WorldController {
     this.playSeq(this.selection.length > 0 ? this.selection : [this.focus], 700);
   }
 
-  // ---- camera input ----
+  // ---- zoom ----
 
-  /** WASD: W/S ± major third, A/D ∓/± minor third (in step units). */
-  static keyStep(key: string): Vec2 | null {
-    switch (key) {
-      case 'w':
-        return MAJOR_THIRD;
-      case 's':
-        return { x: -MAJOR_THIRD.x, y: -MAJOR_THIRD.y };
-      case 'd':
-        return MINOR_THIRD;
-      case 'a':
-        return { x: -MINOR_THIRD.x, y: -MINOR_THIRD.y };
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * Zoom by a factor. Crossing into the roll range commits the gesture: the
-   * plane rolls all the way into the torus (or all the way back), so the
-   * in-between curl is only ever seen in motion.
-   */
   zoomBy(factor: number) {
-    const inTorus = this.hTarget >= H_ROLL_END;
-    let next = Math.min(H_MAX, Math.max(H_MIN, this.hTarget * factor));
-    if (!inTorus && next > H_ROLL_START) next = factor > 1 ? H_MAX : H_ROLL_START;
-    if (inTorus && factor < 1) next = H_ROLL_START - 1.5;
-    this.hTarget = next;
+    this.hTarget = Math.min(H_MAX, Math.max(H_MIN, this.hTarget * factor));
   }
 
   pinch(dist: number, start: boolean) {
@@ -407,9 +353,7 @@ export class WorldController {
       return;
     }
     const want = (this.pinchStart.h * this.pinchStart.dist) / Math.max(dist, 1);
-    const factor = want / this.hTarget;
-    if (Math.abs(factor - 1) > 1e-3) this.zoomBy(factor);
-    if (this.hTarget >= H_ROLL_END || this.hTarget <= H_ROLL_START - 1.5) this.pinchStart = { dist, h: this.hTarget };
+    this.hTarget = Math.min(H_MAX, Math.max(H_MIN, want));
   }
 
   endPinch() {

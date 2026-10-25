@@ -28,6 +28,7 @@ import { prefetchWorld, worldStore } from '@/lib/tonnetz/world-store';
 import { ElementShell } from '../ElementShell';
 import { GlassGradient } from '@/components/cadence/FractalScene';
 import { useSurfaces } from '@/lib/use-surfaces';
+import { LegendKey, LegendMoves } from '@/components/tonnetz/TonnetzLegend';
 import { PlayButton } from './PlayButton';
 import { TransposeControl } from './TransposeControl';
 import chordStyles from './ChordCard.module.scss';
@@ -46,7 +47,7 @@ const CX = W / 2;
 const CY = H / 2;
 const R_NODE = 11;
 
-/** Lattice coordinate → stage px (y up), shifted by the recentre slide. */
+/** Lattice coordinate → stage px (world y is up, SVG y is down), shifted by the recentre slide. */
 const toPx = (i: number, j: number, off: { x: number; y: number }) => {
   const p = latticeToXY(i, j);
   return { x: CX + E * p.x + off.x, y: CY - E * p.y + off.y };
@@ -94,8 +95,9 @@ interface Node {
 const MOVE_KEYS: Record<string, Move> = { p: 'P', l: 'L', r: 'R', n: 'N', s: 'S', h: 'H' };
 
 /**
- * Tonnetz card: the flat lattice of fifths (→) and major thirds (↗), every
- * triangle a triad (up = major, down = minor). One torus copy shows at full
+ * Tonnetz card: the flat lattice in the familiar Wikipedia orientation, fifths
+ * (→), major thirds (↘) and minor thirds (↗), every triangle a triad (▽ major,
+ * △ minor). One torus copy shows at full
  * strength – each note and chord once – with the repeat around it fading out.
  * Double-click a note to recentre on it; click a triangle to select and play
  * it; the move bar (or typing P L R N S H) walks to a neighbouring triad.
@@ -124,14 +126,14 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
         const p = toPx(i, j, { x: 0, y: 0 });
         const inStage = p.x > -E && p.x < W + E && p.y > -E && p.y < H + E;
         if (inStage && ringOf(i, j) <= 1) nodes.push({ key: `${i},${j}`, i, j, pc: pcAt(el.centre, i, j), ring: ringOf(i, j) });
-        for (const up of [true, false]) {
-          const pos = { i, j, up };
+        for (const major of [true, false]) {
+          const pos = { i, j, major };
           const c = triangleCentroid(pos);
           const cp = toPx(c.i, c.j, { x: 0, y: 0 });
           if (cp.x < -E || cp.x > W + E || cp.y < -E || cp.y > H + E) continue;
           const ring = ringOf(c.i, c.j);
           if (ring > 1) continue;
-          tris.push({ key: `${i},${j},${up ? 'u' : 'd'}`, pos, triad: triangleAt(el.centre, pos), ring });
+          tris.push({ key: `${i},${j},${major ? 'M' : 'm'}`, pos, triad: triangleAt(el.centre, pos), ring });
         }
       }
     }
@@ -169,7 +171,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
     const live = slideRef.current;
     // The clicked note becomes (0, 0): start the new view where it was.
     live.x += E * p.x;
-    live.y -= E * p.y;
+    live.y -= E * p.y; // world y up → SVG y down
     setOff({ ...live });
     tweenRef.current?.kill();
     tweenRef.current = gsap.to(live, {
@@ -237,15 +239,26 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
         </div>
         <div className={chordStyles.card}>
           <div className={styles.bar} onPointerDown={(e) => e.stopPropagation()}>
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={el.showChords}
-                onChange={(e) => store().updateElement(el.id, { showChords: e.target.checked }, { commit: true })}
-              />
-              <span className={styles.box} aria-hidden />
-              Chord names
-            </label>
+            <div className={styles.toggles}>
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={el.showChords}
+                  onChange={(e) => store().updateElement(el.id, { showChords: e.target.checked }, { commit: true })}
+                />
+                <span className={styles.box} aria-hidden />
+                Chord names
+              </label>
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={el.showLegend}
+                  onChange={(e) => store().updateElement(el.id, { showLegend: e.target.checked }, { commit: true })}
+                />
+                <span className={styles.box} aria-hidden />
+                Show legend
+              </label>
+            </div>
             <button
               className={styles.pill}
               title="Open the Tonnetz in 3D"
@@ -379,6 +392,16 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                 })}
               </g>
             </svg>
+            {el.showLegend && (
+              <>
+                <div className={`${styles.legend} ${styles.legendKey}`} aria-hidden>
+                  <LegendKey />
+                </div>
+                <div className={`${styles.legend} ${styles.legendMoves}`} aria-hidden>
+                  <LegendMoves />
+                </div>
+              </>
+            )}
             <TransposeControl id={el.id} visible={selected && soloSelected} />
           </div>
 
@@ -409,10 +432,10 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
 /** Is the note at (i, j) a corner of a copy of `t`? (6 triangles meet at a node.) */
 const touches = (centre: number, i: number, j: number, t: Triad) =>
   [
-    { i, j, up: true },
-    { i: i - 1, j, up: true },
-    { i, j: j - 1, up: true },
-    { i: i - 1, j, up: false },
-    { i, j: j - 1, up: false },
-    { i: i - 1, j: j - 1, up: false },
+    { i, j, major: true },
+    { i: i - 1, j, major: true },
+    { i, j: j - 1, major: true },
+    { i: i - 1, j, major: false },
+    { i, j: j - 1, major: false },
+    { i: i - 1, j: j - 1, major: false },
   ].some((p) => sameTriad(triangleAt(centre, p), t));

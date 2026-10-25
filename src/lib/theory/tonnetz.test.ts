@@ -12,6 +12,7 @@ import {
   pcAt,
   triangleAt,
   triangleCorners,
+  latticeToXY,
   neighbourPos,
   nearestCopy,
   triangleCentroid,
@@ -82,33 +83,53 @@ describe('tonnetz lattice', () => {
   it('triangle corners carry the triad pitch classes', () => {
     for (let i = -3; i <= 3; i++)
       for (let j = -3; j <= 3; j++)
-        for (const up of [true, false]) {
-          const p = { i, j, up };
+        for (const major of [true, false]) {
+          const p = { i, j, major };
           const t = triangleAt(2, p);
-          expect(t.minor).toBe(!up);
+          expect(t.minor).toBe(!major);
           const pcs = triangleCorners(p).map(([a, b]) => pcAt(2, a, b)).sort();
           expect(pcs).toEqual([...triadPcs(t)].sort());
         }
   });
 
-  it('arrow neighbours are P, L and R', () => {
-    const up = { i: 0, j: 0, up: true };
-    expect(triadName(triangleAt(0, neighbourPos(up, 'left')!))).toBe('Am');
-    expect(triadName(triangleAt(0, neighbourPos(up, 'right')!))).toBe('Em');
-    expect(triadName(triangleAt(0, neighbourPos(up, 'down')!))).toBe('Cm');
-    expect(neighbourPos(up, 'up')).toBeNull();
-    const down = { i: 0, j: -1, up: false }; // C minor
-    expect(triadName(triangleAt(0, down))).toBe('Cm');
-    expect(triadName(triangleAt(0, neighbourPos(down, 'left')!))).toBe('G#');
-    expect(triadName(triangleAt(0, neighbourPos(down, 'right')!))).toBe('D#');
-    expect(triadName(triangleAt(0, neighbourPos(down, 'up')!))).toBe('C');
-    expect(neighbourPos(down, 'down')).toBeNull();
-    // Neighbours share an edge: two common tones.
-    for (const p of [up, down])
+  it('arrow keys follow the Wikipedia layout: sloped edges L/R, flat edge P, corner S', () => {
+    const major = { i: 0, j: 0, major: true }; // C major, a ▽
+    const go = (p: typeof major, d: 'left' | 'right' | 'up' | 'down') => {
+      const n = neighbourPos(p, d);
+      return `${n.move}:${triadName(triangleAt(0, n.pos))}`;
+    };
+    expect(go(major, 'left')).toBe('R:Am');
+    expect(go(major, 'right')).toBe('L:Em');
+    expect(go(major, 'up')).toBe('P:Cm');
+    expect(go(major, 'down')).toBe('S:C#m');
+    const minor = { i: 0, j: -1, major: false }; // C minor, a △
+    expect(triadName(triangleAt(0, minor))).toBe('Cm');
+    expect(go(minor, 'left')).toBe('L:G#');
+    expect(go(minor, 'right')).toBe('R:D#');
+    expect(go(minor, 'down')).toBe('P:C');
+    expect(go(minor, 'up')).toBe('S:B');
+    // Every arrow lands where its move says, from every triad.
+    for (const t of TRIADS) {
+      const p = nearestCopy(0, t, 0, 0);
       for (const d of ['left', 'right', 'up', 'down'] as const) {
         const n = neighbourPos(p, d);
-        if (n) expect(common(triangleAt(0, p), triangleAt(0, n))).toBe(2);
+        expect(triangleAt(0, n.pos)).toEqual(applyMove(t, n.move));
       }
+    }
+  });
+
+  it('draws majors pointing down and minors pointing up', () => {
+    const ys = (p: { i: number; j: number; major: boolean }) =>
+      triangleCorners(p).map(([i, j]) => latticeToXY(i, j).y);
+    const maj = ys({ i: 0, j: 0, major: true });
+    const min = ys({ i: 0, j: 0, major: false });
+    // ▽: two corners on top, one below; △: one on top, two below
+    expect(maj.filter((y) => y === Math.max(...maj))).toHaveLength(2);
+    expect(min.filter((y) => y === Math.min(...min))).toHaveLength(2);
+    // major third (j) runs down-right, minor third (+3 = (1, −1)) up-right
+    expect(latticeToXY(0, 1).y).toBeLessThan(0);
+    expect(latticeToXY(1, -1).y).toBeGreaterThan(0);
+    expect(latticeToXY(1, -1).x).toBeGreaterThan(0);
   });
 
   it('placed move paths agree with the theory', () => {
@@ -128,8 +149,8 @@ describe('tonnetz lattice', () => {
         const i = v;
         const j = u - v;
         expect(toTorus(i, j)).toEqual({ u, v });
-        seen.add(triadIndex(triangleAt(0, { i, j, up: true })));
-        seen.add(triadIndex(triangleAt(0, { i, j, up: false })));
+        seen.add(triadIndex(triangleAt(0, { i, j, major: true })));
+        seen.add(triadIndex(triangleAt(0, { i, j, major: false })));
       }
     expect(seen.size).toBe(24);
   });
@@ -142,13 +163,13 @@ describe('tonnetz lattice', () => {
       // within one torus copy of the target
       expect(Math.abs(c.i - 10.2) + Math.abs(c.j + 7.4)).toBeLessThan(8);
     }
-    expect(nearestCopy(0, C, 0.3, 0.3)).toEqual({ i: 0, j: 0, up: true });
+    expect(nearestCopy(0, C, 0.3, 0.3)).toEqual({ i: 0, j: 0, major: true });
   });
 
   it('locates the triangle containing a point', () => {
-    expect(triangleContaining(0.2, 0.2)).toEqual({ i: 0, j: 0, up: true });
-    expect(triangleContaining(0.7, 0.7)).toEqual({ i: 0, j: 0, up: false });
-    expect(triangleContaining(-0.05, 0.1)).toEqual({ i: -1, j: 0, up: false });
+    expect(triangleContaining(0.2, 0.2)).toEqual({ i: 0, j: 0, major: true });
+    expect(triangleContaining(0.7, 0.7)).toEqual({ i: 0, j: 0, major: false });
+    expect(triangleContaining(-0.05, 0.1)).toEqual({ i: -1, j: 0, major: false });
   });
 });
 

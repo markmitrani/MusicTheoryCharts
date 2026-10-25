@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Canvas } from '@react-three/fiber';
 import { gsap } from 'gsap';
 import { NOTE_NAMES } from '@/lib/theory/note';
 import { MOVES, moveLabel, sameTriad, triadName, type ArrowDir, type Move } from '@/lib/theory/tonnetz';
@@ -11,13 +10,13 @@ import type { TonnetzElement } from '@/lib/canvas-store/types';
 import { worldStore, type OriginRect } from '@/lib/tonnetz/world-store';
 import { CloseIcon } from '@/components/chrome/icons';
 import { uiTick } from '@/lib/playback/playback';
-import { WorldController, FOV, H_DEFAULT, type WorldUiState } from './controller';
-import { LatticeScene } from './LatticeScene';
+import { WorldController, type WorldUiState } from './controller';
+import { LatticeView } from './LatticeView';
+import { LegendKey, LegendMoves } from './TonnetzLegend';
 import styles from './TonnetzWorld.module.scss';
 
 const ARROWS: Record<string, ArrowDir> = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
 const MOVE_KEYS: Record<string, Move> = { p: 'P', l: 'L', r: 'R', n: 'N', s: 'S', h: 'H' };
-const HOLD_AFTER_MS = 190;
 
 const clipFrom = (r: OriginRect | null) =>
   r
@@ -26,11 +25,11 @@ const clipFrom = (r: OriginRect | null) =>
 const CLIP_OPEN = 'inset(0px 0px 0px 0px round 0px)';
 
 /**
- * The 3D Tonnetz: an endless curved plane of the lattice, panned like
- * phantom.land's grid (drag with momentum, WASD steps by thirds), which is the
- * torus unrolled. Scroll or pinch out and one copy rolls up into the torus.
- * Opens out of the card that launched it and writes the focused triad back
- * when it closes.
+ * The 3D Tonnetz: an endless curved plane of the lattice (the torus unrolled),
+ * dragged like phantom.land's grid, with momentum. Arrows step between chords,
+ * letters perform the moves, scroll or pinch zooms out to a wide field. Opens
+ * out of the card that launched it and writes the focused triad back when it
+ * closes.
  */
 export function TonnetzWorld({ elementId }: { elementId: string }) {
   const el = canvasStore
@@ -46,6 +45,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
   const closingRef = useRef(false);
   const [ui, setUi] = useState<WorldUiState | null>(null);
   const [showChords, setShowChords] = useState(el?.showChords ?? false);
+  const [showLegend, setShowLegend] = useState(el?.showLegend ?? true);
   const [ready, setReady] = useState(false);
   const reduced = useRef(
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -119,25 +119,9 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
 
   useEffect(() => {
     if (!ctrl) return;
-    const held = new Map<string, { holding: boolean; timer: number }>();
-    const holdVector = () => {
-      let x = 0;
-      let y = 0;
-      held.forEach((h, k) => {
-        if (!h.holding) return;
-        const d = WorldController.keyStep(k)!;
-        x += d.x;
-        y += d.y;
-      });
-      return { x, y };
-    };
-
     const onDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
-        e.stopPropagation();
-        return;
-      }
       e.stopPropagation();
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (key === 'Escape') {
         e.preventDefault();
@@ -156,52 +140,21 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
       }
       if (key === '=' || key === '+') return ctrl.zoomBy(0.85);
       if (key === '-' || key === '_') return ctrl.zoomBy(1 / 0.85);
-      // Shift + letter is always a move (Shift+S = Slide); plain S pans.
       const move = MOVE_KEYS[key];
-      if (move && (e.shiftKey || key !== 's')) {
+      if (move) {
         e.preventDefault();
         if (!e.repeat) {
           uiTick(MOVES.indexOf(move));
           ctrl.doMove(move);
         }
-        return;
-      }
-      const step = WorldController.keyStep(key);
-      if (step && !e.shiftKey) {
-        e.preventDefault();
-        if (e.repeat || held.has(key)) return;
-        ctrl.motion.step(step);
-        const timer = window.setTimeout(() => {
-          const h = held.get(key);
-          if (!h) return;
-          h.holding = true;
-          ctrl.motion.setHold(holdVector());
-        }, HOLD_AFTER_MS);
-        held.set(key, { holding: false, timer });
       }
     };
-    const onUp = (e: KeyboardEvent) => {
-      e.stopPropagation();
-      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      const h = held.get(key);
-      if (!h) return;
-      window.clearTimeout(h.timer);
-      held.delete(key);
-      if (h.holding) ctrl.motion.setHold(holdVector());
-    };
-    const onBlur = () => {
-      held.forEach((h) => window.clearTimeout(h.timer));
-      held.clear();
-      ctrl.motion.setHold({ x: 0, y: 0 });
-    };
+    const onUp = (e: KeyboardEvent) => e.stopPropagation();
     window.addEventListener('keydown', onDown, { capture: true });
     window.addEventListener('keyup', onUp, { capture: true });
-    window.addEventListener('blur', onBlur);
     return () => {
       window.removeEventListener('keydown', onDown, { capture: true });
       window.removeEventListener('keyup', onUp, { capture: true });
-      window.removeEventListener('blur', onBlur);
-      onBlur();
     };
     // close is stable enough for the lifetime of the overlay
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -230,7 +183,11 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 && e.pointerType === 'mouse') return;
-      stage.setPointerCapture(e.pointerId);
+      try {
+        stage.setPointerCapture(e.pointerId);
+      } catch {
+        // pointer already gone (or synthetic): drag still works while over the stage
+      }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 2) {
         grab = null;
@@ -256,16 +213,10 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
       }
       if (!grab || !last) return;
       moved += Math.hypot(e.clientX - last.x, e.clientY - last.y);
-      if (ctrl.roll > 0.05) {
-        // Overview: spin the torus with a fixed gain instead of tracking a point.
-        const gain = (ctrl.halfHeight * 0.5) / (stage.clientHeight / 2);
-        const p = ctrl.motion.pos;
-        ctrl.motion.dragTo({ x: p.x - (e.clientX - last.x) * gain, y: p.y + (e.clientY - last.y) * gain }, now());
-      } else {
-        const { nx, ny } = norm(e.clientX, e.clientY);
-        const rel = ctrl.screenToRel(nx, ny);
-        ctrl.motion.dragTo({ x: grab.x - rel.x, y: grab.y - rel.y }, now());
-      }
+      // Direct manipulation: the lattice point grabbed stays under the pointer.
+      const { nx, ny } = norm(e.clientX, e.clientY);
+      const rel = ctrl.screenToRel(nx, ny);
+      ctrl.motion.dragTo({ x: grab.x - rel.x, y: grab.y - rel.y }, now());
       last = { x: e.clientX, y: e.clientY };
     };
     const onUp = (e: PointerEvent) => {
@@ -317,20 +268,12 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
 
   const focus = ui?.focus ?? ctrl.focus;
   const history = ui?.history ?? [];
-  const roll = ui?.roll ?? 0;
   const selCount = ui?.selection.length ?? 1;
 
   return createPortal(
     <div ref={rootRef} className={styles.root} role="dialog" aria-modal="true" aria-label="Tonnetz in 3D">
       <div ref={stageRef} className={styles.stage} style={{ opacity: 0 }}>
-        <Canvas
-          dpr={[1, 2]}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
-          camera={{ fov: FOV, position: [0, 0, H_DEFAULT], near: 0.1, far: 80 }}
-          frameloop="always"
-        >
-          <LatticeScene ctrl={ctrl} onFirstFrame={() => setReady(true)} />
-        </Canvas>
+        <LatticeView ctrl={ctrl} onFirstFrame={() => setReady(true)} />
       </div>
 
       <header className={styles.top}>
@@ -354,13 +297,37 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
             <span className={styles.box} aria-hidden />
             Chord names
           </label>
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={showLegend}
+              onChange={(e) => {
+                const v = e.target.checked;
+                setShowLegend(v);
+                canvasStore.getState().updateElement(elementId, { showLegend: v }, { commit: true });
+              }}
+            />
+            <span className={styles.box} aria-hidden />
+            Show legend
+          </label>
           <button className={styles.close} aria-label="Close 3D view" title="Close (Esc)" onClick={close}>
             <CloseIcon width={16} height={16} />
           </button>
         </div>
       </header>
 
-      <footer className={styles.bottom} data-hidden={roll > 0.5 || undefined}>
+      {showLegend && (
+        <>
+          <aside className={`${styles.legend} ${styles.legendKey}`}>
+            <LegendKey />
+          </aside>
+          <aside className={`${styles.legend} ${styles.legendMoves}`}>
+            <LegendMoves />
+          </aside>
+        </>
+      )}
+
+      <footer className={styles.bottom}>
         {history.length > 1 && (
           <ol className={styles.history} aria-label="History">
             {history.slice(-10).map((t, k, arr) => (
@@ -397,9 +364,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
       </footer>
 
       <p className={styles.hint} data-hidden={!ready || undefined}>
-        {roll > 0.5
-          ? 'The torus: every note and chord once. Drag to spin it · scroll in to unroll'
-          : 'Drag or W A S D to move · arrows step between chords · Space plays · scroll out for the torus'}
+        Drag to move · arrows step between chords (⇧ adds) · Space plays · P L R N S H move · scroll to zoom
       </p>
     </div>,
     document.body,

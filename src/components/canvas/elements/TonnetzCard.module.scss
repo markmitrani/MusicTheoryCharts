@@ -10,6 +10,11 @@
   margin-bottom: 8px;
 }
 
+.toggles {
+  display: flex;
+  gap: 14px;
+}
+
 .check {
   display: inline-flex;
   align-items: center;
@@ -240,6 +245,32 @@
 
 .node[data-tone] .noteLabel {
   fill: var(--text-primary);
+}
+
+// ---- legend: the key top right, the moves bottom right, over the faded edge ----
+
+.legend {
+  position: absolute;
+  z-index: 6;
+  padding: 6px 7px;
+  border-radius: 9px;
+  border: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--element-fill) 82%, transparent);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.legendKey {
+  top: 6px;
+  right: 40px; // clear of the transpose control
+  width: 150px;
+}
+
+.legendMoves {
+  bottom: 6px;
+  right: 6px;
+  transform: scale(0.9);
+  transform-origin: bottom right;
 }
 
 // ---- move bar ----

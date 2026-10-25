@@ -16,7 +16,7 @@ import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
  *   wayshome = w + flags1 + key1 + x2 + y2 + steps (7 + n chars; flags = out + noLegend*2;
  *             key = pitch class, or 'c' functional; step = dirBit*4 + cadence index)
  *   roads   = r + center1 + show1 + x2 + y2     (7 chars; show 0 both / 1 in / 2 out)
- *   tonnetz = t + flags1 + centre1 + triad1 + x2 + y2 (8 chars; flags bit0 = chord names,
+ *   tonnetz = t + flags1 + centre1 + triad1 + x2 + y2 (8 chars; flags = chordNames + legend*2,
  *             other bits reserved; triad = base36(root*2 + minor), or 'z' = none)
  *   section = f + x2 + y2 + w2 + h2 + escapedName (9+ chars; name may be empty)
  *
@@ -127,7 +127,8 @@ export function encodeDoc(doc: DocSnapshot): string {
         }
         if (e.kind === 'tonnetz') {
           const triad = e.triad ? b36(e.triad.root * 2 + (e.triad.minor ? 1 : 0), 1) : 'z';
-          return `t${e.showChords ? 1 : 0}${b36(e.centre, 1)}${triad}${x}${y}`;
+          const flags = (e.showChords ? 1 : 0) + (e.showLegend ? 2 : 0);
+          return `t${b36(flags, 1)}${b36(e.centre, 1)}${triad}${x}${y}`;
         }
         if (e.kind === 'roads') {
           return `r${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${ROADS_SHOW.indexOf(e.show)}${x}${y}`;
@@ -227,6 +228,7 @@ function decodeV2(body: string): DecodedDoc | null {
             id: freshId(), kind: 'tonnetz', z: i + 1, centre,
             triad: tri === null ? null : { root: tri >> 1, minor: (tri & 1) === 1 },
             showChords: (flags & 1) === 1,
+            showLegend: (flags & 2) === 2,
             x: px(code.slice(4, 6)), y: px(code.slice(6, 8)),
           };
         }

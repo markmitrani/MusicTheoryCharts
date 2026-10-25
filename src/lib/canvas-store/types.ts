@@ -109,6 +109,8 @@ export interface TonnetzElement extends ElementBase {
   triad: Triad | null;
   /** "Chord names": fill triangles by quality and label them. */
   showChords: boolean;
+  /** "Show legend": the triangle key and the move diagrams. */
+  showLegend: boolean;
 }
 
 /**

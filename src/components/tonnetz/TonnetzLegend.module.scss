@@ -1,0 +1,92 @@
+// Shared by the card (small, in the stage corners) and the 3D view (panels).
+
+.key {
+  display: block;
+  overflow: visible;
+}
+
+.minor {
+  fill: color-mix(in srgb, var(--tonnetz-minor) 62%, transparent);
+  stroke: var(--tonnetz-minor);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.major {
+  fill: color-mix(in srgb, var(--tonnetz-major) 62%, transparent);
+  stroke: var(--tonnetz-major);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.passed {
+  fill: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  stroke: var(--text-muted);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 2;
+  stroke-linejoin: round;
+}
+
+.kind {
+  fill: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 560;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.edge {
+  fill: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 7.5px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.moves {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 6px 10px;
+  align-items: end;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.art {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 40px;
+}
+
+.diagram {
+  display: block;
+  overflow: visible;
+}
+
+.caption {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+
+.letter {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--text-primary);
+}
+
+.steps {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
