@@ -90,6 +90,13 @@ float label(vec2 q, float idx, vec2 size) {
   return texture2D(uAtlas, a).a;
 }
 
+/** Anti-aliased 50% dash pattern along a line parameter (one dash per unit). */
+float dashAA(float t) {
+  float fw = max(fwidth(t), 1e-4);
+  float f = fract(t);
+  return smoothstep(0.0, fw, f) * (1.0 - smoothstep(0.55 - fw, 0.55, f));
+}
+
 /** Light level of the triangle at lattice cell p (major or minor). */
 float triGlow(vec2 p, bool isMajor) {
   vec2 r = isMajor ? p : p + vec2(0.0, 1.0);
@@ -145,11 +152,18 @@ void main() {
   col = mix(col, uAccent, rim * 0.9);
   col = mix(col, uAccent, edge * glow);
 
-  // ---- seams between torus copies ----
+  // ---- outline of each repetition (torus copy), dashed like the card's ----
+  // Copy borders: lines i ≡ −2 (mod 4) run along j; lines i + j ≡ −1 (mod 3)
+  // run along the minor thirds. Each is dashed along its own direction.
   float su = abs(mod(L.x + L.y + 1.0 + 1.5, 3.0) - 1.5);
   float sv = abs(mod(L.x + 2.0 + 2.0, 4.0) - 2.0);
-  float seam = max(lineAA(su, max(0.018, fwk * 0.6), fwk), lineAA(sv, max(0.018, fwi * 0.6), fwi));
-  col = mix(col, uSeam, seam * 0.55);
+  float dashU = dashAA(L.x * 2.6);
+  float dashV = dashAA(L.y * 2.6);
+  float seam = max(
+    lineAA(su, max(0.017, fwk * 0.75), fwk) * dashU,
+    lineAA(sv, max(0.017, fwi * 0.75), fwi) * dashV
+  );
+  col = mix(col, uSeam, seam * 0.95);
 
   // ---- nodes ----
   vec2 c0 = isMajor ? vec2(fi, fj) : vec2(fi + 1.0, fj);

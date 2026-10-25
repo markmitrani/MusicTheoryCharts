@@ -7,6 +7,8 @@ import {
   MOVES,
   applyMove,
   latticeToXY,
+  xyToLattice,
+  SQRT3_2,
   moveLabel,
   pcAt,
   sameTriad,
@@ -42,10 +44,12 @@ interface TonnetzCardProps {
 
 /** Window: notes i, j ∈ [−N, N], a parallelogram with horizontal top and bottom (as Wikipedia's figure). */
 const N = 3;
-const E = 56; // edge length in px
-const PAD = 24;
-const W = E * (2 * N + N) + PAD * 2; // row span 2N plus the slant N (half a step per row)
-const H = E * 2 * N * (Math.sqrt(3) / 2) + PAD * 2;
+const E = 52; // edge length in px
+/** Room around the window where the lattice carries on, faded. */
+const PAD_X = 58;
+const PAD_Y = 52;
+const W = E * (2 * N + N) + PAD_X * 2; // row span 2N plus the slant N (half a step per row)
+const H = E * 2 * N * SQRT3_2 + PAD_Y * 2;
 const CX = W / 2;
 const CY = H / 2;
 const R_NODE = 13;
@@ -55,6 +59,8 @@ const toPx = (i: number, j: number, off: { x: number; y: number }) => {
   const p = latticeToXY(i, j);
   return { x: CX + E * p.x + off.x, y: CY - E * p.y + off.y };
 };
+/** Stage px → continuous lattice coordinate (no slide). */
+const fromPx = (x: number, y: number) => xyToLattice((x - CX) / E, -(y - CY) / E);
 
 /** The window outline in lattice coordinates, grown by `d` steps on every side. */
 const windowCorners = (d: number): [number, number][] => [
@@ -64,22 +70,21 @@ const windowCorners = (d: number): [number, number][] => [
   [-N - d, N + d],
 ];
 const inWindow = (i: number, j: number, d = 0) => i >= -N - d && i <= N + d && j >= -N - d && j <= N + d;
-/** Nodes on the rim stay whole: their clip grows by a node radius (lattice lines are 0.866·E apart). */
-const NODE_GROW = (R_NODE + 3) / (E * (Math.sqrt(3) / 2));
-
-/**
- * Torus seams (where the 12-note lattice repeats): lines i ≡ −2 (mod 4) run
- * along the major thirds, lines i + j ≡ −1 (mod 3) along the minor thirds.
- */
-const SEAMS: [number, number, number, number][] = [
-  ...[-6, -2, 2, 6].map((i) => [i, -12, i, 12] as [number, number, number, number]),
-  ...[-10, -7, -4, -1, 2, 5, 8].map((u) => [u + 12, -12, u - 12, 12] as [number, number, number, number]),
-];
+/** Is a stage point inside the window? (Where an element is drawn now, slide included.) */
+const pxInWindow = (p: { x: number; y: number }, d = 0) => {
+  const l = fromPx(p.x, p.y);
+  return inWindow(l.i, l.j, d);
+};
+/** Rim nodes stay whole in the window: grow it by a node radius (lattice lines are 0.866·E apart). */
+const NODE_GROW = (R_NODE + 3) / (E * SQRT3_2);
+const inStage = (p: { x: number; y: number }, m: number) => p.x > -m && p.x < W + m && p.y > -m && p.y < H + m;
 
 interface Tri {
   key: string;
   pos: TriPos;
   triad: Triad;
+  /** Centroid in lattice coordinates. */
+  c: { i: number; j: number };
 }
 
 interface Node {
@@ -94,8 +99,8 @@ const MOVE_KEYS: Record<string, Move> = { p: 'P', l: 'L', r: 'R', n: 'N', s: 'S'
 /**
  * Tonnetz card: the flat lattice in the familiar Wikipedia orientation, fifths
  * (→), major thirds (↘) and minor thirds (↗), every triangle a triad (▽ major,
- * △ minor), framed as the figure's parallelogram with dashed seams where the
- * 12-note lattice repeats.
+ * △ minor), framed as the figure's parallelogram with a dashed border, the
+ * lattice carrying on beyond it, faded.
  * Double-click a note to recentre on it; click a triangle to select and play
  * it; the move bar (or typing P L R N S H) walks to a neighbouring triad.
  */
@@ -115,23 +120,27 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
   const tweenRef = useRef<gsap.core.Tween | null>(null);
   useEffect(() => () => void tweenRef.current?.kill(), []);
 
-  // While sliding, draw a margin beyond the window (clipped) so content moves through it.
-  const margin = off.x !== 0 || off.y !== 0 ? 2 * N + 1 : 0;
+  // Everything that can show on the stage; while sliding, a margin more so
+  // content keeps flowing in from the edges.
+  const sliding = off.x !== 0 || off.y !== 0;
   const { tris, nodes } = useMemo(() => {
     const tris: Tri[] = [];
     const nodes: Node[] = [];
-    for (let i = -N - margin; i <= N + margin; i++) {
-      for (let j = -N - margin; j <= N + margin; j++) {
-        nodes.push({ key: `${i},${j}`, i, j, pc: pcAt(el.centre, i, j) });
-        if (i === N + margin || j === N + margin) continue;
+    const m = E * (sliding ? 2 * N + 2 : 1);
+    const zero = { x: 0, y: 0 };
+    for (let i = -16; i <= 16; i++) {
+      for (let j = -12; j <= 12; j++) {
+        if (inStage(toPx(i, j, zero), m)) nodes.push({ key: `${i},${j}`, i, j, pc: pcAt(el.centre, i, j) });
         for (const major of [true, false]) {
           const pos = { i, j, major };
-          tris.push({ key: `${i},${j},${major ? 'M' : 'm'}`, pos, triad: triangleAt(el.centre, pos) });
+          const c = triangleCentroid(pos);
+          if (!inStage(toPx(c.i, c.j, zero), m)) continue;
+          tris.push({ key: `${i},${j},${major ? 'M' : 'm'}`, pos, triad: triangleAt(el.centre, pos), c });
         }
       }
     }
     return { tris, nodes };
-  }, [el.centre, margin]);
+  }, [el.centre, sliding]);
 
   const store = () => canvasStore.getState();
 
@@ -280,17 +289,20 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
               data-chords={el.showChords || undefined}
             >
               <defs>
-                <clipPath id={`win${uid}`}>
-                  <polygon points={outline(0)} />
-                </clipPath>
-                <clipPath id={`winNodes${uid}`}>
-                  <polygon points={outline(NODE_GROW)} />
-                </clipPath>
+                {/* Fade the lattice toward the stage edges, never inside the window. */}
+                <radialGradient id={`fade${uid}`} cx="0.5" cy="0.5" r="0.5">
+                  <stop offset="0.7" stopColor="#fff" />
+                  <stop offset="1" stopColor="#000" />
+                </radialGradient>
+                <mask id={`mask${uid}`} maskUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
+                  <rect width={W} height={H} fill={`url(#fade${uid})`} />
+                  <polygon points={outline(NODE_GROW)} fill="#fff" />
+                </mask>
                 {glass && <GlassGradient id={`glass${uid}`} color="var(--text-muted)" quiet />}
                 {glass && <GlassGradient id={`glassLit${uid}`} color="var(--accent)" />}
               </defs>
 
-              <g clipPath={`url(#win${uid})`}>
+              <g mask={`url(#mask${uid})`}>
                 {tris.map((t) => {
                   const pts = triangleCorners(t.pos)
                     .map(([i, j]) => toPx(i, j, off))
@@ -298,12 +310,14 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     .join(' ');
                   const isSel = sameTriad(t.triad, el.triad);
                   const isLit = sameTriad(t.triad, lit);
+                  const out = !pxInWindow(toPx(t.c.i, t.c.j, off));
                   return (
                     <polygon
                       key={t.key}
                       points={pts}
                       className={styles.tri}
                       data-minor={t.triad.minor || undefined}
+                      data-out={out || undefined}
                       data-selected={isSel || undefined}
                       data-lit={isLit || undefined}
                       onPointerDown={(e) => e.stopPropagation()}
@@ -319,26 +333,20 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
 
                 {el.showChords &&
                   tris.map((t) => {
-                    const c = triangleCentroid(t.pos);
-                    const p = toPx(c.i, c.j, off);
+                    const p = toPx(t.c.i, t.c.j, off);
                     return (
                       <text
                         key={`l${t.key}`}
                         x={p.x}
                         y={p.y + 4}
                         className={styles.chordLabel}
+                        data-out={!pxInWindow(p) || undefined}
                         data-selected={sameTriad(t.triad, el.triad) || undefined}
                       >
                         {triadName(t.triad)}
                       </text>
                     );
                   })}
-
-                {SEAMS.map(([i1, j1, i2, j2], k) => {
-                  const a = toPx(i1, j1, off);
-                  const b = toPx(i2, j2, off);
-                  return <line key={`s${k}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={styles.seam} />;
-                })}
 
                 {hover &&
                   axisDirs.map(([di, dj], k) => {
@@ -347,10 +355,6 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     return <line key={k} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={styles.axis} data-axis={k} />;
                   })}
 
-              </g>
-              <polygon points={outline(0)} className={styles.frame} />
-
-              <g clipPath={`url(#winNodes${uid})`}>
                 {nodes.map((n) => {
                   const p = toPx(n.i, n.j, off);
                   const isCentre = n.i === 0 && n.j === 0;
@@ -360,7 +364,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     <g
                       key={n.key}
                       className={styles.node}
-                      data-edge={!inWindow(n.i, n.j) || undefined}
+                      data-out={!pxInWindow(p, 0.01) || undefined}
                       data-centre={isCentre || undefined}
                       data-tone={inTriad || undefined}
                       data-lit={litNote === n.pc || undefined}
@@ -393,6 +397,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                   );
                 })}
               </g>
+              <polygon points={outline(0)} className={styles.border} />
             </svg>
             {el.showLegend && (
               <>
