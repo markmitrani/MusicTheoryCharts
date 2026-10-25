@@ -22,6 +22,7 @@ import { CircleCard } from './elements/CircleCard';
 import { PitchAxisCard } from './elements/PitchAxisCard';
 import { WaysHomeCard } from './elements/WaysHomeCard';
 import { RoadsCard } from './elements/RoadsCard';
+import { TonnetzCard } from './elements/TonnetzCard';
 import { ImageCard } from './elements/ImageCard';
 import { SectionCard } from './elements/SectionCard';
 import { StubCard } from './elements/StubCard';
@@ -30,6 +31,7 @@ import { PageRail } from '@/components/chrome/PageRail';
 import { TitlePanel } from '@/components/chrome/TitlePanel';
 import { CornerActions } from '@/components/chrome/SettingsPanel';
 import { LessonHost } from '@/components/lesson/LessonHost';
+import { WorldHost } from '@/components/tonnetz/WorldHost';
 import styles from './CanvasApp.module.scss';
 
 interface DragRect {
@@ -333,6 +335,8 @@ export function CanvasApp() {
                 return <WaysHomeCard key={el.id} el={el} {...common} />;
               case 'roads':
                 return <RoadsCard key={el.id} el={el} {...common} />;
+              case 'tonnetz':
+                return <TonnetzCard key={el.id} el={el} {...common} />;
               case 'image':
                 return <ImageCard key={el.id} el={el} {...common} />;
               case 'stub':
@@ -376,6 +380,7 @@ export function CanvasApp() {
       <CornerActions />
       <Toolbar onAddNew={spawnStub} onUpload={() => fileInputRef.current?.click()} />
       <LessonHost />
+      <WorldHost />
     </>
   );
 }
