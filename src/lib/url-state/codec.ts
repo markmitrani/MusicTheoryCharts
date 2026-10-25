@@ -1,5 +1,5 @@
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
-import type { CanvasElement, Page } from '@/lib/canvas-store/types';
+import type { CanvasElement, CircleComplexity, CircleElement, CircleFocus, Page } from '@/lib/canvas-store/types';
 import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
 
 /**
@@ -11,7 +11,9 @@ import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
  *   scale   = s + pc1 + type1 + x2 + y2         (7 chars)
  *   harmony = h + pc1 + type1 + x2 + y2 [+f1]   (7-8 chars; trailing 1 = 7ths)
  *   chord   = c + pc1 + type1 + pack1 + x2 + y2 (8 chars; pack = inv*2+seventh)
- *   circle  = o + center1 + flags1 + x2 + y2    (7 chars; flags = sig + minor*2)
+ *   circle  = o + center1 + flags1 + x2 + y2    (7 chars; flags = sig + complexity*2
+ *             + functionColors*8 + minorCenter*16; v1 minors flag = intermediate;
+ *             optional focus1 = focused key's pitch class, +12 if read as minor)
  *   pitchax = p + center1 + x2 + y2             (6 chars)
  *   wayshome = w + flags1 + key1 + x2 + y2 + steps (7 + n chars; flags = out + noLegend*2;
  *             key = pitch class, or 'c' functional; step = dirBit*4 + cadence index)
@@ -50,6 +52,30 @@ const BUCKET_V1 = 16;
 const DEFAULT_OCTAVE = 3;
 const MAX_WALK = 12;
 const ROADS_SHOW = ['both', 'in', 'out'] as const;
+const CIRCLE_COMPLEXITY: CircleComplexity[] = ['basic', 'intermediate', 'advanced'];
+
+const circleFlags = (e: CircleElement) =>
+  (e.showSignatures ? 1 : 0) + CIRCLE_COMPLEXITY.indexOf(e.complexity) * 2 +
+  (e.functionColors ? 8 : 0) + (e.minorCenter ? 16 : 0);
+
+/** Trailing focus char → the focused key, or null when absent. */
+function circleFocus(ch: string | undefined): CircleFocus | null {
+  if (ch === undefined) return null;
+  const v = parseInt(ch, 36);
+  if (Number.isNaN(v) || v > 23) throw new Error(`bad circle focus: ${ch}`);
+  return { key: NOTE_NAMES[v % 12], minor: v >= 12 };
+}
+
+function circleFromFlags(flags: number) {
+  const complexity = CIRCLE_COMPLEXITY[(flags >> 1) & 3];
+  if (!complexity) throw new Error(`bad circle flags: ${flags}`);
+  return {
+    showSignatures: (flags & 1) === 1,
+    complexity,
+    functionColors: (flags & 8) === 8,
+    minorCenter: (flags & 16) === 16,
+  };
+}
 
 export interface DocSnapshot {
   pages: readonly Page[];
@@ -116,8 +142,8 @@ export function encodeDoc(doc: DocSnapshot): string {
           return `f${x}${y}${w}${h}${escapeName(e.name)}`;
         }
         if (e.kind === 'circle') {
-          const flags = (e.showSignatures ? 1 : 0) + (e.showRelativeMinor ? 2 : 0);
-          return `o${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${b36(flags, 1)}${x}${y}`;
+          const focus = e.focus ? b36(NOTE_NAMES.indexOf(e.focus.key) + (e.focus.minor ? 12 : 0), 1) : '';
+          return `o${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${b36(circleFlags(e), 1)}${x}${y}${focus}`;
         }
         if (e.kind === 'pitchaxis') {
           return `p${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${x}${y}`;
@@ -181,14 +207,14 @@ function decodeV2(body: string): DecodedDoc | null {
             width: px(code.slice(5, 7)), height: px(code.slice(7, 9)),
           };
         }
-        if (kind === 'o' && code.length === 7) {
+        if (kind === 'o' && (code.length === 7 || code.length === 8)) {
           const center = NOTE_NAMES[parseInt(code[1], 36)];
           const flags = parseInt(code[2], 36);
           if (!center || Number.isNaN(flags)) throw new Error(`bad circle: ${code}`);
           return {
             id: freshId(), kind: 'circle', z: i + 1, centerKey: center,
-            showSignatures: (flags & 1) === 1,
-            showRelativeMinor: (flags & 2) === 2,
+            ...circleFromFlags(flags),
+            focus: circleFocus(code[7]),
             x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };
         }
@@ -295,8 +321,8 @@ function decodeV1(body: string): DecodedDoc | null {
           if (!center || Number.isNaN(flags)) throw new Error(`bad circle: ${code}`);
           return {
             id: freshId(), kind: 'circle', z: i + 1, centerKey: center,
-            showSignatures: (flags & 1) === 1,
-            showRelativeMinor: (flags & 2) === 2,
+            ...circleFromFlags(flags),
+            focus: null,
             x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };
         }

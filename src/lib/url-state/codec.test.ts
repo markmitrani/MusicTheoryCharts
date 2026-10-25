@@ -134,14 +134,34 @@ describe('url codec', () => {
       activePageId: 'p-c',
       pages: [
         page('c', [
-          { id: 'a', kind: 'circle', x: 16, y: 16, z: 1, centerKey: 'A#', showSignatures: true, showRelativeMinor: false },
+          { id: 'a', kind: 'circle', x: 16, y: 16, z: 1, centerKey: 'A#', showSignatures: true, complexity: 'advanced', functionColors: true, minorCenter: true,
+            focus: { key: 'D', minor: true } },
         ]),
       ],
     } as const;
     const decoded = decodeDoc(encodeDoc(doc))!;
     expect(decoded.pages[0].elements[0]).toMatchObject({
-      kind: 'circle', centerKey: 'A#', showSignatures: true, showRelativeMinor: false,
+      kind: 'circle', centerKey: 'A#', showSignatures: true, complexity: 'advanced', functionColors: true, minorCenter: true,
+      focus: { key: 'D', minor: true },
     });
+  });
+
+  it('reads a legacy relative-minors flag as the intermediate level', () => {
+    const doc = {
+      activePageId: 'p-c',
+      pages: [
+        page('c', [
+          {
+            id: 'a', kind: 'circle', x: 0, y: 0, z: 1, centerKey: 'C',
+            showSignatures: false, complexity: 'intermediate', functionColors: false, minorCenter: false, focus: null,
+          },
+        ]),
+      ],
+    } as const;
+    // 'o' + centre C + flags 2: the same code old links used for "relative minors on".
+    const code = encodeDoc(doc);
+    expect(code).toContain('o02');
+    expect(decodeDoc(code)!.pages[0].elements[0]).toMatchObject({ complexity: 'intermediate', minorCenter: false, focus: null });
   });
 
   it('round-trips a pitch axis with its center key', () => {
