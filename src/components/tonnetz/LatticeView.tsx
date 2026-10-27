@@ -57,14 +57,16 @@ function applyColors(u: Record<string, THREE.IUniform>, c: WorldColors) {
   u.uTint.value = raw(c.accentWarm);
   u.uMajor.value = raw(c.major);
   u.uMinor.value = raw(c.minor);
-  // Dark theme, chord names on: near-black oxblood and ink fills with a faint
-  // gloss, names quiet until their chord is focused, selected or playing.
-  // Light keeps the blended tint.
-  u.uDeep.value = c.dark ? 0.97 : 0;
-  u.uDeepMajor.value = raw('#1f080a');
-  u.uDeepMinor.value = raw('#06141e');
+  // Chord names on. Dark: near-black oxblood and ink fills with a faint gloss,
+  // names quiet until their chord is focused, selected or playing. Light: the
+  // card's solid red and blue with a stronger gloss and white names.
+  u.uDeep.value = c.dark ? 0.97 : 1;
+  u.uDeepMajor.value = c.dark ? raw('#1f080a') : raw(c.major);
+  u.uDeepMinor.value = c.dark ? raw('#06141e') : raw(c.minor);
   u.uLabelMute.value = c.dark ? 1 : 0;
-  u.uSheen.value = c.dark ? 0.7 : 0;
+  u.uSheen.value = c.dark ? 0.7 : 1.6;
+  u.uChordInk.value = raw('#ffffff');
+  u.uChordInkOn.value = c.dark ? 0 : 1;
 }
 
 /**
@@ -132,6 +134,8 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
       uDeepMinor: { value: new THREE.Color() },
       uLabelMute: { value: 0 },
       uSheen: { value: 0 },
+      uChordInk: { value: new THREE.Color() },
+      uChordInkOn: { value: 0 },
     };
     const material = new THREE.ShaderMaterial({
       uniforms: u,

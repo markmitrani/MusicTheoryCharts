@@ -73,6 +73,9 @@ uniform vec3 uDeepMajor;
 uniform vec3 uDeepMinor;
 uniform float uLabelMute;
 uniform float uSheen;
+// Chord names in a fixed ink (white on the light theme's solid fills), else themed.
+uniform vec3 uChordInk;
+uniform float uChordInkOn;
 uniform sampler2D uAtlas;
 
 varying vec2 vLat;
@@ -144,7 +147,9 @@ void main() {
     float sh = clamp(dot(toXY(L - cen), vec2(-0.34, 0.94)) / 0.55, -1.0, 1.0) * uSheen;
     col = sh > 0.0 ? mix(col, vec3(1.0), 0.08 * sh) : mix(col, vec3(0.0), -0.14 * sh);
   }
-  col = mix(col, uAccent, 0.13 * lit + 0.12 * focusCopy + 0.32 * play);
+  // solid light fills keep their colour (a wash over red reads muddy); the outline marks them
+  float solid = uChordInkOn * uShowChords;
+  col = mix(col, uAccent, (0.13 * lit + 0.12 * focusCopy + 0.32 * play) * (1.0 - 0.8 * solid));
 
   // ---- edges (three families of integer lines) ----
   float di = abs(fract(L.x + 0.5) - 0.5);
@@ -159,7 +164,7 @@ void main() {
   // Lit triangles: a crisp accent band just inside their edges (no soft glow, which aliases).
   float dEdge = min(di, min(dj, dk)) * S3;
   float fwe = max(fwi, fwj);
-  float band = glow * lineAA(dEdge, max(0.012, fwe * 0.8), fwe);
+  float band = glow * lineAA(dEdge, max(mix(0.012, 0.03, solid), fwe * 0.8), fwe);
   col = mix(col, uAccent, band);
 
   // ---- outline of each repetition: solid, heavier and brighter than the hairline edges ----
@@ -221,7 +226,8 @@ void main() {
     float cl = label(toXY(L - cen), 12.0 + float(tri), vec2(0.4, 0.2)) * textVis;
     // muted names: quiet until their chord is focused, selected or playing
     float ink = mix(1.0, 0.62 + 0.38 * clamp(glow, 0.0, 1.0), uLabelMute);
-    col = mix(col, mix(uText, uTextStrong, max(glow, 0.2)), cl * (1.0 - disc) * ink);
+    vec3 themed = mix(uText, uTextStrong, max(glow, 0.2));
+    col = mix(col, mix(themed, uChordInk, uChordInkOn), cl * (1.0 - disc) * ink);
   }
 
   // Soft fade toward the far edges of the curved plane.
