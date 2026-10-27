@@ -399,8 +399,8 @@ $tuck: $edge * 0.5 - $space;
 .legend {
   position: absolute;
   z-index: 6;
-  padding: 9px;
-  border-radius: 9px;
+  padding: 12px;
+  border-radius: 10px;
   border: 1px solid var(--hairline);
   overflow: hidden;
   // whatever lies beneath the card, blurred; the lattice itself is in .backdrop
@@ -440,6 +440,7 @@ $tuck: $edge * 0.5 - $space;
   top: $tuck + 6px;
   right: 6px;
   width: 148px;
+  padding: 6px 7px; // the key's own snug fit; the moves legend keeps the roomier default
 }
 
 .legendMoves {
