@@ -57,6 +57,14 @@ function applyColors(u: Record<string, THREE.IUniform>, c: WorldColors) {
   u.uTint.value = raw(c.accentWarm);
   u.uMajor.value = raw(c.major);
   u.uMinor.value = raw(c.minor);
+  // Dark theme, chord names on: near-black oxblood and ink fills with a faint
+  // gloss, names quiet until their chord is focused, selected or playing.
+  // Light keeps the blended tint.
+  u.uDeep.value = c.dark ? 0.97 : 0;
+  u.uDeepMajor.value = raw('#1f080a');
+  u.uDeepMinor.value = raw('#06141e');
+  u.uLabelMute.value = c.dark ? 1 : 0;
+  u.uSheen.value = c.dark ? 0.7 : 0;
 }
 
 /**
@@ -119,6 +127,11 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
       uTint: { value: new THREE.Color() },
       uMajor: { value: new THREE.Color() },
       uMinor: { value: new THREE.Color() },
+      uDeep: { value: 0 },
+      uDeepMajor: { value: new THREE.Color() },
+      uDeepMinor: { value: new THREE.Color() },
+      uLabelMute: { value: 0 },
+      uSheen: { value: 0 },
     };
     const material = new THREE.ShaderMaterial({
       uniforms: u,

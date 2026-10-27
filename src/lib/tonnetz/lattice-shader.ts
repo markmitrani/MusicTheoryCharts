@@ -67,6 +67,12 @@ uniform vec3 uAccent;
 uniform vec3 uTint;
 uniform vec3 uMajor;
 uniform vec3 uMinor;
+// Chord-name fills: blended tint (0) or deep, near-solid hues (1); dark theme goes deep.
+uniform float uDeep;
+uniform vec3 uDeepMajor;
+uniform vec3 uDeepMinor;
+uniform float uLabelMute;
+uniform float uSheen;
 uniform sampler2D uAtlas;
 
 varying vec2 vLat;
@@ -128,7 +134,16 @@ void main() {
   float brickB = floor((L.y + 1.0 + brickA) / 3.0);
   float checker = mod(brickA + brickB, 2.0);
   col = mix(col, uTint, 0.1 * checker);
-  if (uShowChords > 0.5) col = mix(col, isMajor ? uMajor : uMinor, 0.26);
+  if (uShowChords > 0.5) {
+    vec3 blended = mix(col, isMajor ? uMajor : uMinor, 0.26);
+    // deep fills keep their saturation; the copies alternate by a faint lift
+    vec3 deep = isMajor ? uDeepMajor : uDeepMinor;
+    deep = mix(deep, uTint, 0.05 * checker);
+    col = mix(blended, deep, uDeep);
+    // top-lit sheen across each triangle
+    float sh = clamp(dot(toXY(L - cen), vec2(-0.34, 0.94)) / 0.55, -1.0, 1.0) * uSheen;
+    col = sh > 0.0 ? mix(col, vec3(1.0), 0.08 * sh) : mix(col, vec3(0.0), -0.14 * sh);
+  }
   col = mix(col, uAccent, 0.13 * lit + 0.12 * focusCopy + 0.32 * play);
 
   // ---- edges (three families of integer lines) ----
@@ -204,7 +219,9 @@ void main() {
   // ---- chord names ----
   if (uShowChords > 0.5) {
     float cl = label(toXY(L - cen), 12.0 + float(tri), vec2(0.4, 0.2)) * textVis;
-    col = mix(col, mix(uText, uTextStrong, max(glow, 0.2)), cl * (1.0 - disc));
+    // muted names: quiet until their chord is focused, selected or playing
+    float ink = mix(1.0, 0.62 + 0.38 * clamp(glow, 0.0, 1.0), uLabelMute);
+    col = mix(col, mix(uText, uTextStrong, max(glow, 0.2)), cl * (1.0 - disc) * ink);
   }
 
   // Soft fade toward the far edges of the curved plane.
