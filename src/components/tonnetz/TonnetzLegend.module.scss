@@ -60,10 +60,10 @@
 }
 
 .art {
+  // sized by its diagram; the grid row bottom-aligns the short ones with the tall
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 40px;
 }
 
 .diagram {

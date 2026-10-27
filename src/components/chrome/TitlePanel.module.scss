@@ -8,9 +8,9 @@
   padding: 28px 30px;
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
-  background: var(--glass-fill);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  // frosted, not see-through: what's beneath blurs and dims under the canvas colour
+  background: var(--card-sheen), color-mix(in srgb, var(--canvas-bg) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
   box-shadow: var(--shadow-md);
   z-index: 90;
 }

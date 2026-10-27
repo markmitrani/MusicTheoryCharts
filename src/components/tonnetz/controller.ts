@@ -3,12 +3,14 @@ import {
   movePosPath,
   nearestCopy,
   neighbourPos,
+  pcAt,
   sameTriad,
   triadIndex,
   triadPitches,
   triangleAt,
   triangleCentroid,
   triangleContaining,
+  triangleCorners,
   latticeToXY,
   xyToLattice,
   voiceProgression,
@@ -20,13 +22,20 @@ import {
 import { Motion, snapToCentroid, type Vec2 } from '@/lib/tonnetz/motion';
 import { COPY_ORIGIN, PERIOD_A, PERIOD_B } from '@/lib/tonnetz/lattice-shader';
 import { playChord, playProgression } from '@/lib/playback/playback';
+import { getAudioEngine } from '@/lib/audio/engine';
 
 export const FOV = 40;
 const TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
 export const H_MIN = 3.6;
 export const H_DEFAULT = 8.5;
+/** Fraction the camera pulls back while dragging. */
+const DRAG_PULLBACK = 0.22;
+/** Duration of the selection / focus highlight tween. */
+const LIT_EASE_S = 0.14;
 /** Furthest zoom-out: the lattice shrinks to a wide field, labels fade first. */
 export const H_MAX = 30;
+/** Node disc radius in world units (the shader's R), plus a little slack for the pointer. */
+const NODE_HIT = 0.19 * 1.15;
 
 /** Torus copy index of a lattice point (same parallelogram as the shader). */
 const copyIndex = (i: number, j: number) => {
@@ -64,9 +73,15 @@ export class WorldController {
   showChords: boolean;
   reducedMotion = false;
 
-  /** Camera height (zoom) and its target. */
+  /** Camera height as rendered: the zoom plus a momentary pull-back while dragging. */
   h = H_DEFAULT;
+  /** The zoom the user set, eased toward hTarget. */
+  hZoom = H_DEFAULT;
   hTarget = H_DEFAULT;
+  /** 0..1, how far the drag pull-back has eased in. */
+  private dragOut = 0;
+  /** Set once a press has moved far enough to be a drag, so a click never pulls back. */
+  pulling = false;
   aspect = 1;
   time = 0;
 
@@ -78,6 +93,12 @@ export class WorldController {
   /** Smoothed per-triad light levels (selection / focus) and playback. */
   readonly lit = new Float32Array(24);
   readonly play = new Float32Array(24);
+  /** Per pitch class: a node clicked on its own, glowing while it sounds. */
+  readonly notePlay = new Float32Array(12);
+  // per-triad ease-in-out tween of lit: start value, end value, start time
+  private litFrom = new Float32Array(24);
+  private litTo = new Float32Array(24);
+  private litT0 = new Float32Array(24);
   private playTarget = new Float32Array(24);
   private timers: { at: number; fn: () => void }[] = [];
   private listeners = new Set<Listener>();
@@ -161,7 +182,11 @@ export class WorldController {
   update(dt: number) {
     this.time += dt;
     const k = 1 - Math.exp(-dt * 10);
-    this.h += (this.hTarget - this.h) * (this.reducedMotion ? 1 : k);
+    this.hZoom += (this.hTarget - this.hZoom) * (this.reducedMotion ? 1 : k);
+    const dragging = this.pulling && this.motion.mode === 'drag' && !this.reducedMotion;
+    this.dragOut += ((dragging ? 1 : 0) - this.dragOut) * (1 - Math.exp(-dt * (dragging ? 5 : 3.5)));
+    const e = this.dragOut * this.dragOut * (3 - 2 * this.dragOut);
+    this.h = Math.min(H_MAX, this.hZoom * (1 + DRAG_PULLBACK * e));
     this.motion.update(dt);
 
     for (let n = this.timers.length - 1; n >= 0; n--) {
@@ -171,17 +196,26 @@ export class WorldController {
       }
     }
 
-    // Light levels: fast attack, slow release (as the harmony chips).
+    // Selection / focus: a short ease-in-out tween per triad, restarted from the current level.
+    // Playback: fast attack, slow release (as the harmony chips).
     const attack = 1 - Math.exp(-dt * 22);
     const release = 1 - Math.exp(-dt * 3.2);
     const target = new Float32Array(24);
     this.selection.forEach((t) => (target[triadIndex(t)] = 1));
     target[triadIndex(this.focus)] = 1;
     for (let n = 0; n < 24; n++) {
-      this.lit[n] += (target[n] - this.lit[n]) * (target[n] > this.lit[n] ? attack : release);
+      if (target[n] !== this.litTo[n]) {
+        this.litFrom[n] = this.lit[n];
+        this.litTo[n] = target[n];
+        this.litT0[n] = this.time;
+      }
+      const u = this.reducedMotion ? 1 : Math.min(1, (this.time - this.litT0[n]) / LIT_EASE_S);
+      const eased = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      this.lit[n] = this.litFrom[n] + (this.litTo[n] - this.litFrom[n]) * eased;
       const pt = this.playTarget[n];
       this.play[n] += (pt - this.play[n]) * (pt > this.play[n] ? attack : release);
     }
+    for (let n = 0; n < 12; n++) this.notePlay[n] += (0 - this.notePlay[n]) * release;
   }
 
   private after(seconds: number, fn: () => void) {
@@ -190,18 +224,22 @@ export class WorldController {
 
   // ---- picking ----
 
-  /** Screen point → world point on the curved plane (relative to the camera). */
-  screenToRel(nx: number, ny: number): Vec2 {
+  /**
+   * Screen point → world point on the curved plane (relative to the camera).
+   * Drags pass the set zoom (hZoom), so the pull-back doesn't slide the grabbed point.
+   */
+  screenToRel(nx: number, ny: number, h = this.h): Vec2 {
+    const curve = 0.2 / h;
     const dx = nx * TAN * this.aspect;
     const dy = ny * TAN;
     let z = 0;
     let x = 0;
     let y = 0;
     for (let n = 0; n < 5; n++) {
-      const t = this.h - z; // ray from (0,0,h) along (dx, dy, −1)
+      const t = h - z; // ray from (0,0,h) along (dx, dy, −1)
       x = dx * t;
       y = dy * t;
-      z = -this.curve * (x * x + y * y);
+      z = -curve * (x * x + y * y);
     }
     return { x, y };
   }
@@ -235,7 +273,30 @@ export class WorldController {
     this.emit();
   }
 
+  /** The note whose disc is under a screen point, if any (shader disc radius, a touch generous). */
+  pickNode(nx: number, ny: number): number | null {
+    const rel = this.screenToRel(nx, ny);
+    const w = { x: this.motion.pos.x + rel.x, y: this.motion.pos.y + rel.y };
+    const l = xyToLattice(w.x, w.y);
+    for (const [i, j] of triangleCorners(triangleContaining(l.i, l.j))) {
+      const c = latticeToXY(i, j);
+      if (Math.hypot(c.x - w.x, c.y - w.y) < NODE_HIT) return pcAt(this.centre, i, j);
+    }
+    return null;
+  }
+
+  /** A single note: sounds and glows, leaving focus, selection and history alone. */
+  playNote(pc: number) {
+    getAudioEngine().triggerNote(36 + pc, 900); // the card's note register
+    this.notePlay[pc] = 1;
+  }
+
   clickAt(nx: number, ny: number, shift: boolean) {
+    const pc = this.pickNode(nx, ny);
+    if (pc !== null) {
+      this.playNote(pc);
+      return;
+    }
     const p = this.pickTriangle(nx, ny);
     const t = triangleAt(this.centre, p);
     this.setFocus(t, { add: shift });

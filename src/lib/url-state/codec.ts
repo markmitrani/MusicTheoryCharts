@@ -16,7 +16,7 @@ import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
  *   wayshome = w + flags1 + key1 + x2 + y2 + steps (7 + n chars; flags = out + noLegend*2;
  *             key = pitch class, or 'c' functional; step = dirBit*4 + cadence index)
  *   roads   = r + center1 + show1 + x2 + y2     (7 chars; show 0 both / 1 in / 2 out)
- *   tonnetz = t + flags1 + centre1 + triad1 + x2 + y2 (8 chars; flags = chordNames + legend*2,
+ *   tonnetz = t + flags1 + centre1 + triad1 + x2 + y2 [+a1] (8-9 chars; flags = chordNames + legend*2,
  *             other bits reserved; triad = base36(root*2 + minor), or 'z' = none)
  *   section = f + x2 + y2 + w2 + h2 + escapedName (9+ chars; name may be empty)
  *
@@ -128,7 +128,9 @@ export function encodeDoc(doc: DocSnapshot): string {
         if (e.kind === 'tonnetz') {
           const triad = e.triad ? b36(e.triad.root * 2 + (e.triad.minor ? 1 : 0), 1) : 'z';
           const flags = (e.showChords ? 1 : 0) + (e.showLegend ? 2 : 0);
-          return `t${b36(flags, 1)}${b36(e.centre, 1)}${triad}${x}${y}`;
+          // repeats alpha in twentieths, only when moved off the default
+          const a = e.repeats === undefined ? '' : b36(Math.round(e.repeats * 20), 1);
+          return `t${b36(flags, 1)}${b36(e.centre, 1)}${triad}${x}${y}${a}`;
         }
         if (e.kind === 'roads') {
           return `r${b36(NOTE_NAMES.indexOf(e.centerKey), 1)}${ROADS_SHOW.indexOf(e.show)}${x}${y}`;
@@ -217,11 +219,17 @@ function decodeV2(body: string): DecodedDoc | null {
             x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };
         }
-        if (kind === 't' && code.length === 8) {
+        if (kind === 't' && (code.length === 8 || code.length === 9)) {
           const flags = parseInt(code[1], 36);
           const centre = parseInt(code[2], 36);
           const tri = code[3] === 'z' ? null : parseInt(code[3], 36);
-          if (Number.isNaN(flags) || !(centre >= 0 && centre < 12) || (tri !== null && !(tri >= 0 && tri < 24))) {
+          const a = code.length === 9 ? parseInt(code[8], 36) : null;
+          if (
+            Number.isNaN(flags) ||
+            !(centre >= 0 && centre < 12) ||
+            (tri !== null && !(tri >= 0 && tri < 24)) ||
+            (a !== null && !(a >= 0 && a <= 20))
+          ) {
             throw new Error(`bad tonnetz: ${code}`);
           }
           return {
@@ -229,6 +237,7 @@ function decodeV2(body: string): DecodedDoc | null {
             triad: tri === null ? null : { root: tri >> 1, minor: (tri & 1) === 1 },
             showChords: (flags & 1) === 1,
             showLegend: (flags & 2) === 2,
+            ...(a === null ? {} : { repeats: a / 20 }),
             x: px(code.slice(4, 6)), y: px(code.slice(6, 8)),
           };
         }

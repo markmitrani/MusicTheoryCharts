@@ -61,7 +61,8 @@ export function readWorldColors(): WorldColors {
     fill: over(get('--element-fill'), bg),
     rim: over(get('--element-stroke-hover'), bg),
     hairline: over(mix('--text-primary', 16), bg),
-    seam: over(get('--accent-warm'), bg),
+    // the repetition outline: the warm accent, eased toward the background so it stays subtle
+    seam: over(mix('--accent-warm', 70), bg),
     text: over(get('--text-secondary'), bg),
     textStrong: over(get('--text-primary'), bg),
     accent: over(get('--accent'), bg),

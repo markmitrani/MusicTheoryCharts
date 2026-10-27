@@ -5,7 +5,7 @@
  * procedural in the fragment shader from the continuous lattice coordinate:
  * triangle fills, anti-aliased edges and seams (all lattice edges lie on
  * integer lines of i, j or i + j), glass nodes, atlas labels, per-triad
- * highlights, and a dashed outline and alternating tint per repetition (the
+ * highlights, and a solid outline and alternating tint per repetition (the
  * card's 4 × 3 brick). Repeats of a triad light together for free, because
  * lighting is looked up by triad, not by position.
  *
@@ -53,6 +53,7 @@ uniform float uShowChords;
 uniform float uFadeR;
 uniform float uLit[24];
 uniform float uPlay[24];
+uniform float uNotePlay[12];
 uniform vec3 uFocus;
 
 uniform vec3 uBg;
@@ -86,13 +87,6 @@ float label(vec2 q, float idx, vec2 size) {
   float row = floor(idx / 8.0);
   vec2 a = vec2((col + uv.x) / 8.0, 1.0 - (row + 1.0 - uv.y) / 5.0);
   return texture2D(uAtlas, a).a;
-}
-
-/** Anti-aliased 50% dash pattern along a line parameter (one dash per unit). */
-float dashAA(float t) {
-  float fw = max(fwidth(t), 1e-4);
-  float f = fract(t);
-  return smoothstep(0.0, fw, f) * (1.0 - smoothstep(0.55 - fw, 0.55, f));
 }
 
 /** Light level of the triangle at lattice cell p (major or minor). */
@@ -133,8 +127,8 @@ void main() {
   float brickA = floor((L.x + 2.0) / 4.0);
   float brickB = floor((L.y + 1.0 + brickA) / 3.0);
   float checker = mod(brickA + brickB, 2.0);
-  col = mix(col, uTint, 0.07 * checker);
-  if (uShowChords > 0.5) col = mix(col, isMajor ? uMajor : uMinor, 0.2);
+  col = mix(col, uTint, 0.1 * checker);
+  if (uShowChords > 0.5) col = mix(col, isMajor ? uMajor : uMinor, 0.26);
   col = mix(col, uAccent, 0.13 * lit + 0.12 * focusCopy + 0.32 * play);
 
   // ---- edges (three families of integer lines) ----
@@ -142,18 +136,18 @@ void main() {
   float dj = abs(fract(L.y + 0.5) - 0.5);
   float dk = abs(fract(L.x + L.y + 0.5) - 0.5);
   float edge = max(
-    max(lineAA(di, max(0.011, fwi * 0.55), fwi), lineAA(dj, max(0.011, fwj * 0.55), fwj)),
-    lineAA(dk, max(0.011, fwk * 0.55), fwk)
+    max(lineAA(di, max(0.002, fwi * 0.22), fwi), lineAA(dj, max(0.002, fwj * 0.22), fwj)),
+    lineAA(dk, max(0.002, fwk * 0.22), fwk)
   );
-  col = mix(col, uHair, edge);
+  col = mix(col, uHair, edge * 0.75);
 
-  // Lit triangles glow along their own inner edges.
+  // Lit triangles: a crisp accent band just inside their edges (no soft glow, which aliases).
   float dEdge = min(di, min(dj, dk)) * S3;
-  float rim = glow * (1.0 - smoothstep(0.0, max(0.085, fwi * 2.0), dEdge));
-  col = mix(col, uAccent, rim * 0.9);
-  col = mix(col, uAccent, edge * glow);
+  float fwe = max(fwi, fwj);
+  float band = glow * lineAA(dEdge, max(0.012, fwe * 0.8), fwe);
+  col = mix(col, uAccent, band);
 
-  // ---- outline of each repetition, dashed like the card's border ----
+  // ---- outline of each repetition: solid, heavier and brighter than the hairline edges ----
   // The repetition is the card's brick: 4 fifths by 3 major thirds (cells
   // i ∈ [−2, 2), j ∈ [−1, 2)), tiled by (0, 3) and (4, −1). Brick sides are
   // the lines i ≡ −2 (mod 4) along the major thirds; brick tops are horizontal,
@@ -161,10 +155,10 @@ void main() {
   float sv = abs(mod(L.x + 2.0 + 2.0, 4.0) - 2.0);
   float sh = abs(mod(L.y + 1.0 + brickA + 1.5, 3.0) - 1.5);
   float seam = max(
-    lineAA(sh, max(0.017, fwj * 0.75), fwj) * dashAA(L.x * 2.6),
-    lineAA(sv, max(0.017, fwi * 0.75), fwi) * dashAA(L.y * 2.6)
+    lineAA(sh, max(0.012, fwj * 0.9), fwj),
+    lineAA(sv, max(0.012, fwi * 0.9), fwi)
   );
-  col = mix(col, uSeam, seam * 0.95);
+  col = mix(col, uSeam, seam * 0.9);
 
   // ---- nodes ----
   vec2 c0 = isMajor ? vec2(fi, fj) : vec2(fi + 1.0, fj);
@@ -189,12 +183,14 @@ void main() {
     nlit = max(nlit, triGlow(n - vec2(1.0, 0.0), false));
     nlit = max(nlit, triGlow(n - vec2(0.0, 1.0), false));
     nlit = max(nlit, triGlow(n - vec2(1.0, 1.0), false));
+    nlit = max(nlit, uNotePlay[int(mod(npc + 0.5, 12.0))]); // a note clicked on its own
     nlit = clamp(nlit, 0.0, 1.0);
     vec2 q = toXY(L - n);
     // glass wash: highlight toward the upper left, as the card's nodes
     float wash = 1.0 - clamp(length(q / R - vec2(-0.32, 0.36)) * 0.75, 0.0, 1.0);
     vec3 nodeCol = mix(uFill, mix(uTextStrong, uAccent, nlit), wash * (0.12 + 0.2 * nlit));
-    float ring = smoothstep(R - 0.03 - fwn, R - 0.03 + fwn, dn);
+    float rw = mix(0.009, 0.02, nlit);
+    float ring = smoothstep(R - rw - fwn, R - rw + fwn, dn);
     nodeCol = mix(nodeCol, mix(uRim, uAccent, nlit), ring);
     // note name, tilted 35° counterclockwise
     float ca = 0.8191520;

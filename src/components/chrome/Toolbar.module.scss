@@ -10,7 +10,6 @@
   border: 1px solid var(--hairline);
   background: var(--chrome-fill);
   backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
   box-shadow: var(--shadow-md);
   z-index: 100;
   transition: opacity var(--dur-med) var(--ease-out);
@@ -80,7 +79,6 @@
   border: 1px solid var(--hairline);
   background: var(--chrome-fill);
   backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
   box-shadow: var(--shadow-lg);
   animation: layersIn var(--dur-fast) var(--ease-out);
 }

@@ -105,6 +105,7 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
       uFadeR: { value: 10 },
       uLit: { value: new Array(24).fill(0) },
       uPlay: { value: new Array(24).fill(0) },
+      uNotePlay: { value: new Array(12).fill(0) },
       uFocus: { value: new THREE.Vector3() },
       uAtlas: { value: atlas },
       uBg: { value: new THREE.Color() },
@@ -188,6 +189,8 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
         lit[n] = ctrl.lit[n];
         play[n] = ctrl.play[n];
       }
+      const notePlay = u.uNotePlay.value as number[];
+      for (let n = 0; n < 12; n++) notePlay[n] = ctrl.notePlay[n];
       camera.position.set(0, 0, ctrl.h);
       camera.lookAt(0, 0, 0);
       renderer.render(scene, camera);

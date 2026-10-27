@@ -33,11 +33,11 @@ export default function RootLayout({
       className={`${fraunces.variable} ${inter.variable}`}
     >
       <head>
-        {/* Apply saved theme + surfaces before first paint to avoid a flash. */}
+        {/* Apply saved theme, surfaces and colours before first paint to avoid a flash. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var d=document.documentElement.dataset,t=localStorage.getItem('mtp-theme'),s=localStorage.getItem('mtp-surfaces');if(t)d.theme=t;if(s)d.surfaces=s;}catch(e){}",
+              "try{var d=document.documentElement.dataset,t=localStorage.getItem('mtp-theme'),s=localStorage.getItem('mtp-surfaces');if(t)d.theme=t;if(s)d.surfaces=s;if(localStorage.getItem('mtp-colors-on')==='1'){var c=JSON.parse(localStorage.getItem('mtp-colors')||'{}')[d.theme||'dark']||{};for(var k in c)document.documentElement.style.setProperty(k,c[k]);}}catch(e){}",
           }}
         />
       </head>

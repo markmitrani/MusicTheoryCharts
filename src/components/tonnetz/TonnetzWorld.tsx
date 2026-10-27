@@ -47,6 +47,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
   const [showChords, setShowChords] = useState(el?.showChords ?? false);
   const [showLegend, setShowLegend] = useState(el?.showLegend ?? true);
   const [ready, setReady] = useState(false);
+  const [tucked, setTucked] = useState(false);
   const reduced = useRef(
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
@@ -196,7 +197,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
         return;
       }
       const { nx, ny } = norm(e.clientX, e.clientY);
-      const rel = ctrl.screenToRel(nx, ny);
+      const rel = ctrl.screenToRel(nx, ny, ctrl.hZoom);
       grab = { x: ctrl.motion.pos.x + rel.x, y: ctrl.motion.pos.y + rel.y };
       down = { x: e.clientX, y: e.clientY, t: now() };
       last = { x: e.clientX, y: e.clientY };
@@ -213,9 +214,10 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
       }
       if (!grab || !last) return;
       moved += Math.hypot(e.clientX - last.x, e.clientY - last.y);
+      if (moved >= 6) ctrl.pulling = true;
       // Direct manipulation: the lattice point grabbed stays under the pointer.
       const { nx, ny } = norm(e.clientX, e.clientY);
-      const rel = ctrl.screenToRel(nx, ny);
+      const rel = ctrl.screenToRel(nx, ny, ctrl.hZoom);
       ctrl.motion.dragTo({ x: grab.x - rel.x, y: grab.y - rel.y }, now());
       last = { x: e.clientX, y: e.clientY };
     };
@@ -229,6 +231,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
       }
       if (pointers.size > 0) return;
       delete stage.dataset.dragging;
+      ctrl.pulling = false;
       if (!grab) {
         ctrl.endPinch();
         return;
@@ -271,7 +274,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
   const selCount = ui?.selection.length ?? 1;
 
   return createPortal(
-    <div ref={rootRef} className={styles.root} role="dialog" aria-modal="true" aria-label="Tonnetz in 3D">
+    <div ref={rootRef} className={styles.root} data-world role="dialog" aria-modal="true" aria-label="Tonnetz in 3D">
       <div ref={stageRef} className={styles.stage} style={{ opacity: 0 }}>
         <LatticeView ctrl={ctrl} onFirstFrame={() => setReady(true)} />
       </div>
@@ -282,34 +285,47 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
           <span className={styles.chord}>{triadName(focus)}</span>
           {selCount > 1 && <span className={styles.selCount}>{selCount} selected</span>}
         </div>
-        <div className={styles.actions}>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={showChords}
-              onChange={(e) => {
-                const v = e.target.checked;
+        <div className={styles.actions} data-tucked={tucked || undefined}>
+          <div className={styles.opts} inert={tucked}>
+            <button
+              type="button"
+              className={styles.opt}
+              aria-pressed={showChords}
+              data-on={showChords || undefined}
+              onClick={() => {
+                const v = !showChords;
                 setShowChords(v);
                 ctrl.showChords = v;
                 canvasStore.getState().updateElement(elementId, { showChords: v }, { commit: true });
               }}
-            />
-            <span className={styles.box} aria-hidden />
-            Chord names
-          </label>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={showLegend}
-              onChange={(e) => {
-                const v = e.target.checked;
+            >
+              Chord names
+            </button>
+            <button
+              type="button"
+              className={styles.opt}
+              aria-pressed={showLegend}
+              data-on={showLegend || undefined}
+              onClick={() => {
+                const v = !showLegend;
                 setShowLegend(v);
                 canvasStore.getState().updateElement(elementId, { showLegend: v }, { commit: true });
               }}
-            />
-            <span className={styles.box} aria-hidden />
-            Show legend
-          </label>
+            >
+              Legend
+            </button>
+          </div>
+          <button
+            type="button"
+            className={styles.tuck}
+            aria-label={tucked ? 'Show options' : 'Tuck options away'}
+            title={tucked ? 'Show options' : 'Tuck away'}
+            onClick={() => setTucked((t) => !t)}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+              <path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
           <button className={styles.close} aria-label="Close 3D view" title="Close (Esc)" onClick={close}>
             <CloseIcon width={16} height={16} />
           </button>

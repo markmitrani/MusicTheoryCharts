@@ -111,6 +111,8 @@ export interface TonnetzElement extends ElementBase {
   showChords: boolean;
   /** "Show legend": the triangle key and the move diagrams. */
   showLegend: boolean;
+  /** Opacity of the repeats around the framed repetition (0–1); unset = 0.15. */
+  repeats?: number;
 }
 
 /**

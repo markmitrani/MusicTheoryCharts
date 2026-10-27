@@ -1,13 +1,84 @@
+// Layout rhythm. The lattice fades in over $edge at the stage's edges, so it
+// visibly starts halfway in; the bars keep $space from that line, as the move
+// bar does from the card's bottom edge. The stage tucks under the bars by the
+// difference, and the legends sit the same distance in.
+$edge: 40px;
+$space: 16px;
+$tuck: $edge * 0.5 - $space;
+
 .wrap {
+  position: relative;
   width: 618px;
+}
+
+.body {
+  // a lighter top, a touch more at the sides, the bottom matching the bars' rhythm plus a little
+  padding: 10px 15px $space + 4px;
+  // The glass lives on a layer behind the content, not on the card: an element
+  // with backdrop-filter clips its children's backdrops to itself, which kept
+  // the legends from blurring whatever lies beneath the card.
+  position: relative;
+  z-index: 0;
+  background: none;
+  backdrop-filter: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--card-sheen), var(--glass-fill);
+    backdrop-filter: blur(var(--glass-blur));
+    pointer-events: none;
+  }
+}
+
+.nameTab {
+  cursor: pointer;
+}
+
+// Card settings, opened from the name tab.
+.tune {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  z-index: 20;
+  width: 220px;
+  padding: 12px 14px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: var(--chrome-fill);
+  backdrop-filter: blur(var(--chrome-blur));
+  box-shadow: var(--shadow-lg);
+}
+
+.tuneRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.tuneValue {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tuneSlider {
+  width: 100%;
+  margin-top: 8px;
+  accent-color: var(--accent);
 }
 
 // Top bar: "Chord names" checkbox and the 3D button.
 .bar {
+  position: relative;
+  z-index: 7; // over the stage's tucked-under fade
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
 }
 
 .toggles {
@@ -99,19 +170,19 @@
 
 .stage {
   position: relative;
+  margin-block: -$tuck;
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
-// Vignette: a soft band on all four edges (corners included), well clear of
-// the window, so nothing inside the perimeter ever fades.
-$vignette: 40px;
-
+// Fade: a soft band on all four edges, intersected with an oval vignette
+// centred on the window (which stays clear inside ~two thirds of it).
 .svg {
   display: block;
   mask-image:
-    linear-gradient(to right, transparent, #000 $vignette, #000 calc(100% - #{$vignette}), transparent),
-    linear-gradient(to bottom, transparent, #000 $vignette, #000 calc(100% - #{$vignette}), transparent);
+    linear-gradient(to right, transparent, #000 $edge, #000 calc(100% - #{$edge}), transparent),
+    linear-gradient(to bottom, transparent, #000 $edge, #000 calc(100% - #{$edge}), transparent),
+    radial-gradient(ellipse farthest-side at 50% 50%, #000 66%, transparent 100%);
   mask-composite: intersect;
 }
 
@@ -148,6 +219,23 @@ $vignette: 40px;
   }
 }
 
+// Light: solid fills (:where keeps the base selection and playing rules on top).
+:global(:where([data-theme='light'])) .svg[data-chords] .tri {
+  fill: var(--tonnetz-major);
+
+  &[data-minor] {
+    fill: var(--tonnetz-minor);
+  }
+
+  &:hover {
+    fill: color-mix(in srgb, var(--tonnetz-major) 88%, var(--element-fill));
+  }
+
+  &[data-minor]:hover {
+    fill: color-mix(in srgb, var(--tonnetz-minor) 88%, var(--element-fill));
+  }
+}
+
 // Selected triad: outlined and washed in the accent, in every copy.
 .tri[data-selected],
 .svg[data-chords] .tri[data-selected] {
@@ -167,7 +255,9 @@ $vignette: 40px;
 }
 
 .chordLabel {
-  transition: opacity var(--dur-med) var(--ease-out);
+  transition:
+    opacity 0.2s var(--ease-out),
+    fill 0.2s var(--ease-out);
   fill: var(--text-secondary);
   font-family: var(--font-body);
   font-size: 11px;
@@ -182,6 +272,45 @@ $vignette: 40px;
   }
 }
 
+// Light: fills are solid, so selection keeps the quality colour and the accent
+// marks it with a thick outline only.
+:global([data-theme='light']) .svg[data-chords] .tri {
+  &[data-selected],
+  &[data-lit] {
+    fill: var(--tonnetz-major);
+    stroke-width: 3;
+  }
+
+  &[data-minor][data-selected],
+  &[data-minor][data-lit] {
+    fill: var(--tonnetz-minor);
+  }
+
+  &[data-out][data-selected],
+  &[data-out][data-lit] {
+    stroke-width: 1.2;
+  }
+}
+
+// Light glass: solid fills take the chips' top-lit sheen (gradients set on the svg).
+:global([data-theme='light'][data-surfaces='glass']) .svg[data-chords] .tri {
+  &,
+  &[data-selected],
+  &[data-lit] {
+    fill: var(--tz-major-fill);
+  }
+
+  &[data-minor],
+  &[data-minor][data-selected],
+  &[data-minor][data-lit] {
+    fill: var(--tz-minor-fill);
+  }
+}
+
+:global([data-theme='light']) .svg[data-chords] .chordLabel {
+  fill: #fff;
+}
+
 // The window's dashed border: where the figure's parallelogram ends and the
 // lattice carries on, faded.
 .border {
@@ -192,18 +321,19 @@ $vignette: 40px;
   pointer-events: none;
 }
 
-// The lattice beyond the window.
+// The lattice beyond the window, at the card's repeats alpha.
 .svg [data-out] {
-  opacity: 0.4;
+  opacity: var(--tz-repeats, 0.15);
 }
 
-// Hover a note: its fifths, major-third and minor-third axes light through it.
-.axis {
-  stroke: var(--accent);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  opacity: 0.55;
-  pointer-events: none;
+// Repeats are background: a click there deselects rather than selects.
+.svg .tri[data-out] {
+  cursor: default;
+}
+
+// Light: a faded solid red reads pink, so the repeats fade to grey instead.
+:global([data-theme='light']) .svg[data-chords] [data-out] {
+  filter: grayscale(1);
 }
 
 .node {
@@ -239,6 +369,11 @@ $vignette: 40px;
 }
 
 .noteLabel {
+  // a landing name eases into its node's look
+  transition:
+    fill 0.2s var(--ease-out),
+    opacity 0.2s var(--ease-out),
+    font-size 0.2s var(--ease-out);
   fill: var(--text-secondary);
   font-family: var(--font-body);
   font-size: 12px;
@@ -248,14 +383,14 @@ $vignette: 40px;
   user-select: none;
 }
 
-.node[data-centre] .noteLabel {
+.noteLabel[data-centre] {
   fill: var(--text-primary);
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 560;
 }
 
-.node[data-tone] .noteLabel {
+.noteLabel[data-tone] {
   fill: var(--text-primary);
 }
 
@@ -264,23 +399,51 @@ $vignette: 40px;
 .legend {
   position: absolute;
   z-index: 6;
-  padding: 6px 7px;
+  padding: 9px;
   border-radius: 9px;
   border: 1px solid var(--hairline);
-  background: color-mix(in srgb, var(--element-fill) 82%, transparent);
-  backdrop-filter: blur(6px);
+  overflow: hidden;
+  // whatever lies beneath the card, blurred; the lattice itself is in .backdrop
+  backdrop-filter: blur(8px) saturate(1.1);
   pointer-events: none;
+}
+
+// The lattice under a legend at full strength, blurred, under the settings
+// panel's neutral: the 3D view's panel look. Behind the legend's content.
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--chrome-fill) 42%, transparent);
+  }
+}
+
+// Bleeds past the legend (BACKDROP_BLEED) so the blur stays even to the rim.
+.backdropLattice {
+  position: absolute;
+  inset: -28px;
+  width: calc(100% + 56px);
+  height: calc(100% + 56px);
+  --tz-repeats: 1;
+  filter: blur(14px) saturate(1.35);
 }
 
 // The figure's free corners: the key top right, the moves bottom left.
 .legendKey {
-  top: 6px;
+  top: $tuck + 6px;
   right: 6px;
   width: 148px;
 }
 
 .legendMoves {
-  bottom: 6px;
+  bottom: $tuck + 6px;
   left: 6px;
   transform: scale(0.85);
   transform-origin: bottom left;
@@ -289,10 +452,11 @@ $vignette: 40px;
 // ---- move bar ----
 
 .moves {
+  position: relative;
+  z-index: 7; // over the stage's tucked-under fade
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 10px;
 }
 
 .move {
