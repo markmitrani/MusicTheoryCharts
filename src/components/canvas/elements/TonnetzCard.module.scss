@@ -5,6 +5,10 @@
 $edge: 40px;
 $space: 16px;
 $tuck: $edge * 0.5 - $space;
+// Card padding: the move bar's P sits as far from the bottom edge as from the
+// left, and the moves legend as far above it ($gap counts the card's border).
+$pad-x: 15px;
+$gap: $pad-x + 1px;
 
 .wrap {
   position: relative;
@@ -12,8 +16,7 @@ $tuck: $edge * 0.5 - $space;
 }
 
 .body {
-  // a lighter top, a touch more at the sides, the bottom matching the bars' rhythm plus a little
-  padding: 10px 15px $space + 4px;
+  padding: 10px $pad-x $pad-x;
   // The glass lives on a layer behind the content, not on the card: an element
   // with backdrop-filter clips its children's backdrops to itself, which kept
   // the legends from blurring whatever lies beneath the card.
@@ -444,7 +447,7 @@ $tuck: $edge * 0.5 - $space;
 }
 
 .legendMoves {
-  bottom: $tuck + 6px;
+  bottom: $tuck + $gap; // the stage runs $tuck under the move bar
   left: 6px;
   transform: scale(0.85);
   transform-origin: bottom left;

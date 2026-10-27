@@ -48,7 +48,8 @@
 .moves {
   display: grid;
   grid-template-columns: repeat(3, auto);
-  gap: 6px 10px;
+  // rows breathe apart (the old fixed-height slots gave this); no slack above the first
+  gap: 20px 10px;
   align-items: end;
 }
 
