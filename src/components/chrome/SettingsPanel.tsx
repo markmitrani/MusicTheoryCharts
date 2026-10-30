@@ -10,7 +10,18 @@ import {
   type Theme,
   type Surfaces,
 } from '@/lib/theme';
+import {
+  COLOR_SLOTS,
+  readColor,
+  setColor,
+  resetColors,
+  hasColors,
+  colorsEnabled,
+  setColorsEnabled,
+  type ColorSlot,
+} from '@/lib/custom-colors';
 import { useIsMobile } from '@/lib/use-mobile';
+import { ColorPicker } from './ColorPicker';
 import { GearIcon, ShareIcon, TrashIcon } from './icons';
 import styles from './SettingsPanel.module.scss';
 
@@ -30,11 +41,25 @@ export function CornerActions() {
   const harmonicsViz = useCanvas((s) => s.harmonicsViz);
   const deleteMode = useCanvas((s) => s.deleteMode);
   const mobile = useIsMobile();
+  const [colors, setColors] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<ColorSlot | null>(null);
+  const [customised, setCustomised] = useState(false);
+  const [colorsOn, setColorsOn] = useState(false);
+
+  const readColors = (t: Theme) => {
+    setColors(Object.fromEntries(COLOR_SLOTS.map(({ slot, token }) => [slot, readColor(token)])));
+    setCustomised(hasColors(t));
+  };
+
+  useEffect(() => {
+    if (open) readColors(theme);
+  }, [open, theme]);
 
   // Sync from the DOM (set pre-paint by the no-flash script) on mount.
   useEffect(() => {
     setThemeState(getTheme());
     setSurfacesState(getSurfaces());
+    setColorsOn(colorsEnabled());
   }, []);
 
   const chooseTheme = (next: Theme) => {
@@ -195,6 +220,66 @@ export function CornerActions() {
               </button>
             </label>
             <p className={styles.hint}>Harmonics wave reacts while audio plays.</p>
+
+            <label className={styles.row}>
+              <span>Custom colours</span>
+              <button
+                className={styles.switch}
+                role="switch"
+                aria-checked={colorsOn}
+                data-on={colorsOn || undefined}
+                onClick={() => {
+                  setColorsEnabled(!colorsOn, theme);
+                  setColorsOn(!colorsOn);
+                  setEditing(null);
+                  readColors(theme);
+                }}
+              >
+                <span className={styles.knob} />
+              </button>
+            </label>
+            {colorsOn && (
+              <>
+                <div className={styles.swatches}>
+                  {COLOR_SLOTS.map(({ slot, label }) => (
+                    <button
+                      key={slot}
+                      className={styles.swatchBtn}
+                      aria-expanded={editing === slot}
+                      data-active={editing === slot || undefined}
+                      onClick={() => setEditing(editing === slot ? null : slot)}
+                    >
+                      <span className={styles.swatch} style={{ background: colors[slot] }} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {editing && colors[editing] && (
+                  <ColorPicker
+                    value={colors[editing]}
+                    onChange={(hex) => {
+                      setColor(theme, editing, hex);
+                      setColors((c) => ({ ...c, [editing]: hex }));
+                      setCustomised(true);
+                    }}
+                  />
+                )}
+                <div className={styles.sectionHead}>
+                  <p className={styles.hint}>Accent also colours highlighted notes. Saved separately for dark and light.</p>
+                  {customised && (
+                    <button
+                      className={styles.reset}
+                      onClick={() => {
+                        resetColors(theme);
+                        readColors(theme);
+                      }}
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           <button

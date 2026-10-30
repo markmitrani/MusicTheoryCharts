@@ -121,19 +121,37 @@
   }
 }
 
-// On white, the same gradient reads heavier — ease it a smidge lighter.
+// Light: the same hues, tinted deeper with a rim and darkened ink, so chips hold their own on white.
+:global(:where([data-theme='light'])) .chip {
+  background: color-mix(in srgb, var(--chip-color) 34%, transparent);
+  border-color: color-mix(in srgb, var(--chip-color) 55%, transparent);
+
+  .numeral {
+    color: color-mix(in srgb, var(--chip-color) 70%, #000);
+  }
+
+  .chordName {
+    color: color-mix(in srgb, var(--chip-color) 30%, #0b1a1f);
+  }
+
+  &[data-active] {
+    background: color-mix(in srgb, var(--chip-color) 50%, transparent);
+    border-color: color-mix(in srgb, var(--chip-color) 80%, #000);
+  }
+}
+
 :global([data-theme='light'][data-surfaces='glass']) .chip {
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--chip-color) 26%, transparent) 0%,
-    color-mix(in srgb, var(--chip-color) 7%, transparent) 100%
+    color-mix(in srgb, var(--chip-color) 52%, transparent) 0%,
+    color-mix(in srgb, var(--chip-color) 26%, transparent) 100%
   );
 
   &[data-active] {
     background: linear-gradient(
       160deg,
-      color-mix(in srgb, var(--chip-color) 46%, transparent) 0%,
-      color-mix(in srgb, var(--chip-color) 20%, transparent) 100%
+      color-mix(in srgb, var(--chip-color) 74%, transparent) 0%,
+      color-mix(in srgb, var(--chip-color) 46%, transparent) 100%
     );
   }
 }
@@ -269,6 +287,6 @@
   display: block;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--well-fill);
   padding: 6px 6px 0;
 }

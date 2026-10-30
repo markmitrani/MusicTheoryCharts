@@ -30,7 +30,9 @@ class AudioEngine implements AudioSink {
   private chorus: Tone.Chorus;
   private pad: Tone.PolySynth<Tone.Synth>;
   private sub: Tone.Synth;
-  private pluck: Tone.Synth;
+  private pluck: Tone.PolySynth<Tone.Synth>;
+  /** Last pluck start: Tone rejects a start time that isn't strictly later. */
+  private lastPluck = 0;
   // Piano voice: a real sampled grand (Salamander samples, bundled under
   // /public) pushed through a short modulated delay (flanger) and the shared
   // reverb for an expansive shimmer.
@@ -117,11 +119,14 @@ class AudioEngine implements AudioSink {
     this.epChorus.connect(this.waveform);
     this.sub.connect(this.waveform);
 
-    // barely-there triangle pluck for chrome interactions (reference ui.js feel)
-    this.pluck = new Tone.Synth({
+    // barely-there triangle pluck for chrome interactions (reference ui.js feel).
+    // Polyphonic so quick successive presses (typing moves) overlap instead of
+    // restarting a single voice mid-note, which Tone rejects.
+    this.pluck = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.004, decay: 0.22, sustain: 0, release: 0.3 },
     });
+    this.pluck.maxPolyphony = 8;
     this.pluck.volume.value = -18;
     this.pluck.connect(this.master);
     this.pluck.connect(this.reverbSend);
@@ -213,7 +218,10 @@ class AudioEngine implements AudioSink {
     if (!this.started || this.muted) return;
     // A-major pentatonic, like the reference interaction sounds
     const notes = ['A4', 'B4', 'C#5', 'E5', 'F#5'];
-    this.pluck.triggerAttackRelease(notes[((step % 5) + 5) % 5], 0.12, Tone.now(), 0.35);
+    // Two presses inside one audio tick share Tone.now(); nudge the second.
+    const t = Math.max(Tone.now(), this.lastPluck + 0.002);
+    this.lastPluck = t;
+    this.pluck.triggerAttackRelease(notes[((step % 5) + 5) % 5], 0.12, t, 0.35);
   }
 
   triggerChord(pitches: number[], durationMs: number) {

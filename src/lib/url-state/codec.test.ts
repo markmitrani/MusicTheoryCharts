@@ -9,6 +9,54 @@ const page = (name: string, elements: Page['elements']): Page => ({
 });
 
 describe('url codec', () => {
+  it('round-trips every tonnetz centre, triad and flag', () => {
+    const triads = [null, ...Array.from({ length: 24 }, (_, k) => ({ root: k >> 1, minor: (k & 1) === 1 }))];
+    for (const showChords of [false, true])
+      for (const showLegend of [false, true])
+        for (let centre = 0; centre < 12; centre++)
+          for (const triad of triads) {
+            const doc = {
+              activePageId: 'p-t',
+              pages: [page('t', [{ id: 't', kind: 'tonnetz', x: 0, y: 0, z: 1, centre, triad, showChords, showLegend }])],
+            };
+            const el = decodeDoc(encodeDoc(doc))!.pages[0].elements[0];
+            expect(el).toMatchObject({ kind: 'tonnetz', centre, triad, showChords, showLegend });
+          }
+  });
+
+  it('writes tonnetz as an 8-char t code and keeps neighbours in order', () => {
+    const doc = {
+      activePageId: 'p-m',
+      pages: [
+        page('m', [
+          { id: 't', kind: 'tonnetz', x: 48, y: 0, z: 1, centre: 9, triad: { root: 4, minor: true }, showChords: true, showLegend: false },
+          { id: 'p', kind: 'pitchaxis', x: 0, y: 96, z: 2, centerKey: 'C' },
+        ]),
+      ],
+    } as const;
+    const enc = encodeDoc(doc);
+    expect(enc).toContain('t199');
+    const els = decodeDoc(enc)!.pages[0].elements;
+    expect(els.map((e) => e.kind)).toEqual(['tonnetz', 'pitchaxis']);
+    expect(els[0]).toMatchObject({ x: 48, y: 0 });
+  });
+
+  it('round-trips the tonnetz repeats alpha, omitting it when unset', () => {
+    const base = { id: 't', kind: 'tonnetz', x: 0, y: 0, z: 1, centre: 0, triad: null, showChords: true, showLegend: true } as const;
+    for (const repeats of [0, 0.25, 0.4, 1]) {
+      const doc = { activePageId: 'p-t', pages: [page('t', [{ ...base, repeats }])] };
+      expect(decodeDoc(encodeDoc(doc))!.pages[0].elements[0]).toMatchObject({ repeats });
+    }
+    const plain = decodeDoc(encodeDoc({ activePageId: 'p-t', pages: [page('t', [base])] }))!.pages[0].elements[0];
+    expect(plain).not.toHaveProperty('repeats');
+  });
+
+  it('rejects malformed tonnetz codes', () => {
+    expect(decodeDoc('v2:0;~t1c00000')).toBeNull(); // centre 12
+    expect(decodeDoc('v2:0;~t10o0000')).toBeNull(); // triad 24
+    expect(decodeDoc('v2:0;~t30z0000l')).toBeNull(); // repeats 21/20
+  });
+
   it('round-trips the roads ring', () => {
     for (const show of ['both', 'in', 'out'] as const) {
       const doc = { activePageId: 'p-r', pages: [page('r', [{ id: 'r', kind: 'roads', x: 0, y: 0, z: 1, centerKey: 'A#', show }])] } as const;

@@ -112,6 +112,34 @@ describe('canvas store', () => {
     expect(store.getState().activePage().elements[0]).toMatchObject({ kind: 'roads', centerKey: 'C', show: 'both' });
   });
 
+  it('confirms a tonnetz stub centred on C with nothing selected', () => {
+    const id = store.getState().addElement({ kind: 'stub', x: 0, y: 0, root: null, typeId: 'tonnetz:default' });
+    store.getState().confirmStub(id);
+    expect(store.getState().activePage().elements[0]).toMatchObject({
+      kind: 'tonnetz',
+      centre: 0,
+      triad: null,
+      showChords: false,
+      showLegend: true,
+    });
+  });
+
+  it('transposes a tonnetz centre and selected triad, and undoes', () => {
+    const a = store.getState().addElement({
+      kind: 'tonnetz', x: 0, y: 0, centre: 11, triad: { root: 9, minor: true }, showChords: true, showLegend: true,
+    });
+    const b = store.getState().addElement({ kind: 'tonnetz', x: 0, y: 0, centre: 0, triad: null, showChords: false, showLegend: false });
+    store.getState().transposeElements([a, b], 2);
+    const [ea, eb] = store.getState().activePage().elements;
+    expect(ea).toMatchObject({ centre: 1, triad: { root: 11, minor: true } });
+    expect(eb).toMatchObject({ centre: 2, triad: null });
+    store.getState().transposeElements([a], -3);
+    expect(store.getState().activePage().elements[0]).toMatchObject({ centre: 10, triad: { root: 8, minor: true } });
+    store.getState().undo();
+    store.getState().undo();
+    expect(store.getState().activePage().elements[0]).toMatchObject({ centre: 11, triad: { root: 9 } });
+  });
+
   it('z-order: bring forward / send backward swap neighbors', () => {
     const a = store.getState().addElement(chord());
     const b = store.getState().addElement(chord({ x: 300 }));

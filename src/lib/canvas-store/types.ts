@@ -1,5 +1,6 @@
 import type { NoteName } from '@/lib/theory/note';
 import type { Direction, WalkStep } from '@/lib/theory/cadence';
+import type { Triad } from '@/lib/theory/tonnetz';
 
 export type Tool = 'select' | 'move' | 'frame' | 'upload';
 
@@ -97,6 +98,24 @@ export interface RoadsElement extends ElementBase {
 }
 
 /**
+ * Tonnetz: the lattice of fifths and thirds, every triangle a triad. The card
+ * is flat; its "3D" button opens the immersive world on the same lattice.
+ */
+export interface TonnetzElement extends ElementBase {
+  kind: 'tonnetz';
+  /** Pitch class (0–11) of the centre note. */
+  centre: number;
+  /** Selected triad; the 3D world opens focused here. */
+  triad: Triad | null;
+  /** "Chord names": fill triangles by quality and label them. */
+  showChords: boolean;
+  /** "Show legend": the triangle key and the move diagrams. */
+  showLegend: boolean;
+  /** Opacity of the repeats around the framed repetition (0–1); unset = 0.15. */
+  repeats?: number;
+}
+
+/**
  * Named region drawn with the frame tool. Acts as a group: dragging it
  * moves every element fully enclosed in its area. Renders beneath elements.
  */
@@ -125,6 +144,7 @@ export type CanvasElement =
   | PitchAxisElement
   | WaysHomeElement
   | RoadsElement
+  | TonnetzElement
   | ImageElement
   | SectionElement
   | StubElement;

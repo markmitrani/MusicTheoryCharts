@@ -62,7 +62,7 @@ export interface CanvasState extends DocState {
   updateElement(id: string, patch: Partial<CanvasElement>, opts?: { commit?: boolean }): void;
   /** Reposition several elements in one store update (section group drag). */
   moveElements(positions: Array<{ id: string; x: number; y: number }>): void;
-  /** Transpose pitched elements (scale/chord/harmony) by N semitones. */
+  /** Transpose pitched elements (scale/chord/harmony/tonnetz) by N semitones. */
   transposeElements(ids: string[], semitones: number): void;
   removeElements(ids: string[]): void;
   duplicateSelection(): void;
@@ -106,7 +106,7 @@ const cloneDoc = (s: DocState): DocState => ({
 const MAX_HISTORY = 100;
 
 /** Stub kinds that spawn without a root/type choice. */
-const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome', 'roads'];
+const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome', 'roads', 'tonnetz'];
 
 export function createCanvasStore() {
   const firstPage: Page = { id: newId(), name: '', elements: [] };
@@ -183,6 +183,8 @@ export function createCanvasStore() {
               return { ...pos, kind: 'wayshome', walk: [], dir: 'in', key: null, showLegend: true };
             case 'roads':
               return { ...pos, kind: 'roads', centerKey: 'C', show: 'both' };
+            case 'tonnetz':
+              return { ...pos, kind: 'tonnetz', centre: 0, triad: null, showChords: false, showLegend: true };
             case 'chord':
               return { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false };
             case 'harmony':
@@ -225,7 +227,7 @@ export function createCanvasStore() {
       transposeElements(ids, semitones) {
         const set = new Set(ids);
         const pitched = (e: CanvasElement) =>
-          e.kind === 'scale' || e.kind === 'chord' || e.kind === 'harmony';
+          e.kind === 'scale' || e.kind === 'chord' || e.kind === 'harmony' || e.kind === 'tonnetz';
         const targets = get().activePage().elements.filter((e) => set.has(e.id) && pitched(e));
         if (targets.length === 0) return;
         snapshot();
@@ -236,6 +238,10 @@ export function createCanvasStore() {
           ...p,
           elements: p.elements.map((e) => {
             if (!set.has(e.id) || !pitched(e)) return e;
+            if (e.kind === 'tonnetz') {
+              const shift = (pc: number) => (((pc + semitones) % 12) + 12) % 12;
+              return { ...e, centre: shift(e.centre), triad: e.triad && { ...e.triad, root: shift(e.triad.root) } };
+            }
             const i = NOTE_NAMES.indexOf((e as { root: NoteName }).root);
             const next = NOTE_NAMES[(((i + semitones) % 12) + 12) % 12];
             return { ...e, root: next };
