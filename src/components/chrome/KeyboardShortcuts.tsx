@@ -56,6 +56,15 @@ const GROUPS: Array<{ heading: string; items: Shortcut[] }> = [
     ],
   },
   {
+    heading: 'Tonnetz',
+    items: [
+      { label: 'Move P / L / R / N / S / H', keys: ['P', 'L', 'R', 'N', 'S', 'H'] },
+      { label: '3D: move around / zoom', keys: ['Drag', 'Scroll'] },
+      { label: '3D: step between chords', keys: ['←', '→', '↑', '↓'] },
+      { label: '3D: add to selection / play it', keys: ['⇧ + arrow', 'Space'] },
+    ],
+  },
+  {
     heading: 'Navigate',
     items: [{ label: 'Switch page (nothing selected)', keys: ['↑', '↓'] }],
   },

@@ -3,6 +3,8 @@
  * localStorage and applied via `data-theme` on <html>. A no-flash inline
  * script in the root layout applies the saved value before first paint.
  */
+import { applyColors } from './custom-colors';
+
 export type Theme = 'dark' | 'light';
 
 const STORAGE_KEY = 'mtp-theme';
@@ -14,6 +16,7 @@ export function getTheme(): Theme {
 
 export function setTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
+  applyColors(theme);
   try {
     localStorage.setItem(STORAGE_KEY, theme);
   } catch {

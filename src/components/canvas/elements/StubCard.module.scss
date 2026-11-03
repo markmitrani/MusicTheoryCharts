@@ -12,7 +12,7 @@ $kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
   margin-bottom: 12px;
   padding: $kinds-pad;
   border-radius: var(--radius-sm) $kinds-right-radius $kinds-right-radius var(--radius-sm);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--well-fill-soft);
 }
 
 .moreWrap {
@@ -150,7 +150,7 @@ $kinds-right-radius: calc(#{$ellipsis-d} / 2 + #{$kinds-pad});
   border-radius: 50%;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #1a1109;
+  color: var(--on-accent);
   box-shadow: 0 0 14px var(--accent-glow);
   transition: transform var(--dur-fast) var(--ease-out);
 

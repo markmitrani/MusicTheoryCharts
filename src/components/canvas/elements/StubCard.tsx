@@ -34,6 +34,7 @@ const MORE_KINDS = [
   { id: 'pitchaxis', label: 'Pitch Axis' },
   { id: 'wayshome', label: 'Ways Home' },
   { id: 'roads', label: 'Roads' },
+  { id: 'tonnetz', label: 'Tonnetz' },
 ] as const;
 
 type StubKind =
@@ -43,7 +44,7 @@ type StubKind =
 const isMoreKind = (k: StubKind) => MORE_KINDS.some((m) => m.id === k);
 
 // "Instant" kinds need no root/type choice — confirm spawns them as-is.
-const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome', 'roads'] as const;
+const INSTANT_KINDS = ['circle', 'pitchaxis', 'wayshome', 'roads', 'tonnetz'] as const;
 const isInstantKind = (k: StubKind): k is (typeof INSTANT_KINDS)[number] =>
   (INSTANT_KINDS as readonly string[]).includes(k);
 
@@ -52,6 +53,7 @@ const INSTANT_LABEL: Record<string, string> = {
   pitchaxis: 'Pitch Axis',
   wayshome: 'Ways Home',
   roads: 'Roads',
+  tonnetz: 'Tonnetz',
 };
 
 const INSTANT_NOTE: Record<string, string> = {
@@ -63,6 +65,8 @@ const INSTANT_NOTE: Record<string, string> = {
     'The many ways home – every chord’s four ways in and four homes, as a fractal you can zoom through. Opens with an explainer. Confirm above to place it.',
   roads:
     'The circle of fifths as a road map – every cadence a road, every key a stop. Neighbours share one road driven both ways. Confirm above to place it.',
+  tonnetz:
+    'The Tonnetz – notes linked by fifths and thirds, every triangle a major or minor triad. Walk between chords with P, L, R, N, S and H, or open it in 3D. Confirm above to place it.',
 };
 
 /**

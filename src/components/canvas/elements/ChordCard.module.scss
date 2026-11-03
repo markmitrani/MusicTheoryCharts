@@ -34,7 +34,8 @@ $tab-slant: 14px;
   height: 100%;
   padding: 0 26px 0 15px;
   clip-path: polygon(6px 0, calc(100% - #{$tab-slant} + 0.5px) 0, 100% 100%, 0 100%, 0 6px);
-  background: var(--glass-fill);
+  // over the canvas colour: a see-through fill would show the faked stroke behind the tab
+  background: var(--glass-fill), var(--canvas-bg);
   backdrop-filter: blur(var(--glass-blur));
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -92,7 +93,7 @@ $tab-slant: 14px;
   position: relative;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--well-fill);
   padding: 8px 8px 0;
 }
 
