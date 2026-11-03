@@ -176,7 +176,7 @@ export function createCanvasStore() {
         const real = ((): CanvasElement => {
           switch (kind) {
             case 'circle':
-              return { ...pos, kind: 'circle', centerKey: 'C', showSignatures: false, showRelativeMinor: false };
+              return { ...pos, kind: 'circle', centerKey: 'C', showSignatures: false, complexity: 'basic', functionColors: false, minorCenter: false, focus: null };
             case 'pitchaxis':
               return { ...pos, kind: 'pitchaxis', centerKey: 'C' };
             case 'wayshome':

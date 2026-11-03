@@ -1,4 +1,4 @@
-import type { NoteName } from './note';
+import { NOTE_NAMES, type NoteName } from './note';
 
 /**
  * Circle-of-fifths data: keys in fifths order starting from C, with
@@ -46,3 +46,33 @@ export function circleIndexOf(note: NoteName): number {
  */
 export const SHARP_STEPS = [8, 5, 9, 6, 3, 7, 4];
 export const FLAT_STEPS = [4, 7, 3, 6, 2, 5, 1];
+
+const LETTERS = 'CDEFGAB';
+const NATURAL_PC = [0, 2, 4, 5, 7, 9, 11];
+const NOTE_PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+/** Spell pitch class `pc` on the given letter, e.g. (E, 5) → "E♯". */
+function spell(letter: string, pc: number): string {
+  let acc = (((pc - NATURAL_PC[LETTERS.indexOf(letter)]) % 12) + 12) % 12;
+  if (acc > 6) acc -= 12;
+  return letter + (acc === 1 ? '♯' : acc === -1 ? '♭' : acc === 2 ? '𝄪' : acc === -2 ? '𝄫' : '');
+}
+
+/** The note `steps` letters above the key's tonic, `semis` semitones up. */
+function above(key: CircleKey, steps: number, semis: number): string {
+  const tonic = key.label[0];
+  const pc = NOTE_PC[tonic] + (key.label[1] === '♯' ? 1 : key.label[1] === '♭' ? -1 : 0);
+  return spell(LETTERS[(LETTERS.indexOf(tonic) + steps) % 7], (pc + semis + 12) % 12);
+}
+
+/** The half-diminished vii of a major key (B° in C), spelled for that key. */
+export const leadingToneChord = (key: CircleKey) => `${above(key, 6, 11)}ø`;
+
+/** The dominant seventh of the relative minor (E7 in C / in Am), spelled for that key. */
+export const secondaryDominantChord = (key: CircleKey) => `${above(key, 2, 4)}7`;
+
+/** Pitch class of the key's relative minor tonic as a sharp-only NoteName. */
+export function relativeMinorNote(key: CircleKey): NoteName {
+  const i = NOTE_NAMES.indexOf(key.note);
+  return NOTE_NAMES[(i + 9) % 12];
+}
