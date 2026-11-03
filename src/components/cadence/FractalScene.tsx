@@ -128,16 +128,27 @@ export function Glyphs({ text }: { text: string }) {
   return (
     <>
       {m[1] && <tspan className={styles.acc}>{m[1]}</tspan>}
-      <tspan dx={m[1] ? '-0.04em' : undefined}>{m[2]}</tspan>
+      <tspan dx={m[1] ? `${-ACC_BEARING[m[1]].after}em` : undefined}>{m[2]}</tspan>
       {m[3] && (
-        <tspan className={styles.acc} dx="0.02em">
+        <tspan className={styles.acc} dx={`${-ACC_BEARING[m[3]].before}em`}>
           {m[3]}
         </tspan>
       )}
-      {m[4] && <tspan>{m[4]}</tspan>}
+      {m[4] && <tspan dx={m[3] ? `${-ACC_BEARING[m[3]].after}em` : undefined}>{m[4]}</tspan>}
     </>
   );
 }
+
+/**
+ * Empty space around each accidental's ink, to kern away. Inter sets ♭ and ♯
+ * on a full-em advance with the ink centred (♭ ink spans 0.35–0.73em, ♯
+ * 0.17–0.83em); `before` is in the accidental's own (smaller) em, `after` in
+ * the following text's em, both leaving a hair of air.
+ */
+const ACC_BEARING: Record<string, { before: number; after: number }> = {
+  '♭': { before: 0.3, after: 0.2 },
+  '♯': { before: 0.12, after: 0.12 },
+};
 
 /**
  * The Ways Home fractal. Controlled by `walk` + `dir`: appending steps zooms

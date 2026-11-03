@@ -98,7 +98,7 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
 
-    const atlasCanvas = drawAtlas(document.createElement('canvas'));
+    const atlasCanvas = drawAtlas(document.createElement('canvas'), ctrl.centre);
     const atlas = new THREE.CanvasTexture(atlasCanvas);
     atlas.generateMipmaps = true;
     atlas.minFilter = THREE.LinearMipmapLinearFilter;
@@ -161,7 +161,7 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
     let alive = true;
     document.fonts?.ready.then(() => {
       if (!alive) return;
-      drawAtlas(atlasCanvas);
+      drawAtlas(atlasCanvas, ctrl.centre);
       atlas.needsUpdate = true;
     });
 

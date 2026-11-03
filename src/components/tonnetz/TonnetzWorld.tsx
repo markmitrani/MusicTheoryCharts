@@ -3,8 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
-import { NOTE_NAMES } from '@/lib/theory/note';
-import { MOVES, moveLabel, sameTriad, triadName, type ArrowDir, type Move } from '@/lib/theory/tonnetz';
+import { MOVES, moveLabel, noteName, sameTriad, triadName, type ArrowDir, type Move } from '@/lib/theory/tonnetz';
 import { canvasStore } from '@/lib/canvas-store/store';
 import type { TonnetzElement } from '@/lib/canvas-store/types';
 import { worldStore, type OriginRect } from '@/lib/tonnetz/world-store';
@@ -283,8 +282,8 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
 
       <header className={styles.top}>
         <div className={styles.title}>
-          <span className={styles.kicker}>Tonnetz – {NOTE_NAMES[el.centre]}</span>
-          <span className={styles.chord}>{triadName(focus)}</span>
+          <span className={styles.kicker}>Tonnetz – {noteName(el.centre, el.centre)}</span>
+          <span className={styles.chord}>{triadName(focus, el.centre)}</span>
           {selCount > 1 && <span className={styles.selCount}>{selCount} selected</span>}
         </div>
         <div className={styles.actions} data-tucked={tucked || undefined}>
@@ -370,7 +369,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
                   data-current={k === arr.length - 1 || undefined}
                   onClick={() => ctrl.travelTo(t)}
                 >
-                  {triadName(t)}
+                  {triadName(t, el.centre)}
                 </button>
               </li>
             ))}
@@ -381,14 +380,14 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
             <button
               key={m}
               className={styles.move}
-              title={moveLabel(focus, m)}
-              aria-label={moveLabel(focus, m)}
+              title={moveLabel(focus, m, el.centre)}
+              aria-label={moveLabel(focus, m, el.centre)}
               onClick={() => {
                 ctrl.doMove(m);
               }}
             >
               {m}
-              <span className={styles.tip}>{moveLabel(focus, m)}</span>
+              <span className={styles.tip}>{moveLabel(focus, m, el.centre)}</span>
             </button>
           ))}
         </div>

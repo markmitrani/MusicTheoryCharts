@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { NOTE_NAMES } from '@/lib/theory/note';
 import {
   MOVES,
   applyMove,
@@ -12,6 +11,7 @@ import {
   pcAt,
   sameTriad,
   triadName,
+  noteName,
   triadFunction,
   triadPitches,
   triangleAt,
@@ -28,7 +28,7 @@ import { playChord, playProgression } from '@/lib/playback/playback';
 import { getAudioEngine } from '@/lib/audio/engine';
 import { prefetchWorld, worldStore } from '@/lib/tonnetz/world-store';
 import { ElementShell } from '../ElementShell';
-import { GlassGradient } from '@/components/cadence/FractalScene';
+import { GlassGradient, Glyphs } from '@/components/cadence/FractalScene';
 import { useSurfaces } from '@/lib/use-surfaces';
 import { LegendKey, LegendMoves } from '@/components/tonnetz/TonnetzLegend';
 import { PlayButton } from './PlayButton';
@@ -361,7 +361,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
     worldStore.getState().open(el.id, r ? { left: r.left, top: r.top, width: r.width, height: r.height } : null);
   };
 
-  const centreName = NOTE_NAMES[el.centre];
+  const centreName = noteName(el.centre, el.centre);
   const outline = (d: number) =>
     windowCorners(d)
       .map(([i, j]) => toPx(i, j, { x: 0, y: 0 }))
@@ -564,7 +564,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                           selectTriad(t.triad);
                         }}
                       >
-                        <title>{triadName(t.triad)}</title>
+                        <title>{triadName(t.triad, el.centre)}</title>
                       </polygon>
                     );
                   })}
@@ -583,7 +583,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                           data-out={!pxInWindow(p) || undefined}
                           data-selected={sameTriad(t.triad, el.triad) || undefined}
                         >
-                          {triadFunction(t.triad, el.centre)}
+                          <Glyphs text={triadFunction(t.triad, el.centre)} />
                         </text>
                       );
                     })}
@@ -652,7 +652,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                             className={styles.chordLabel}
                             data-selected={sameTriad(triangleAt(el.centre, at), el.triad) || undefined}
                           >
-                            {triadName(t.triad)}
+                            <Glyphs text={triadName(t.triad, el.centre)} />
                           </text>
                         );
                       })}
@@ -676,7 +676,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                           data-centre={isCentre || undefined}
                           data-tone={(el.triad && touches(el.centre, ai, aj, el.triad)) || undefined}
                         >
-                          {NOTE_NAMES[n.pc]}
+                          <Glyphs text={noteName(n.pc, el.centre)} />
                         </text>
                       );
                     })}
@@ -708,8 +708,8 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                 className={styles.move}
                 onPointerDown={(e) => e.stopPropagation()}
                 disabled={!el.triad}
-                title={el.triad ? moveLabel(el.triad, m) : 'Select a triangle first'}
-                aria-label={el.triad ? moveLabel(el.triad, m) : `${m} move`}
+                title={el.triad ? moveLabel(el.triad, m, el.centre) : 'Select a triangle first'}
+                aria-label={el.triad ? moveLabel(el.triad, m, el.centre) : `${m} move`}
                 onClick={(e) => {
                   e.stopPropagation();
                   doMove(m);
@@ -718,7 +718,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                 {m}
               </button>
             ))}
-            <span className={styles.current}>{el.triad ? triadName(el.triad) : ''}</span>
+            <span className={styles.current}>{el.triad ? triadName(el.triad, el.centre) : ''}</span>
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ import {
   VOICE_LO,
   VOICE_HI,
   type Triad,
-  type Move, triadFunction } from './tonnetz';
+  type Move, triadFunction, noteName } from './tonnetz';
 
 const C: Triad = { root: 0, minor: false };
 const common = (a: Triad, b: Triad) => triadPcs(a).filter((x) => triadPcs(b).includes(x)).length;
@@ -205,5 +205,19 @@ describe('triadFunction', () => {
     expect(triadFunction({ root: 0, minor: true }, C)).toBe('i');
     // same shape in another key
     expect(triadFunction({ root: 2, minor: false }, 7)).toBe('V');
+  });
+});
+
+describe('noteName', () => {
+  it('spells for the centre key, as the circle and Ways Home do', () => {
+    const inC = Array.from({ length: 12 }, (_, pc) => noteName(pc, 0));
+    expect(inC).toEqual(['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B']);
+    // flat keys read flat
+    expect(noteName(10, 10)).toBe('B♭');
+    expect(noteName(3, 10)).toBe('E♭');
+    // the tritone is a raised 4th in every key
+    expect(noteName(1, 7)).toBe('C♯');
+    expect(noteName(11, 5)).toBe('B');
+    expect(triadFunction({ root: 6, minor: false }, 0)).toBe('♯IV');
   });
 });

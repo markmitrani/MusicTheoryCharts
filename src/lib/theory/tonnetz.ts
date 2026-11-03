@@ -1,5 +1,5 @@
 import { NOTE_NAMES } from './note';
-import { numeral } from './cadence';
+import { numeral, rootName } from './cadence';
 
 /**
  * Tonnetz theory core: the lattice of notes linked by fifths and thirds, where
@@ -70,25 +70,49 @@ export function applyMove(t: Triad, move: Move): Triad {
   return path[path.length - 1];
 }
 
-/** "C", "Am". */
-export function triadName(t: Triad): string {
-  return `${NOTE_NAMES[t.root]}${t.minor ? 'm' : ''}`;
+/**
+ * A pitch class's name. With a `centre`, spelled as Circle of Fifths, Roads
+ * and Ways Home do: in the centre's major key, ♯/♭ glyphs, flat keys flat,
+ * each chromatic degree fixed (♭2 ♭3 ♭5 ♭6 ♭7), so names agree with the
+ * numerals. Without one, the plain sharp names.
+ */
+export function noteName(pc: number, centre?: number): string {
+  if (centre === undefined) return NOTE_NAMES[mod12(pc)];
+  const key = NOTE_NAMES[mod12(centre)];
+  const rel = mod12(pc - centre);
+  // the tritone reads as a raised 4th (F♯ in C), not a flattened 5th
+  if (rel === 6) return raise(rootName(5, key));
+  return rootName(rel, key);
+}
+
+/** One semitone up, by letter: B♭ → B, F → F♯; E♯/B♯ collapse to F/C. */
+function raise(name: string): string {
+  if (name.endsWith('♭')) return name.slice(0, -1);
+  if (name === 'E') return 'F';
+  if (name === 'B') return 'C';
+  return `${name}♯`;
+}
+
+/** "C", "Am" (spelled for `centre` when given). */
+export function triadName(t: Triad, centre?: number): string {
+  return `${noteName(t.root, centre)}${t.minor ? 'm' : ''}`;
 }
 
 /** Harmonic function against a major tonic: "I", "vi", "♭VII", "♭iii". */
 export function triadFunction(t: Triad, tonic: number): string {
-  const n = numeral(t.root - tonic);
+  // the tritone is a raised 4th here, matching its name (F♯ over ♯IV in C)
+  const n = mod12(t.root - tonic) === 6 ? '♯IV' : numeral(t.root - tonic);
   return t.minor ? n.toLowerCase() : n;
 }
 
-/** "C major", "A minor". */
-export function triadLongName(t: Triad): string {
-  return `${NOTE_NAMES[t.root]} ${t.minor ? 'minor' : 'major'}`;
+/** "C major", "A minor" (spelled for `centre` when given). */
+export function triadLongName(t: Triad, centre?: number): string {
+  return `${noteName(t.root, centre)} ${t.minor ? 'minor' : 'major'}`;
 }
 
 /** Tooltip text for a move from `t`: "R – A minor". */
-export function moveLabel(t: Triad, move: Move): string {
-  return `${move} – ${triadLongName(applyMove(t, move))}`;
+export function moveLabel(t: Triad, move: Move, centre?: number): string {
+  return `${move} – ${triadLongName(applyMove(t, move), centre)}`;
 }
 
 /** Pitch classes of a triad: root, third, fifth. */
