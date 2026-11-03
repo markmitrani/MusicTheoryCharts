@@ -9,7 +9,6 @@ import { canvasStore } from '@/lib/canvas-store/store';
 import type { TonnetzElement } from '@/lib/canvas-store/types';
 import { worldStore, type OriginRect } from '@/lib/tonnetz/world-store';
 import { CloseIcon } from '@/components/chrome/icons';
-import { uiTick } from '@/lib/playback/playback';
 import { WorldController, type WorldUiState } from './controller';
 import { LatticeView } from './LatticeView';
 import { LegendKey, LegendMoves } from './TonnetzLegend';
@@ -37,7 +36,10 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
     .activePage()
     .elements.find((e): e is TonnetzElement => e.id === elementId && e.kind === 'tonnetz');
   const ctrlRef = useRef<WorldController | null>(null);
-  if (!ctrlRef.current && el) ctrlRef.current = new WorldController(el.centre, el.triad, el.showChords);
+  if (!ctrlRef.current && el) {
+    ctrlRef.current = new WorldController(el.centre, el.triad, el.showChords);
+    ctrlRef.current.showFunctions = !!el.showFunctions;
+  }
   const ctrl = ctrlRef.current;
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -46,6 +48,7 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
   const [ui, setUi] = useState<WorldUiState | null>(null);
   const [showChords, setShowChords] = useState(el?.showChords ?? false);
   const [showLegend, setShowLegend] = useState(el?.showLegend ?? true);
+  const [showFunctions, setShowFunctions] = useState(!!el?.showFunctions);
   const [ready, setReady] = useState(false);
   const [tucked, setTucked] = useState(false);
   const reduced = useRef(
@@ -145,7 +148,6 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
       if (move) {
         e.preventDefault();
         if (!e.repeat) {
-          uiTick(MOVES.indexOf(move));
           ctrl.doMove(move);
         }
       }
@@ -314,6 +316,20 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
             >
               Legend
             </button>
+            <button
+              type="button"
+              className={styles.opt}
+              aria-pressed={showFunctions}
+              data-on={showFunctions || undefined}
+              onClick={() => {
+                const v = !showFunctions;
+                setShowFunctions(v);
+                ctrl.showFunctions = v;
+                canvasStore.getState().updateElement(elementId, { showFunctions: v }, { commit: true });
+              }}
+            >
+              Harmonic function
+            </button>
           </div>
           <button
             type="button"
@@ -368,7 +384,6 @@ export function TonnetzWorld({ elementId }: { elementId: string }) {
               title={moveLabel(focus, m)}
               aria-label={moveLabel(focus, m)}
               onClick={() => {
-                uiTick(MOVES.indexOf(m));
                 ctrl.doMove(m);
               }}
             >

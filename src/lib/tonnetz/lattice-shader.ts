@@ -50,6 +50,7 @@ export const latticeFragment = /* glsl */ `
 uniform float uCentre;
 uniform float uTime;
 uniform float uShowChords;
+uniform float uShowFunctions;
 uniform float uFadeR;
 uniform float uLit[24];
 uniform float uPlay[24];
@@ -94,7 +95,7 @@ float label(vec2 q, float idx, vec2 size) {
   if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 0.0;
   float col = mod(idx, 8.0);
   float row = floor(idx / 8.0);
-  vec2 a = vec2((col + uv.x) / 8.0, 1.0 - (row + 1.0 - uv.y) / 5.0);
+  vec2 a = vec2((col + uv.x) / 8.0, 1.0 - (row + 1.0 - uv.y) / 8.0);
   return texture2D(uAtlas, a).a;
 }
 
@@ -221,13 +222,22 @@ void main() {
     col = mix(col, nodeCol, disc);
   }
 
-  // ---- chord names ----
+  // ---- chord names, and their harmonic function against the centre beneath ----
+  // muted names: quiet until their chord is focused, selected or playing
+  float ink = mix(1.0, 0.62 + 0.38 * clamp(glow, 0.0, 1.0), uLabelMute);
+  vec3 themed = mix(uText, uTextStrong, max(glow, 0.2));
+  vec3 nameInk = mix(themed, uChordInk, uChordInkOn);
+  vec2 qc = toXY(L - cen);
+  float lift = uShowFunctions * uShowChords;
   if (uShowChords > 0.5) {
-    float cl = label(toXY(L - cen), 12.0 + float(tri), vec2(0.4, 0.2)) * textVis;
-    // muted names: quiet until their chord is focused, selected or playing
-    float ink = mix(1.0, 0.62 + 0.38 * clamp(glow, 0.0, 1.0), uLabelMute);
-    vec3 themed = mix(uText, uTextStrong, max(glow, 0.2));
-    col = mix(col, mix(themed, uChordInk, uChordInkOn), cl * (1.0 - disc) * ink);
+    float cl = label(qc - vec2(0.0, 0.05 * lift), 12.0 + float(tri), vec2(0.4, 0.2)) * textVis;
+    col = mix(col, nameInk, cl * (1.0 - disc) * ink);
+  }
+  if (uShowFunctions > 0.5) {
+    float deg = mod(7.0 * rootL.x + 4.0 * rootL.y, 12.0);
+    float fi2 = 36.0 + 2.0 * floor(deg + 0.5) + (isMajor ? 0.0 : 1.0);
+    float fl = label(qc + vec2(0.0, 0.12 * lift), fi2, vec2(0.36, 0.18)) * textVis;
+    col = mix(col, nameInk, fl * (1.0 - disc) * ink * 0.78);
   }
 
   // Soft fade toward the far edges of the curved plane.

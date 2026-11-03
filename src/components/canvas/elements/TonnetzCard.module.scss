@@ -310,6 +310,27 @@ $gap: $pad-x + 1px;
   }
 }
 
+// Harmonic function under each chord (or in its place when names are off),
+// set like numerals elsewhere (Harmony, Ways Home): body face, medium weight.
+.functionLabel {
+  fill: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.02em;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+
+  &[data-selected] {
+    fill: var(--text-primary);
+  }
+}
+
+:global([data-theme='light']) .svg[data-chords] .functionLabel {
+  fill: rgba(255, 255, 255, 0.82);
+}
+
 :global([data-theme='light']) .svg[data-chords] .chordLabel {
   fill: #fff;
 }

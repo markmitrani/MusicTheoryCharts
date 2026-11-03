@@ -71,6 +71,8 @@ export class WorldController {
   readonly centre: number;
   readonly motion: Motion;
   showChords: boolean;
+  /** Harmonic function (roman numerals against the centre) under each chord. */
+  showFunctions = false;
   reducedMotion = false;
 
   /** Camera height as rendered: the zoom plus a momentary pull-back while dragging. */

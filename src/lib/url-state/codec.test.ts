@@ -51,6 +51,14 @@ describe('url codec', () => {
     expect(plain).not.toHaveProperty('repeats');
   });
 
+  it('round-trips the tonnetz harmonic-function flag', () => {
+    for (const showFunctions of [false, true]) {
+      const el = { id: 't', kind: 'tonnetz', x: 0, y: 0, z: 1, centre: 4, triad: null, showChords: true, showLegend: false, showFunctions } as const;
+      const doc = { activePageId: 'p-t', pages: [page('t', [el])] };
+      expect(decodeDoc(encodeDoc(doc))!.pages[0].elements[0]).toMatchObject({ showFunctions, showChords: true, showLegend: false });
+    }
+  });
+
   it('rejects malformed tonnetz codes', () => {
     expect(decodeDoc('v2:0;~t1c00000')).toBeNull(); // centre 12
     expect(decodeDoc('v2:0;~t10o0000')).toBeNull(); // triad 24

@@ -23,8 +23,7 @@ import {
   VOICE_LO,
   VOICE_HI,
   type Triad,
-  type Move,
-} from './tonnetz';
+  type Move, triadFunction } from './tonnetz';
 
 const C: Triad = { root: 0, minor: false };
 const common = (a: Triad, b: Triad) => triadPcs(a).filter((x) => triadPcs(b).includes(x)).length;
@@ -193,5 +192,18 @@ describe('tonnetz voicing', () => {
       expect(Math.min(...v)).toBeGreaterThanOrEqual(VOICE_LO);
       expect(Math.max(...v)).toBeLessThanOrEqual(VOICE_HI);
     }
+  });
+});
+
+describe('triadFunction', () => {
+  it('names diatonic and chromatic triads against the centre', () => {
+    const C = 0;
+    expect(triadFunction({ root: 0, minor: false }, C)).toBe('I');
+    expect(triadFunction({ root: 9, minor: true }, C)).toBe('vi');
+    expect(triadFunction({ root: 2, minor: true }, C)).toBe('ii');
+    expect(triadFunction({ root: 10, minor: false }, C)).toBe('♭VII');
+    expect(triadFunction({ root: 0, minor: true }, C)).toBe('i');
+    // same shape in another key
+    expect(triadFunction({ root: 2, minor: false }, 7)).toBe('V');
   });
 });

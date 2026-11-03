@@ -12,6 +12,7 @@ import {
   pcAt,
   sameTriad,
   triadName,
+  triadFunction,
   triadPitches,
   triangleAt,
   triangleCentroid,
@@ -23,7 +24,7 @@ import {
 } from '@/lib/theory/tonnetz';
 import type { TonnetzElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
-import { playChord, playProgression, uiTick } from '@/lib/playback/playback';
+import { playChord, playProgression } from '@/lib/playback/playback';
 import { getAudioEngine } from '@/lib/audio/engine';
 import { prefetchWorld, worldStore } from '@/lib/tonnetz/world-store';
 import { ElementShell } from '../ElementShell';
@@ -327,7 +328,6 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
     const from = el.triad;
     if (!from) return;
     const to = applyMove(from, move);
-    uiTick(MOVES.indexOf(move));
     store().updateElement(el.id, { triad: to }, { commit: true });
     const ends = [from, to];
     setPlaying(true);
@@ -342,6 +342,8 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
     if (!selected || !soloSelected) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+      // the 3D view takes the keys while it's open; both acting doubled every move
+      if (worldStore.getState().elementId) return;
       const t = e.target;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) return;
       const move = MOVE_KEYS[e.key.toLowerCase()];
@@ -460,6 +462,19 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                 <span className={styles.box} aria-hidden />
                 Show legend
               </label>
+              <label
+                className={styles.check}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!el.showFunctions}
+                  onChange={(e) => store().updateElement(el.id, { showFunctions: e.target.checked }, { commit: true })}
+                />
+                <span className={styles.box} aria-hidden />
+                Harmonic function
+              </label>
             </div>
             <button
               className={styles.pill}
@@ -554,6 +569,24 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                     );
                   })}
 
+                  {/* Functions belong to the graph, not the names: a transpose leaves every
+                      triangle's numeral unchanged, so these stay put while the names slide. */}
+                  {el.showFunctions &&
+                    tris.map((t) => {
+                      const p = toPx(t.c.i, t.c.j, ZERO);
+                      return (
+                        <text
+                          key={`f${t.key}`}
+                          x={p.x}
+                          y={p.y + (el.showChords ? 12 : 4)}
+                          className={styles.functionLabel}
+                          data-out={!pxInWindow(p) || undefined}
+                          data-selected={sameTriad(t.triad, el.triad) || undefined}
+                        >
+                          {triadFunction(t.triad, el.centre)}
+                        </text>
+                      );
+                    })}
                 </g>
 
                 {/* the window border runs under the nodes */}
@@ -615,7 +648,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
                           <text
                             key={`l${t.key}`}
                             x={p.x}
-                            y={p.y + 4}
+                            y={p.y + (el.showFunctions ? 0 : 4)}
                             className={styles.chordLabel}
                             data-selected={sameTriad(triangleAt(el.centre, at), el.triad) || undefined}
                           >

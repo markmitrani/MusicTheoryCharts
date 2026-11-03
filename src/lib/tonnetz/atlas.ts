@@ -1,15 +1,16 @@
 import { NOTE_NAMES } from '@/lib/theory/note';
-import { TRIADS, triadName } from '@/lib/theory/tonnetz';
+import { TRIADS, triadName, triadFunction } from '@/lib/theory/tonnetz';
 
 /**
- * Glyph atlas for the 3D labels: only 36 strings ever appear (12 note names,
- * 24 chord names), so they are drawn once with the app's own loaded faces
- * (Fraunces for notes, Inter for chords) and sampled in the lattice shader.
- * White on transparent; the shader colours it. Cell k: notes 0–11, chord
- * `12 + triadIndex`.
+ * Glyph atlas for the 3D labels: only 60 strings ever appear (12 note names,
+ * 24 chord names, 24 harmonic functions), so they are drawn once with the
+ * app's own loaded faces (Fraunces for notes, Inter for chords and numerals)
+ * and sampled in the lattice shader. White on transparent; the shader colours
+ * it. Cell k: notes 0–11, chord `12 + triadIndex`, function
+ * `36 + 2 · (root − centre) + minor`.
  */
 export const ATLAS_COLS = 8;
-export const ATLAS_ROWS = 5;
+export const ATLAS_ROWS = 8;
 // High resolution so labels stay crisp when zoomed in (mipmaps cover zoomed out).
 export const CELL_W = 384;
 export const CELL_H = 192;
@@ -55,12 +56,22 @@ export function drawAtlas(canvas: HTMLCanvasElement): HTMLCanvasElement {
   ctx.textBaseline = 'middle';
   const display = family('--font-display', 'Georgia, serif');
   const body = family('--font-body', 'system-ui, sans-serif');
-  const strings = [...NOTE_NAMES, ...TRIADS.map(triadName)];
+  const functions = Array.from({ length: 24 }, (_, k) => triadFunction({ root: k >> 1, minor: (k & 1) === 1 }, 0));
+  const strings = [...NOTE_NAMES, ...TRIADS.map(triadName), ...functions];
   strings.forEach((s, k) => {
     const cx = (k % ATLAS_COLS) * CELL_W + CELL_W / 2;
     const cy = Math.floor(k / ATLAS_COLS) * CELL_H + CELL_H / 2 + 6;
     if (k < 12) drawLabel(ctx, s, cx, cy, display, body, 128, 560);
-    else drawLabel(ctx, s, cx, cy, body, body, 104, 500);
+    else if (k < 36) drawLabel(ctx, s, cx, cy, body, body, 104, 500);
+    else {
+      // numerals as elsewhere in the app: body face, medium weight
+      ctx.font = `500 ${92}px ${body}`;
+      ctx.letterSpacing = '2px'; // 0.02em, as the card's
+      ctx.textAlign = 'center';
+      ctx.fillText(s, cx, cy);
+      ctx.textAlign = 'start';
+      ctx.letterSpacing = '0px';
+    }
   });
   return canvas;
 }

@@ -112,6 +112,7 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
       uTime: { value: 0 },
       uCentre: { value: ctrl.centre },
       uShowChords: { value: ctrl.showChords ? 1 : 0 },
+      uShowFunctions: { value: ctrl.showFunctions ? 1 : 0 },
       uFadeR: { value: 10 },
       uLit: { value: new Array(24).fill(0) },
       uPlay: { value: new Array(24).fill(0) },
@@ -199,6 +200,7 @@ export function LatticeView({ ctrl, onFirstFrame }: { ctrl: WorldController; onF
       u.uCurve.value = ctrl.curve;
       u.uTime.value = ctrl.time;
       u.uShowChords.value = ctrl.showChords ? 1 : 0;
+      u.uShowFunctions.value = ctrl.showFunctions ? 1 : 0;
       u.uFadeR.value = ctrl.fadeRadius;
       const lit = u.uLit.value as number[];
       const play = u.uPlay.value as number[];

@@ -1,4 +1,5 @@
 import { NOTE_NAMES } from './note';
+import { numeral } from './cadence';
 
 /**
  * Tonnetz theory core: the lattice of notes linked by fifths and thirds, where
@@ -72,6 +73,12 @@ export function applyMove(t: Triad, move: Move): Triad {
 /** "C", "Am". */
 export function triadName(t: Triad): string {
   return `${NOTE_NAMES[t.root]}${t.minor ? 'm' : ''}`;
+}
+
+/** Harmonic function against a major tonic: "I", "vi", "♭VII", "♭iii". */
+export function triadFunction(t: Triad, tonic: number): string {
+  const n = numeral(t.root - tonic);
+  return t.minor ? n.toLowerCase() : n;
 }
 
 /** "C major", "A minor". */

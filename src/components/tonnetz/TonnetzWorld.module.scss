@@ -106,7 +106,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  max-width: 260px;
+  max-width: 420px; // room for every chip; tucking animates it to 0
   overflow: hidden;
   transition:
     max-width 0.45s var(--ease-out),
