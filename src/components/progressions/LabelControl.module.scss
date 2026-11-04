@@ -1,0 +1,58 @@
+// A segmented pill like the settings' theme switch, but each segment is its own
+// toggle and the two can trade places (a grip shows they move).
+.group {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--element-stroke);
+  background: var(--well-fill);
+  user-select: none;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px 4px 8px;
+  // pill outside, near-square where the two segments meet
+  border-radius: 999px 4px 4px 999px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[data-on] {
+    background: var(--accent-soft);
+    color: var(--text-primary);
+  }
+
+  & + & {
+    border-radius: 4px 999px 999px 4px;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// Two columns of three dots.
+.grip {
+  width: 5px;
+  height: 9px;
+  opacity: 0.55;
+  background: radial-gradient(circle, currentColor 0.9px, transparent 1.1px) 0 0 / 2.5px 3px;
+}

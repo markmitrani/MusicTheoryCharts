@@ -35,7 +35,7 @@ export function CornerActions() {
   const [theme, setThemeState] = useState<Theme>('dark');
   const [surfaces, setSurfacesState] = useState<Surfaces>('flat');
   const muted = useCanvas((s) => s.muted);
-  const tempoMs = useCanvas((s) => s.tempoMs);
+  const tempo = useCanvas((s) => s.tempo);
   const sound = useCanvas((s) => s.sound);
   const gradientMode = useCanvas((s) => s.gradientMode);
   const harmonicsViz = useCanvas((s) => s.harmonicsViz);
@@ -139,17 +139,17 @@ export function CornerActions() {
 
           <label className={styles.row}>
             <span>Tempo</span>
-            <span className={styles.tempoValue}>{tempoMs}ms / note</span>
+            <span className={styles.tempoValue}>♩ = {tempo}</span>
           </label>
           <input
             className={styles.slider}
             type="range"
-            min={100}
-            max={400}
-            step={10}
-            value={tempoMs}
-            aria-label="Playback tempo in milliseconds per note"
-            onChange={(e) => canvasStore.getState().setTempoMs(Number(e.target.value))}
+            min={40}
+            max={208}
+            step={1}
+            value={tempo}
+            aria-label="Playback tempo in quarter-note beats per minute"
+            onChange={(e) => canvasStore.getState().setTempo(Number(e.target.value))}
           />
 
           <label className={styles.row}>

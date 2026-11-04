@@ -1,0 +1,176 @@
+@use '../cadence/lit' as *;
+
+// The house language. Roads and brackets in the mode's ink (--ink) on its
+// gradient. Nodes follow Ways Home's corner nodes exactly, from the mode's
+// node colour (--node, --node-up): the base is the stroke and tints the fill
+// 24% into the element fill; the glass runs from the -up tone 42% into the
+// fill, to 22% of the base, to a 34% rim into the canvas colour. Colour
+// chords double every share.
+
+.svg {
+  display: block;
+  overflow: visible;
+  user-select: none;
+}
+
+// Node tones derive from --node where it's set: the stage (one map) or each
+// mandala arm, so they're declared on whatever carries the mode.
+.tinted {
+  --node-fill: color-mix(in srgb, var(--node) 24%, var(--element-fill));
+  --node-stroke: var(--node);
+  --node-hi: color-mix(in srgb, var(--node-up) 42%, var(--element-fill));
+  --node-mid: color-mix(in srgb, var(--node) 22%, var(--element-fill));
+  --node-rim: color-mix(in srgb, var(--node) 34%, var(--canvas-bg));
+  --colour-fill: color-mix(in srgb, var(--node) 48%, var(--element-fill));
+  --colour-hi: color-mix(in srgb, var(--node-up) 84%, var(--element-fill));
+  --colour-mid: color-mix(in srgb, var(--node) 44%, var(--element-fill));
+  --colour-rim: color-mix(in srgb, var(--node) 68%, var(--canvas-bg));
+}
+
+.bracket,
+.edge path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bracket {
+  stroke-width: 3.4;
+  opacity: 0.85;
+}
+
+.tip {
+  fill: var(--ink);
+}
+
+.bracket,
+.edge {
+  transition: opacity var(--dur-med) var(--ease-out);
+}
+
+.edge[data-kind='swap'] {
+  opacity: 0.9;
+}
+
+.edge[data-kind='twin'] path,
+.edge[data-kind='lane'] path {
+  stroke-dasharray: 1.5 9;
+}
+
+.edge[data-kind='twin'],
+.edge[data-kind='lane'] {
+  opacity: 0.75;
+}
+
+// After the kinds above, which set their own resting opacity.
+.bracket[data-dim],
+.edge[data-dim] {
+  opacity: 0.22;
+}
+
+// ---- nodes ----
+
+.node {
+  transition: opacity var(--dur-med) var(--ease-out);
+
+  &[data-dim] {
+    opacity: 0.3;
+  }
+
+  &[data-clickable] {
+    cursor: pointer;
+  }
+}
+
+.disc {
+  fill: var(--node-fill);
+  stroke: var(--node-stroke);
+  stroke-width: 1.8;
+  transition:
+    fill var(--dur-fast) var(--ease-out),
+    stroke var(--dur-fast) var(--ease-out);
+
+  [data-hovered] > .bloom > & {
+    stroke-width: 2.6;
+  }
+
+  [data-picked] > .bloom > & {
+    stroke: var(--accent);
+    stroke-width: 2.6;
+  }
+}
+
+// Borrowed chords: a dashed rim, an italic numeral.
+[data-lane] .disc {
+  stroke-dasharray: 5 4;
+}
+
+[data-lane] .numeral {
+  font-style: italic;
+}
+
+.numeral {
+  fill: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+
+// The display face has no accidentals: set the fallback glyph smaller.
+.acc {
+  font-family: var(--font-body);
+  font-size: 0.7em;
+  font-weight: 700;
+}
+
+.sym {
+  font-size: 0.56em;
+}
+
+.suffix {
+  font-size: 0.42em;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+// A chord name's quality when the name is the big label ("B♭" + "m7").
+.quality {
+  font-family: var(--font-body);
+  font-size: 0.5em;
+  font-weight: 600;
+}
+
+.name {
+  fill: var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+  pointer-events: none;
+}
+
+.nameAcc {
+  font-size: 0.86em;
+}
+
+// Chords that hold the mode's colour note: the node recipe at twice the
+// strength, outlined in the brighter tone.
+[data-colour] > .bloom > .disc {
+  fill: var(--colour-fill);
+  stroke: var(--node-up);
+  stroke-width: 2.6;
+}
+
+// The mandala hubs: an angular rim replaces the plain stroke.
+[data-ring] > .bloom > .disc {
+  stroke: transparent;
+}
+
+.rim path {
+  fill: none;
+  stroke-width: 3.4;
+  stroke-linecap: butt;
+}
+
+// Last, so the lit outline beats resting stroke rules.
+@include lit-parts;

@@ -1,0 +1,24 @@
+// An outline drawn as an angular (conic) gradient: a ring of `$width` cut from
+// whatever --angular-ring paints, 1px outside the box so it covers the border.
+// Pair with modeRing() (components/progressions/mandala.ts) for the modes'
+// colours at their angles. The element keeps its own glow (box-shadow).
+@mixin angular-ring($width: 2px) {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    padding: $width;
+    border-radius: inherit;
+    background: var(--angular-ring, none);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+}

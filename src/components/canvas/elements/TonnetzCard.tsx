@@ -24,7 +24,7 @@ import {
 } from '@/lib/theory/tonnetz';
 import type { TonnetzElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
-import { playChord, playProgression } from '@/lib/playback/playback';
+import { noteMs, playChord, playProgression } from '@/lib/playback/playback';
 import { getAudioEngine } from '@/lib/audio/engine';
 import { prefetchWorld, worldStore } from '@/lib/tonnetz/world-store';
 import { ElementShell } from '../ElementShell';
@@ -334,7 +334,7 @@ export function TonnetzCard({ el, selected, soloSelected }: TonnetzCardProps) {
     playProgression(voiceProgression(ends), {
       onStep: (k) => setLit(k < 0 ? null : ends[k]),
       onDone: () => setPlaying(false),
-    }, 650);
+    }, noteMs('quarter'));
   };
 
   // Typing P L R N S H moves when this card is the only selection.

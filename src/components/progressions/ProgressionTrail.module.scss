@@ -1,0 +1,173 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 4px;
+  min-width: 0;
+  min-height: 30px;
+  font-size: var(--text-sm);
+  user-select: none;
+}
+
+// Writing mode: on by default; clicks on the map add chords while it's lit.
+.pencil {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--element-stroke);
+  color: var(--text-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  &[data-on] {
+    color: var(--accent);
+    border-color: var(--element-stroke-selected);
+    background: var(--accent-soft);
+  }
+}
+
+.hint {
+  padding-left: 2px;
+  color: var(--text-muted);
+}
+
+// A step and the arrow out of it wrap together: a line ends with ›, never starts with one.
+.step {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  white-space: nowrap;
+
+  // Drop marker while dragging: a caret before (or after the last) step.
+  &[data-drop-before]::before,
+  &[data-drop-after]::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+
+  &[data-drop-before]::before {
+    left: -2px;
+  }
+
+  &[data-drop-after]::after {
+    right: -3px;
+  }
+}
+
+.crumb {
+  position: relative;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    background: var(--accent-warm-soft);
+  }
+
+  &[data-against] {
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  &[data-playing] {
+    color: var(--accent);
+  }
+
+  &[data-selected] {
+    border-color: var(--element-stroke-selected);
+    background: var(--accent-soft);
+  }
+
+  &[data-lifted] {
+    z-index: 2;
+    cursor: grabbing;
+    background: var(--element-fill-raised);
+    border-color: var(--element-stroke-hover);
+    box-shadow: var(--shadow-md);
+    transition: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// Remove badge on the selected crumb.
+.remove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.sep {
+  color: var(--text-muted);
+  opacity: 0.7;
+  padding: 0 1px;
+}
+
+.against {
+  color: var(--accent-warm);
+  font-size: var(--text-xs);
+  padding: 0 2px;
+}
+
+.clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--accent-warm-soft);
+  }
+}
