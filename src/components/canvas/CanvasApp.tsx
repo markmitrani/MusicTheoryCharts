@@ -18,6 +18,7 @@ import { MultiSelectBox } from './MultiSelectBox';
 import { ChordCard } from './elements/ChordCard';
 import { ScaleCard } from './elements/ScaleCard';
 import { HarmonyCard } from './elements/HarmonyCard';
+import { ProgressionsCard } from './elements/ProgressionsCard';
 import { CircleCard } from './elements/CircleCard';
 import { PitchAxisCard } from './elements/PitchAxisCard';
 import { WaysHomeCard } from './elements/WaysHomeCard';
@@ -165,7 +166,11 @@ export function CanvasApp() {
         const pitched = s.activePage().elements.some(
           (el) =>
             s.selection.has(el.id) &&
-            (el.kind === 'scale' || el.kind === 'chord' || el.kind === 'harmony' || el.kind === 'tonnetz'),
+            (el.kind === 'scale' ||
+              el.kind === 'chord' ||
+              el.kind === 'harmony' ||
+              el.kind === 'progressions' ||
+              el.kind === 'tonnetz'),
         );
         if (pitched) {
           // Transpose the selection: ±1 semitone, or ±a fifth with Shift.
@@ -327,6 +332,8 @@ export function CanvasApp() {
                 return <ScaleCard key={el.id} el={el} {...common} />;
               case 'harmony':
                 return <HarmonyCard key={el.id} el={el} {...common} />;
+              case 'progressions':
+                return <ProgressionsCard key={el.id} el={el} {...common} />;
               case 'circle':
                 return <CircleCard key={el.id} el={el} {...common} />;
               case 'pitchaxis':

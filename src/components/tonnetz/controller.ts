@@ -21,7 +21,7 @@ import {
 } from '@/lib/theory/tonnetz';
 import { Motion, snapToCentroid, type Vec2 } from '@/lib/tonnetz/motion';
 import { COPY_ORIGIN, PERIOD_A, PERIOD_B } from '@/lib/tonnetz/lattice-shader';
-import { playChord, playProgression } from '@/lib/playback/playback';
+import { noteMs, playChord, playProgression } from '@/lib/playback/playback';
 import { getAudioEngine } from '@/lib/audio/engine';
 
 export const FOV = 40;
@@ -397,11 +397,11 @@ export class WorldController {
   }
 
   playPair(from: Triad, to: Triad) {
-    this.playSeq([from, to], 620);
+    this.playSeq([from, to], noteMs('quarter'));
   }
 
   playSelection() {
-    this.playSeq(this.selection.length > 0 ? this.selection : [this.focus], 700);
+    this.playSeq(this.selection.length > 0 ? this.selection : [this.focus], noteMs('half'));
   }
 
   // ---- zoom ----

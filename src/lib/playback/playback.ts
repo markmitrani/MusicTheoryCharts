@@ -1,4 +1,5 @@
 import { gsap } from 'gsap';
+import { canvasStore } from '@/lib/canvas-store/store';
 
 /**
  * Element playback sequencing. Drives the piano key-light animation via a
@@ -13,6 +14,23 @@ export interface PlaybackHandle {
 interface PlaybackCallbacks {
   onLit(lit: ReadonlySet<number>): void;
   onDone(): void;
+}
+
+/** Note values in beats (♩ = 1). */
+export const NOTE_VALUES = {
+  whole: 4,
+  dottedHalf: 3,
+  half: 2,
+  dottedQuarter: 1.5,
+  quarter: 1,
+  eighth: 0.5,
+  sixteenth: 0.25,
+} as const;
+export type NoteValue = keyof typeof NOTE_VALUES;
+
+/** A note value's length in ms at the current tempo (♩ = canvasStore's tempo). */
+export function noteMs(value: NoteValue): number {
+  return (60000 / canvasStore.getState().tempo) * NOTE_VALUES[value];
 }
 
 /** Audio hooks installed by the audio engine in Phase 4. */
@@ -59,8 +77,8 @@ function takeOver(cb: PlaybackCallbacks): gsap.core.Timeline {
   return tl;
 }
 
-/** All notes at once, sustained ~1.5s with a soft visual release. */
-export function playChord(pitches: number[], cb: PlaybackCallbacks, sustainMs = 1500): PlaybackHandle {
+/** All notes at once, rung for a dotted half with a soft visual release. */
+export function playChord(pitches: number[], cb: PlaybackCallbacks, sustainMs = noteMs('dottedHalf')): PlaybackHandle {
   const tl = takeOver(cb);
   tl.call(() => {
     cb.onLit(new Set(pitches));
@@ -76,14 +94,14 @@ export function playChord(pitches: number[], cb: PlaybackCallbacks, sustainMs = 
  * highlighted on the element.
  */
 /**
- * Sequential chord progression (harmony element's card play): each chord
+ * Sequential chord progression, a half note per chord by default: each chord
  * sustains slightly past the next one's attack for a connected feel.
  * onStep receives the current chord index, -1 when finished.
  */
 export function playProgression(
   chords: number[][],
   cb: { onStep(index: number): void; onDone(): void },
-  stepMs = 700,
+  stepMs = noteMs('half'),
 ): PlaybackHandle {
   const tl = takeOver({ onLit: () => {}, onDone: cb.onDone });
   chords.forEach((pitches, i) => {
@@ -100,7 +118,7 @@ export function playProgression(
   return { stop: () => current?.cancel() };
 }
 
-export function playScale(pitches: number[], cb: PlaybackCallbacks, stepMs = 180): PlaybackHandle {
+export function playScale(pitches: number[], cb: PlaybackCallbacks, stepMs = noteMs('eighth')): PlaybackHandle {
   const tl = takeOver(cb);
   const noteMs = stepMs * 1.35; // legato: each note overlaps the next slightly
   const active = new Map<number, number>(); // pitch → overlap count

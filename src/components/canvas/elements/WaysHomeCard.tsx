@@ -38,7 +38,6 @@ interface WaysHomeCardProps {
 const MAX_WALK = 12;
 /** Without the corner legend the fractal grows into the freed corners. */
 const LEGENDLESS_SCALE = 1.17;
-export const CHORD_MS = 950;
 
 /**
  * Ways Home: the cadence fractal on the canvas. Click a chord to hear the move,
@@ -76,7 +75,6 @@ export function WaysHomeCard({ el, selected, soloSelected }: WaysHomeCardProps) 
           onDone?.();
         },
       },
-      CHORD_MS,
     );
 
   const listen = (rel: CadenceType[]) => play(runToProgression(focus, el.dir, rel), moveLights(el.walk, el.dir, rel));

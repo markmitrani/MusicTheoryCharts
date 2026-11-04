@@ -49,6 +49,10 @@ export const HARMONY_MODES: Record<string, ModeHarmony> = {
     numerals: ['I', 'ii', 'iii°', 'IV', 'v', 'vi', '♭VII'],
     qualities: ['maj', 'min', 'dim', 'maj', 'min', 'min', 'maj'],
   },
+  locrian: {
+    numerals: ['i°', '♭II', '♭iii', 'iv', '♭V', '♭VI', '♭vii'],
+    qualities: ['dim', 'maj', 'min', 'min', 'maj', 'maj', 'min'],
+  },
   phrygianDominant: {
     numerals: ['I', '♭II', 'III', 'iv', 'v°', '♭VI', '♭vii'],
     qualities: ['maj', 'maj', 'maj', 'min', 'dim', 'maj', 'min'],

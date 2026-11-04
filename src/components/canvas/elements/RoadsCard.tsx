@@ -16,7 +16,6 @@ import { RoadsRing, roadLights, type Road, type RingLight } from '@/components/c
 import { Acc } from '@/components/cadence/Acc';
 import { InfoIcon } from '@/components/chrome/icons';
 import { ElementShell } from '../ElementShell';
-import { CHORD_MS } from './WaysHomeCard';
 import chordStyles from './ChordCard.module.scss';
 import styles from './RoadsCard.module.scss';
 
@@ -70,7 +69,6 @@ export function RoadsCard({ el, selected, soloSelected }: RoadsCardProps) {
         onStep: (j) => setPlayingStop(j < 0 ? null : (lights[j] ?? null)),
         onDone: () => setPlayingStop(null),
       },
-      CHORD_MS,
     );
   };
 

@@ -37,7 +37,8 @@ export interface CanvasState extends DocState {
   deleteMode: boolean;
   /** Audio + settings (panel state lives with the doc store for URL encoding later). */
   muted: boolean;
-  tempoMs: number;
+  /** Playback tempo, ♩ = beats per minute; note values (playback.ts) follow it. */
+  tempo: number;
   sound: SoundId;
   /** Experimental: gradient backdrop style behind the canvas. */
   gradientMode: GradientMode;
@@ -49,7 +50,7 @@ export interface CanvasState extends DocState {
   setDeleteMode(on: boolean): void;
   setTool(tool: Tool): void;
   setMuted(muted: boolean): void;
-  setTempoMs(ms: number): void;
+  setTempo(bpm: number): void;
   setSound(sound: SoundId): void;
   setGradientMode(mode: GradientMode): void;
   setHarmonicsViz(on: boolean): void;
@@ -62,7 +63,7 @@ export interface CanvasState extends DocState {
   updateElement(id: string, patch: Partial<CanvasElement>, opts?: { commit?: boolean }): void;
   /** Reposition several elements in one store update (section group drag). */
   moveElements(positions: Array<{ id: string; x: number; y: number }>): void;
-  /** Transpose pitched elements (scale/chord/harmony/tonnetz) by N semitones. */
+  /** Transpose pitched elements (scale/chord/harmony/progressions/tonnetz) by N semitones. */
   transposeElements(ids: string[], semitones: number): void;
   removeElements(ids: string[]): void;
   duplicateSelection(): void;
@@ -135,7 +136,7 @@ export function createCanvasStore() {
       spacePanning: false,
       deleteMode: false,
       muted: false,
-      tempoMs: 180,
+      tempo: 120,
       sound: 'piano',
       gradientMode: 'off',
       harmonicsViz: false,
@@ -149,7 +150,7 @@ export function createCanvasStore() {
       setDeleteMode: (deleteMode) => set({ deleteMode }),
       setTool: (tool) => set({ tool }),
       setMuted: (muted) => set({ muted }),
-      setTempoMs: (tempoMs) => set({ tempoMs }),
+      setTempo: (tempo) => set({ tempo }),
       setSound: (sound) => set({ sound }),
       setGradientMode: (gradientMode) => set({ gradientMode }),
       setHarmonicsViz: (harmonicsViz) => set({ harmonicsViz }),
@@ -189,6 +190,8 @@ export function createCanvasStore() {
               return { ...base, kind: 'chord', quality: typeId, inversion: 0, seventh: false };
             case 'harmony':
               return { ...base, kind: 'harmony', scaleId: typeId };
+            case 'progressions':
+              return { ...base, kind: 'progressions', scaleId: typeId, trail: [] };
             default:
               return { ...base, kind: 'scale', scaleId: typeId };
           }
@@ -227,7 +230,11 @@ export function createCanvasStore() {
       transposeElements(ids, semitones) {
         const set = new Set(ids);
         const pitched = (e: CanvasElement) =>
-          e.kind === 'scale' || e.kind === 'chord' || e.kind === 'harmony' || e.kind === 'tonnetz';
+          e.kind === 'scale' ||
+          e.kind === 'chord' ||
+          e.kind === 'harmony' ||
+          e.kind === 'progressions' ||
+          e.kind === 'tonnetz';
         const targets = get().activePage().elements.filter((e) => set.has(e.id) && pitched(e));
         if (targets.length === 0) return;
         snapshot();

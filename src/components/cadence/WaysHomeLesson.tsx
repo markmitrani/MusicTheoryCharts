@@ -23,7 +23,6 @@ import { WAYS_HOME_SLIDES, WAYS_HOME_TITLE } from '@/lessons/ways-home';
 import { LessonWindow } from '@/components/lesson/LessonWindow';
 import { PianoKeys } from '@/components/canvas/PianoKeys';
 import { PlayButton } from '@/components/canvas/elements/PlayButton';
-import { CHORD_MS } from '@/components/canvas/elements/WaysHomeCard';
 import { CadenceStage } from './CadenceStage';
 import { moveLights, walkLights, type LitNode } from './lights';
 import { ChainStrip } from './ChainStrip';
@@ -100,7 +99,6 @@ export function WaysHomeLesson() {
           setPlayingStop(null);
         },
       },
-      CHORD_MS,
     );
   };
 

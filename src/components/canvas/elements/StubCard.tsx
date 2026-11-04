@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import type { NoteName } from '@/lib/theory/note';
-import { scaleDisplayName } from '@/lib/theory/scales';
+import { getScaleDef, scaleDisplayName } from '@/lib/theory/scales';
+import { getProgressionMap, tonicName } from '@/lib/theory/progressions';
 import { chordDisplayName } from '@/lib/theory/chords';
 import type { StubElement } from '@/lib/canvas-store/types';
 import { canvasStore } from '@/lib/canvas-store/store';
@@ -35,6 +36,7 @@ const MORE_KINDS = [
   { id: 'wayshome', label: 'Ways Home' },
   { id: 'roads', label: 'Roads' },
   { id: 'tonnetz', label: 'Tonnetz' },
+  { id: 'progressions', label: 'Progressions' },
 ] as const;
 
 type StubKind =
@@ -149,6 +151,9 @@ export function StubCard({ el }: { el: StubElement }) {
     const [k, typeId] = el.typeId!.split(':');
     if (k === 'chord') return chordDisplayName(el.root!, typeId, 0);
     if (k === 'harmony') return `${scaleDisplayName(el.root!, typeId)} Harmony`;
+    if (k === 'progressions') {
+      return `Progressions – ${tonicName(el.root!, getProgressionMap(typeId))} ${getScaleDef(typeId).label}`;
+    }
     return scaleDisplayName(el.root!, typeId);
   })();
 
