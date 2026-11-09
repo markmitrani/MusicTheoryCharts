@@ -98,8 +98,6 @@ export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; seven
       // Nodes stay upright on the page, so in the arm's frame they lie turned back.
       tilt: Math.atan2(-flip * Math.sin(rad(turn)), mirror * Math.cos(rad(turn))),
       homeW: homeW[spec.side],
-      // Flat arcs leaving a bracket's shoulder would hug its top chord.
-      centredArcs: true,
     });
     const home = layout.chords.get(homeId(map))!;
     const hub = { x: spec.side === 'major' ? -HUB_X : HUB_X, y: 0 };

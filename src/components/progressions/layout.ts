@@ -228,8 +228,6 @@ export function layoutMap(
     tilt?: number;
     /** Home's drawn width, when another map's home is drawn for it (the mandala's hub). */
     homeW?: number;
-    /** Over-arcs leave a bracket from its top centre, above the chord, as under-arcs do from the bottom. */
-    centredArcs?: boolean;
   },
 ): MapLayout {
   const fan = opts.fan !== false;
@@ -328,9 +326,9 @@ export function layoutMap(
     );
   }
 
-  // Arcs over or under the line. A group's over-arc leaves from its right half
-  // (or its centre, with `centredArcs`), so it clears the flow arrow; under-arcs
-  // meet at a bracket's bottom centre.
+  // Arcs over or under the line. Arcs leave a bracket from its centre, above or
+  // below its chord; an over-arc arrives on its left half, clear of the flow
+  // arrow, and under-arcs meet at a bracket's bottom centre.
   // Each bows off the line, then lifts until it clears every slot it passes.
   const spineAt = (id: string) => map.spine.findIndex((s) => s.id === id || members(map, s.id).includes(id));
   for (const arc of map.arcs) {
@@ -340,7 +338,7 @@ export function layoutMap(
       const box = slotBox.get(id)!;
       const x = slotX.get(id)!;
       const isGrp = brackets.some((br) => br.id === id);
-      const shift = over && isGrp && !(leaving && opts.centredArcs) ? (box.right - x) * (leaving ? 0.45 : -0.45) : 0;
+      const shift = over && isGrp && !leaving ? (box.right - x) * -0.45 : 0;
       const gap = leaving ? 4 : gapFor('arc');
       const p = chords.get(id);
       if (p) return { x, y: p.y + sign * (along(p, (sign * Math.PI) / 2) + gap) };
