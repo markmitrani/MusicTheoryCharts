@@ -39,10 +39,9 @@ class AudioEngine implements AudioSink {
   private pianoFlanger: Tone.Chorus;
   private piano: Tone.Sampler;
   // Electric piano: sampled Rhodes-style EP (FluidR3 GM, CC BY 3.0) through
-  // light drive and a stereo tremolo, like a Suitcase. Samples load lazily on
-  // first selection so boot doesn't pay for them.
+  // light drive and chorus. Samples load lazily on first selection so boot
+  // doesn't pay for them.
   private epDrive: Tone.Chebyshev;
-  private epTremolo: Tone.Tremolo;
   private epChorus: Tone.Chorus;
   private epiano: Tone.Sampler | null = null;
   private epianoLoaded = false;
@@ -107,9 +106,8 @@ class AudioEngine implements AudioSink {
     this.pianoFlanger.connect(this.reverbSend);
 
     this.epDrive = new Tone.Chebyshev({ order: 2, wet: 0.12 });
-    this.epTremolo = new Tone.Tremolo({ frequency: 4.5, depth: 0.4, spread: 180 });
     this.epChorus = new Tone.Chorus({ frequency: 0.5, delayTime: 3, depth: 0.4, wet: 0.2 });
-    this.epDrive.chain(this.epTremolo, this.epChorus, this.master);
+    this.epDrive.chain(this.epChorus, this.master);
     this.epChorus.connect(this.reverbSend);
 
     // Feed the analyser the dry voices only (post-chorus/flanger, pre-reverb),
@@ -144,7 +142,6 @@ class AudioEngine implements AudioSink {
       this.padFilterLFO.start();
       this.chorus.start();
       this.pianoFlanger.start();
-      this.epTremolo.start();
       this.epChorus.start();
       this.started = true;
     } finally {
