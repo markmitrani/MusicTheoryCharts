@@ -2,6 +2,7 @@ import type { NoteName } from '@/lib/theory/note';
 import {
   getProgressionMap,
   homeId,
+  isGroup,
   mapChords,
   resolveChord,
   type ProgressionMap,
@@ -18,7 +19,8 @@ import { layoutMap, nodeSize, type LabelKind, type MapLayout, type PlacedChord }
  * Each arm is that mode's own linear layout placed by one rigid transform:
  * rotated so its flow points at the hub (mirrored on the right, so its arcs
  * keep their sides). Roads and brackets take the transform; nodes are moved
- * by it but drawn upright.
+ * by it but drawn upright. Every arm's k-th slot from home sits on ring k, a
+ * circle about the centre, so chords the same steps from home line up.
  */
 
 export interface ArmSpec {
@@ -48,6 +50,9 @@ const ARC_SCALE = 0.42;
 /** Arcs into home arrive this far off their arm, inside its wedge (arms sit about 52° apart). */
 const HOME_ARC = 24;
 const LABEL_OUT = 96;
+
+/** The modes by brightness; neighbours differ by one note, and Lydian and Locrian are the wrap. */
+export const BRIGHTNESS = ['lydian', 'major', 'mixolydian', 'dorian', 'minor', 'phrygian', 'locrian'];
 const MARGIN = 70;
 
 type Pt = { x: number; y: number };
@@ -61,6 +66,8 @@ export interface Arm extends ArmSpec {
   /** Upright nodes at their mandala positions (home left out: the hub stands for it). */
   nodes: PlacedChord[];
   label: Pt & { anchor: 'start' | 'middle' | 'end' };
+  /** Chord ids by ring, home outward (ring k is k steps from home). */
+  rings: string[][];
 }
 
 export interface MandalaLayout {
@@ -68,6 +75,10 @@ export interface MandalaLayout {
   hubs: { major: PlacedChord & { mode: string }; minor: PlacedChord & { mode: string } };
   hubResolved: { major: ResolvedChord; minor: ResolvedChord };
   viewBox: { x: number; y: number; w: number; h: number };
+  /** Each ring's radius about the centre. */
+  ringR: number[];
+  /** Each ring's opening at the wrap, from Locrian's side to Lydian's (radians, y down). */
+  ringWrap: Array<{ from: number; to: number }>;
 }
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -81,7 +92,7 @@ export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; seven
   };
   const homeW = { major: hubW('major'), minor: hubW('minor') };
 
-  const arms: Arm[] = ARMS.map((spec) => {
+  const build = (spec: ArmSpec, slotAt?: Array<number | undefined>): Arm => {
     const map = getProgressionMap(spec.mode);
     const resolved = new Map(mapChords(map).map((ch) => [ch.id, resolveChord(map, ch, root, opts.sevenths)]));
     // Flow (+x in the linear layout) must point from the arm's tip toward its hub.
@@ -98,6 +109,7 @@ export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; seven
       // Nodes stay upright on the page, so in the arm's frame they lie turned back.
       tilt: Math.atan2(-flip * Math.sin(rad(turn)), mirror * Math.cos(rad(turn))),
       homeW: homeW[spec.side],
+      slotAt,
     });
     const home = layout.chords.get(homeId(map))!;
     const hub = { x: spec.side === 'major' ? -HUB_X : HUB_X, y: 0 };
@@ -121,8 +133,53 @@ export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; seven
     const lx = hub.x + dir.x * (reach + LABEL_OUT);
     const ly = hub.y + dir.y * (reach + LABEL_OUT);
     const anchor = Math.abs(dir.x) < 0.35 ? 'middle' : dir.x < 0 ? 'end' : 'start';
-    return { ...spec, map, layout, resolved, transform, nodes, label: { x: lx, y: ly, anchor } };
+    const rings = [...map.spine].reverse().map((s) => (isGroup(s) ? [s.top.id, s.bottom.id] : [s.id]));
+    return { ...spec, map, layout, resolved, transform, nodes, label: { x: lx, y: ly, anchor }, rings };
+  };
+
+  // Rings: every arm's k-th slot from home sits at one radius about the centre,
+  // each ring past the last by the widest step any arm takes there, so no gap shrinks.
+  const hubX = (spec: ArmSpec) => (spec.side === 'major' ? -HUB_X : HUB_X);
+  const slotDist = (arm: Arm) => {
+    const home = arm.layout.chords.get(homeId(arm.map))!;
+    return [...arm.map.spine].reverse().map((s) => {
+      const b = arm.layout.brackets.find((x) => x.id === s.id)?.box;
+      return home.x - (b ? (b.left + b.right) / 2 : arm.layout.chords.get(s.id)!.x);
+    });
+  };
+  const natural = ARMS.map((spec) => {
+    const arm = build(spec);
+    const a = rad(arm.angle);
+    return slotDist(arm).map((d) => Math.hypot(hubX(arm) + d * Math.cos(a), d * Math.sin(a)));
   });
+  const ringR = [HUB_X];
+  for (let k = 1; k < Math.max(...natural.map((r) => r.length)); k++) {
+    ringR[k] = Math.max(...natural.filter((r) => r.length > k).map((r) => ringR[k - 1] + r[k] - r[k - 1]));
+  }
+  const arms = ARMS.map((spec) => {
+    const n = getProgressionMap(spec.mode).spine.length;
+    const a = rad(spec.angle);
+    const hx = hubX(spec);
+    // Distance along the arm that lands its slot on the ring: |hub + d·dir| = R.
+    const slotAt = Array.from({ length: n }, (_, i) =>
+      i === n - 1 ? undefined : -hx * Math.cos(a) + Math.sqrt(ringR[n - 1 - i] ** 2 - (hx * Math.sin(a)) ** 2),
+    );
+    return build(spec, slotAt);
+  });
+
+  // Where each ring opens, between Locrian's chords on it and Lydian's.
+  const edge = (mode: string, k: number, side: 1 | -1) => {
+    const arm = arms.find((a) => a.mode === mode)!;
+    const at = arm.rings[k].map((id) => {
+      const n = arm.nodes.find((x) => x.id === id)!;
+      return Math.atan2(n.y, n.x) + (side * (n.w / 2 + 16)) / ringR[k];
+    });
+    return side > 0 ? Math.max(...at) : Math.min(...at);
+  };
+  const full = Math.min(...arms.map((a) => a.rings.length));
+  const ringWrap = ringR.map((_, k) =>
+    k === 0 || k >= full ? { from: 0, to: 0 } : { from: edge('locrian', k, 1), to: edge('lydian', k, -1) },
+  );
 
   // Hubs: each family's home, drawn once.
   const hubOf = (side: 'major' | 'minor') => {
@@ -160,7 +217,14 @@ export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; seven
   }
   const viewBox = { x: minX - MARGIN, y: minY - MARGIN, w: maxX - minX + 2 * MARGIN, h: maxY - minY + 2 * MARGIN };
 
-  return { arms, hubs: { major: major.placed, minor: minor.placed }, hubResolved: { major: major.resolved, minor: minor.resolved }, viewBox };
+  return {
+    arms,
+    hubs: { major: major.placed, minor: minor.placed },
+    hubResolved: { major: major.resolved, minor: minor.resolved },
+    viewBox,
+    ringR,
+    ringWrap,
+  };
 }
 
 /**
@@ -210,4 +274,39 @@ export function modeRing(at: string, kind: 'plain' | 'focus'): string {
     conicStops(ARMS, (mode) => `color-mix(in srgb, var(--prog-${mode}-node) ${Math.round(MODE_WARMTH[mode] * 100)}%, transparent)`),
   );
   return `${overlay}, linear-gradient(var(--element-stroke-selected), var(--element-stroke-selected))`;
+}
+
+// ---- rings ----
+
+/** What a ring's chords do: how many steps they stand from home. */
+export const RING_NAMES = ['', 'cadence', 'approach', 'far'];
+
+const svgAngle = (deg: number) => (-deg * Math.PI) / 180;
+const onRing = (r: number, a: number) => `${(r * Math.cos(a)).toFixed(1)} ${(r * Math.sin(a)).toFixed(1)}`;
+
+/**
+ * A ring every arm reaches: round from Lydian's chords on it to Locrian's, open
+ * across the wrap between them (radians, y down), with its name in the opening.
+ */
+export function ringPath(r: number, wrap: { from: number; to: number }): { d: string; label: Pt } {
+  const mid = (wrap.from + wrap.to) / 2;
+  return {
+    d: `M${onRing(r, wrap.to)} A${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${onRing(r, wrap.from + 2 * Math.PI)}`,
+    label: { x: r * Math.cos(mid), y: r * Math.sin(mid) },
+  };
+}
+
+/** A ring only some arms reach: a short stretch across each of them. */
+export function ringStretch(r: number, armAngle: number, spread = 16): string {
+  const a = svgAngle(armAngle);
+  const s = (spread * Math.PI) / 180;
+  return `M${onRing(r, a - s)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${onRing(r, a + s)}`;
+}
+
+/** Along ring `r` the short way from one chord to another, centre to centre: the chords' knockout hides the ends. */
+export function ringArc(r: number, a: Pt, z: Pt): string {
+  const from = Math.atan2(a.y, a.x);
+  let span = Math.atan2(z.y, z.x) - from;
+  span -= 2 * Math.PI * Math.round(span / (2 * Math.PI));
+  return `M${onRing(r, from)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 ${span > 0 ? 1 : 0} ${onRing(r, from + span)}`;
 }

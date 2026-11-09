@@ -228,6 +228,8 @@ export function layoutMap(
     tilt?: number;
     /** Home's drawn width, when another map's home is drawn for it (the mandala's hub). */
     homeW?: number;
+    /** Each slot's distance before home's centre, over the even gaps (the mandala's rings). */
+    slotAt?: Array<number | undefined>;
   },
 ): MapLayout {
   const fan = opts.fan !== false;
@@ -267,9 +269,17 @@ export function layoutMap(
   const slotX = new Map<string, number>();
   const brackets: Bracket[] = [];
 
-  map.spine.forEach((s, i) => {
+  const xs = map.spine.map((_, i) => {
     const x = cursor + widths[i] / 2;
     cursor += widths[i] + gapAfter(i);
+    return x;
+  });
+  opts.slotAt?.forEach((d, i) => {
+    if (d !== undefined) xs[i] = xs[xs.length - 1] - d;
+  });
+
+  map.spine.forEach((s, i) => {
+    const x = xs[i];
     slotX.set(s.id, x);
     if (isGroup(s)) {
       // Tilted capsules stand taller, so the pair spreads to keep its gap.
