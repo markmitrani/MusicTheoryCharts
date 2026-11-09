@@ -15,6 +15,7 @@ import {
   tonicName,
 } from '@/lib/theory/progressions';
 import type { ProgressionsElement } from '@/lib/canvas-store/types';
+import type { PortalChord, PortalKind } from '@/lib/theory/portals';
 import { canvasStore } from '@/lib/canvas-store/store';
 import { playChord, playProgression, uiTick } from '@/lib/playback/playback';
 import { MapScene } from '@/components/progressions/MapScene';
@@ -159,6 +160,13 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
     return () => ro.disconnect();
   }, [mandalaFrame]);
 
+  // Portal chords only sound: they aren't map chords, so they can't be written yet.
+  const playPortal = (chord: PortalChord) => {
+    const [voiced] = voiceProgression([{ pc: chord.pc, quality: chord.quality }], el.root);
+    setSounding(chord.id);
+    playChord(voiced, { onLit: () => {}, onDone: () => setSounding(null) });
+  };
+
   // A step lights the chord on this map that sounds like it, whichever mode wrote it.
   const onMap = (ref: string | null | undefined) => (ref ? (stepTwins(ref, el.scaleId)[0] ?? null) : null);
   const pickedRef = picked === null ? null : (trail[picked] ?? null);
@@ -274,6 +282,8 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
                 picked={onMap(pickedRef)}
                 travel={travel?.mode === el.scaleId ? travel : null}
                 onChordClick={(id) => write(el.scaleId, id)}
+                portals={el.portals}
+                onPortalClick={playPortal}
                 ariaLabel={`${title} progression map`}
               />
             )}
@@ -300,10 +310,44 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
               update({ root: root ?? el.root, scaleId });
             }}
             onClose={() => setEditing(false)}
-          />
+          >
+            <PortalToggles value={el.portals ?? []} onChange={(portals) => update({ portals })} />
+          </TypePicker>
         )}
       </div>
     </ElementShell>
+  );
+}
+
+const PORTALS: Array<[PortalKind, string]> = [
+  ['secondary', 'Secondary dominants'],
+  ['tritone', 'Tritone subs'],
+];
+
+/** Which portals open off the map. */
+function PortalToggles({ value, onChange }: { value: PortalKind[]; onChange(next: PortalKind[]): void }) {
+  return (
+    <div className={styles.portals}>
+      <div className={styles.portalsLabel}>Portals</div>
+      {PORTALS.map(([kind, label]) => {
+        const on = value.includes(kind);
+        return (
+          <button
+            key={kind}
+            className={styles.portal}
+            data-on={on || undefined}
+            aria-pressed={on}
+            onClick={() => {
+              uiTick(on ? 0 : 1);
+              onChange(on ? value.filter((k) => k !== kind) : [...value, kind]);
+            }}
+          >
+            <span className={styles.portalBox} aria-hidden="true" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

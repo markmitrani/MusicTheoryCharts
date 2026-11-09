@@ -2,6 +2,7 @@ import type { NoteName } from '@/lib/theory/note';
 import type { Direction, WalkStep } from '@/lib/theory/cadence';
 import type { Triad } from '@/lib/theory/tonnetz';
 import type { LabelKind } from '@/lib/theory/progressions';
+import type { PortalKind } from '@/lib/theory/portals';
 
 export type Tool = 'select' | 'move' | 'frame' | 'upload';
 
@@ -82,6 +83,8 @@ export interface ProgressionsElement extends ElementBase {
   labelsHidden?: LabelKind;
   /** The written progression in order, each step "mode:id" (see `stepRef`); modes may mix. */
   trail: string[];
+  /** Portals drawn off the single map (not in links yet, so they reset on reload). */
+  portals?: PortalKind[];
   /** Mandala view: every mode as one arm around the tonic, all of them writing. */
   mandala?: boolean;
 }

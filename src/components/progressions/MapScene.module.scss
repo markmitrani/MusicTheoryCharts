@@ -13,6 +13,15 @@
   user-select: none;
 }
 
+// Chords from outside the mode (borrowed, secondary dominants, tritone subs)
+// and their roads, in one colour apart from every mode's. Pair with .tinted on
+// nodes, so their tones are worked out from it.
+.outside {
+  --node: var(--prog-outside-node);
+  --node-up: var(--prog-outside-node);
+  --ink: var(--prog-outside-ink);
+}
+
 // Node tones derive from --node where it's set: the stage (one map) or each
 // mandala arm, so they're declared on whatever carries the mode.
 .tinted {
@@ -25,6 +34,20 @@
   --colour-hi: color-mix(in srgb, var(--node-up) 84%, var(--element-fill));
   --colour-mid: color-mix(in srgb, var(--node) 44%, var(--element-fill));
   --colour-rim: color-mix(in srgb, var(--node) 68%, var(--canvas-bg));
+}
+
+// Outside chords copy Ways Home's centre chord: the element's own fill and
+// hover stroke under a quiet glass of --node (FractalScene's quiet recipe).
+.tinted.outside {
+  --node-fill: var(--element-fill);
+  --node-stroke: var(--element-stroke-hover);
+  --node-hi: color-mix(in srgb, var(--node) 20%, var(--element-fill));
+  --node-mid: color-mix(in srgb, var(--node) 6%, var(--element-fill));
+  --node-rim: color-mix(in srgb, var(--node) 14%, var(--canvas-bg));
+  --colour-fill: var(--node-fill);
+  --colour-hi: var(--node-hi);
+  --colour-mid: var(--node-mid);
+  --colour-rim: var(--node-rim);
 }
 
 .bracket,
@@ -61,6 +84,22 @@
 .edge[data-kind='twin'],
 .edge[data-kind='lane'] {
   opacity: 0.75;
+}
+
+// Portals off the map, dashed.
+.edge[data-kind='portal'] path,
+.edge[data-kind='tritone'] path {
+  stroke-dasharray: 10 7;
+}
+
+.edge[data-kind='portal'],
+.edge[data-kind='tritone'] {
+  opacity: 0.85;
+}
+
+[data-portal] .disc {
+  stroke-dasharray: 7 5;
+  stroke-width: 2.4;
 }
 
 // After the kinds above, which set their own resting opacity.

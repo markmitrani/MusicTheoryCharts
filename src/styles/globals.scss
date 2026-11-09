@@ -123,6 +123,10 @@
   --prog-phrygian-node-up: #fb7185;
   --prog-locrian-node: #c2564f;
   --prog-locrian-node-up: #d9776f;
+  // Chords from outside the mode (borrowed, secondary dominants, tritone subs),
+  // in the warm accent of Ways Home's centre chord.
+  --prog-outside-node: var(--accent-warm);
+  --prog-outside-ink: var(--accent-warm);
   // how opaque the mode gradients sit over the card's own glass
   --prog-stage-alpha-from: 92%;
   --prog-stage-alpha-to: 85%;
@@ -271,6 +275,8 @@
   --prog-phrygian-node-up: #f43f5e;
   --prog-locrian-node: #a3403a;
   --prog-locrian-node-up: #c2564f;
+  --prog-outside-node: var(--accent-warm);
+  --prog-outside-ink: var(--accent-warm);
 
   // piano
   --key-white: #ffffff;

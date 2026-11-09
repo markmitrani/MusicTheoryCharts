@@ -9,8 +9,9 @@ import {
   type ProgressionMap,
   type ResolvedChord,
 } from '@/lib/theory/progressions';
+import { mapPortals, type PortalChord, type PortalKind } from '@/lib/theory/portals';
 import { HaloFilter } from '@/components/cadence/FractalScene';
-import { NAME_FONT, STROKE, layoutMap, numeralParts, type Edge, type LabelKind, type PlacedChord } from './layout';
+import { NAME_FONT, PORTAL_SCALE, STROKE, layoutMap, layoutPortals, numeralParts, type Edge, type LabelKind, type PlacedChord } from './layout';
 import styles from './MapScene.module.scss';
 
 interface MapSceneProps {
@@ -27,6 +28,9 @@ interface MapSceneProps {
   /** The move being played: a pulse runs along its road. `n` restarts the pulse. */
   travel?: { from: string; to: string; n: number } | null;
   onChordClick?: (id: string) => void;
+  /** Portals to draw off the map, and what a click on one does. */
+  portals?: PortalKind[];
+  onPortalClick?: (chord: PortalChord) => void;
   ariaLabel?: string;
 }
 
@@ -55,6 +59,8 @@ export function MapScene({
   picked = null,
   travel = null,
   onChordClick,
+  portals: portalKinds,
+  onPortalClick,
   ariaLabel,
 }: MapSceneProps) {
   const uid = useId().replace(/[:]/g, '');
@@ -67,11 +73,17 @@ export function MapScene({
 
   const layout = useMemo(() => layoutMap(map, resolved, { labels, borrowed }), [map, resolved, labels, borrowed]);
   const moves = useMemo(() => mapMoves(map, borrowed), [map, borrowed]);
+  const portals = useMemo(
+    () => (portalKinds?.length ? mapPortals(map, root, sevenths, borrowed, portalKinds) : null),
+    [map, root, sevenths, borrowed, portalKinds],
+  );
+  const portalLayout = useMemo(() => (portals ? layoutPortals(layout, portals, labels) : null), [portals, layout, labels]);
 
   // Hover: the chord, everywhere it can go next, and the roads that take it there.
   const hoverTargets = useMemo(() => {
     if (!hovered) return null;
     const out = new Set<string>([hovered]);
+    for (const m of portals?.moves ?? []) if (m.from === hovered) out.add(m.to);
     for (const m of moves) {
       const [from, to] = m.split('>');
       if (from === hovered) out.add(to);
@@ -80,14 +92,37 @@ export function MapScene({
       for (const id of layout.chords.keys()) out.add(id);
     }
     return out;
-  }, [hovered, moves, layout]);
+  }, [hovered, moves, layout, portals]);
 
   const pulse = travel ? roadsFor(layout.edges, travel.from, travel.to)[0] : undefined;
+
+  const mapNode = (p: PlacedChord, glassId: string, colourGlassId: string) => (
+    <ChordNode
+      key={p.id}
+      chord={resolved.get(p.id)!}
+      place={p}
+      labels={labels}
+      dim={!!hoverTargets && !hoverTargets.has(p.id)}
+      hovered={hovered === p.id}
+      picked={picked === p.id}
+      playing={playing === p.id}
+      glassId={glassId}
+      colourGlassId={colourGlassId}
+      haloId={`halo${uid}`}
+      onEnter={() => setHovered(p.id)}
+      onLeave={() => setHovered((h) => (h === p.id ? null : h))}
+      onClick={onChordClick ? () => onChordClick(p.id) : undefined}
+    />
+  );
 
   const edgeLit = (e: Edge) => {
     if (!hovered) return true;
     return [...(hoverTargets ?? [])].some((to) => to !== hovered && carriesMove(e, hovered, to));
   };
+  // Borrowed chords' roads (to the slot they stand in for, and between them) go with them.
+  const outsideEdge = (e: Edge) => e.kind === 'twin' || e.kind === 'lane';
+  const chordsIn = (lane: boolean) => [...layout.chords.values()].filter((p) => p.lane === lane);
+
   const bracketLit = (id: string) => {
     const slot = map.spine.find((s) => s.id === id);
     if (!hovered || !hoverTargets || !slot || !('top' in slot)) return true;
@@ -95,7 +130,7 @@ export function MapScene({
   };
 
   return (
-    <svg viewBox={layout.viewBox} width="100%" role="img" aria-label={ariaLabel} className={`${styles.svg} ${styles.tinted}`}>
+    <svg viewBox={portalLayout?.viewBox ?? layout.viewBox} width="100%" role="img" aria-label={ariaLabel} className={`${styles.svg} ${styles.tinted}`}>
       <defs>
         <HaloFilter id={`halo${uid}`} />
         {/* Ways Home glass: a light point top-left deepening into a tinted rim */}
@@ -115,12 +150,34 @@ export function MapScene({
         );
       })}
 
-      {layout.edges.map((e) => (
-        <g key={e.key} className={styles.edge} data-kind={e.kind} data-dim={edgeLit(e) ? undefined : ''}>
-          <path d={e.d} strokeWidth={STROKE[e.kind]} />
-          {e.tip && <polygon points={e.tip} className={styles.tip} />}
-        </g>
-      ))}
+      {layout.edges
+        .filter((e) => !outsideEdge(e))
+        .map((e) => (
+          <g key={e.key} className={styles.edge} data-kind={e.kind} data-dim={edgeLit(e) ? undefined : ''}>
+            <path d={e.d} strokeWidth={STROKE[e.kind]} />
+            {e.tip && <polygon points={e.tip} className={styles.tip} />}
+          </g>
+        ))}
+
+      <g className={styles.outside}>
+        {layout.edges.filter(outsideEdge).map((e) => (
+          <g key={e.key} className={styles.edge} data-kind={e.kind} data-dim={edgeLit(e) ? undefined : ''}>
+            <path d={e.d} strokeWidth={STROKE[e.kind]} />
+            {e.tip && <polygon points={e.tip} className={styles.tip} />}
+          </g>
+        ))}
+        {portalLayout?.edges.map((e) => (
+          <g
+            key={e.key}
+            className={styles.edge}
+            data-kind={e.kind}
+            data-dim={hovered && !e.carries.some((c) => c.startsWith(`${hovered}>`)) ? '' : undefined}
+          >
+            <path d={e.d} strokeWidth={STROKE[e.kind]} />
+            {e.tip && <polygon points={e.tip} className={styles.tip} />}
+          </g>
+        ))}
+      </g>
 
       {pulse && travel && (
         <path
@@ -133,24 +190,37 @@ export function MapScene({
         />
       )}
 
-      {[...layout.chords.values()].map((p) => (
-        <ChordNode
-          key={p.id}
-          chord={resolved.get(p.id)!}
-          place={p}
-          labels={labels}
-          dim={!!hoverTargets && !hoverTargets.has(p.id)}
-          hovered={hovered === p.id}
-          picked={picked === p.id}
-          playing={playing === p.id}
-          glassId={`glass${uid}`}
-          colourGlassId={`colourGlass${uid}`}
-          haloId={`halo${uid}`}
-          onEnter={() => setHovered(p.id)}
-          onLeave={() => setHovered((h) => (h === p.id ? null : h))}
-          onClick={onChordClick ? () => onChordClick(p.id) : undefined}
-        />
-      ))}
+      {chordsIn(false).map((p) => mapNode(p, `glass${uid}`, `colourGlass${uid}`))}
+
+      <g className={`${styles.tinted} ${styles.outside}`}>
+        <defs>
+          <Glass id={`outsideGlass${uid}`} />
+          <Glass id={`outsideColourGlass${uid}`} colour />
+        </defs>
+        {chordsIn(true).map((p) => mapNode(p, `outsideGlass${uid}`, `outsideColourGlass${uid}`))}
+        {portalLayout?.nodes.map((p) => {
+          const chord = portals!.chords.find((c) => c.id === p.id)!;
+          return (
+            <g key={p.id} data-portal="" transform={`translate(${p.x} ${p.y}) scale(${PORTAL_SCALE}) translate(${-p.x} ${-p.y})`}>
+              <ChordNode
+                chord={chord}
+                place={p}
+                labels={labels}
+                dim={!!hovered && hovered !== p.id}
+                hovered={hovered === p.id}
+                picked={false}
+                playing={playing === p.id}
+                glassId={`outsideGlass${uid}`}
+                colourGlassId={`outsideColourGlass${uid}`}
+                haloId={`halo${uid}`}
+                onEnter={() => setHovered(p.id)}
+                onLeave={() => setHovered((h) => (h === p.id ? null : h))}
+                onClick={onPortalClick ? () => onPortalClick(chord) : undefined}
+              />
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 }

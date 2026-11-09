@@ -345,6 +345,9 @@ function spellOn(fromLetter: number, steps: number, pc: number): string {
   return offset <= 6 ? SHARP_NAMES[pc] : FLAT_NAMES[pc];
 }
 
+/** A note `steps` letters above a spelled one, at pitch class `pc`, spelled as the maps spell. */
+export const spellFrom = (note: string, steps: number, pc: number) => spellOn(LETTERS.indexOf(note[0]), steps, pc);
+
 /** The tonic as its parent major key spells it: G♯ minor (from B), E♭ Dorian (from D♭). */
 export function tonicName(root: NoteName, map: ProgressionMap): string {
   const pc = NOTE_NAMES.indexOf(root);

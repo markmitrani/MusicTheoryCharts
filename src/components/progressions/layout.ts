@@ -1,3 +1,4 @@
+import type { Portals } from '@/lib/theory/portals';
 import {
   homeId,
   isGroup,
@@ -39,7 +40,7 @@ const ARC_CLEAR = 20; // an arc's least clearance over (or under) the slots it p
 export type { LabelKind };
 
 /** Stroke widths by kind; arrowheads scale with them, as on Ways Home. */
-export const STROKE: Record<EdgeKind, number> = { flow: 4, arc: 4, fan: 4, swap: 3, lane: 3, twin: 2.4 };
+export const STROKE: Record<EdgeKind, number> = { flow: 4, arc: 4, fan: 4, swap: 3, lane: 3, twin: 2.4, portal: 3, tritone: 3 };
 
 export interface Box {
   left: number;
@@ -69,7 +70,7 @@ export interface Bracket {
   box: Box;
 }
 
-export type EdgeKind = 'flow' | 'arc' | 'swap' | 'fan' | 'twin' | 'lane';
+export type EdgeKind = 'flow' | 'arc' | 'swap' | 'fan' | 'twin' | 'lane' | 'portal' | 'tritone';
 
 export interface Edge {
   key: string;
@@ -174,16 +175,20 @@ function cubic(key: string, kind: EdgeKind, a: Pt, c1: Pt, c2: Pt, b: Pt, carrie
 
 const line = (key: string, kind: EdgeKind, a: Pt, b: Pt, carries: string[]) => cubic(key, kind, a, a, b, b, carries);
 
-/** Points along a one-cubic road's path. */
+/** Points along a road's path: one cubic, or several chained ("M… C… C…"), `n` per cubic. */
 function sampleCubic(d: string, n = 48): Pt[] {
   const v = d.match(/-?[\d.]+/g)!.map(Number);
-  const [a, c1, c2, b] = [0, 2, 4, 6].map((i) => ({ x: v[i], y: v[i + 1] }));
-  return Array.from({ length: n + 1 }, (_, k) => {
-    const t = k / n;
-    const u = 1 - t;
-    const f = (p: number, q: number, r: number, s: number) => u * u * u * p + 3 * u * u * t * q + 3 * u * t * t * r + t * t * t * s;
-    return { x: f(a.x, c1.x, c2.x, b.x), y: f(a.y, c1.y, c2.y, b.y) };
-  });
+  const out: Pt[] = [];
+  for (let at = 0; at + 8 <= v.length; at += 6) {
+    const [a, c1, c2, b] = [0, 2, 4, 6].map((i) => ({ x: v[at + i], y: v[at + i + 1] }));
+    for (let k = at ? 1 : 0; k <= n; k++) {
+      const t = k / n;
+      const u = 1 - t;
+      const f = (p: number, q: number, r: number, s: number) => u * u * u * p + 3 * u * u * t * q + 3 * u * t * t * r + t * t * t * s;
+      out.push({ x: f(a.x, c1.x, c2.x, b.x), y: f(a.y, c1.y, c2.y, b.y) });
+    }
+  }
+  return out;
 }
 
 /** A point on a node's rim at angle θ (radians, y down), offset outward by `out`: on the end cap facing θ. */
@@ -458,4 +463,184 @@ export function layoutMap(
   const base = opts.borrowed ? BORROWED_HEIGHT : HEIGHT;
   const height = (base * width) / VIEW_W;
   return { viewBox: `0 ${fmt((base - height) / 2)} ${fmt(width)} ${fmt(height)}`, chords, brackets, edges };
+}
+
+// ---- portals ----
+
+export const PORTAL_SCALE = 0.75;
+
+export interface PortalLayout {
+  viewBox: string;
+  /** Full-size places, drawn at PORTAL_SCALE about their centres. */
+  nodes: PlacedChord[];
+  edges: Edge[];
+}
+
+/**
+ * Portal chords in a band above the map (below it for chords that lead into a
+ * bracket's lower member), each over the chord it resolves into; subs sit
+ * beside the dominant they stand in for. A borrowed chord that is already a
+ * dominant keeps its arrow on the map. The viewBox grows to hold the bands.
+ */
+export function layoutPortals(base: MapLayout, portals: Portals, labels: LabelKind[]): PortalLayout {
+  const [vx, vy, vw, vh] = base.viewBox.split(' ').map(Number);
+  const onMap = portals.moves.flatMap((m) => {
+    const a = base.chords.get(m.from);
+    const z = base.chords.get(m.to);
+    return a && z ? [onMapArrow(base, a, z)] : [];
+  });
+  let top = Infinity;
+  let bottom = -Infinity;
+  for (const p of base.chords.values()) {
+    top = Math.min(top, p.box.top);
+    bottom = Math.max(bottom, p.box.bottom);
+  }
+  for (const e of [...base.edges, ...onMap]) {
+    for (const p of sampleCubic(e.d, 16)) {
+      top = Math.min(top, p.y);
+      bottom = Math.max(bottom, p.y);
+    }
+  }
+  const half = (NODE_H[labels[1] ? 'names' : 'bare'] * PORTAL_SCALE) / 2;
+  const rows = { above: top - half - 34, below: bottom + half + 34 };
+
+  const placed = new Map<string, PlacedChord>();
+  const scaled = (p: PlacedChord): PlacedChord => ({ ...p, w: p.w * PORTAL_SCALE, h: p.h * PORTAL_SCALE });
+  const byRow = { above: [] as PlacedChord[], below: [] as PlacedChord[] };
+  for (const ch of portals.chords) {
+    const target = base.chords.get(ch.into[0]);
+    if (!target) continue;
+    const side = target.y > MAIN_Y ? 'below' : 'above';
+    const size = nodeSize(ch, labels);
+    const dom = ch.standsFor ? placed.get(ch.standsFor) : undefined;
+    const x = dom ? dom.x + ((dom.w + size.w) * PORTAL_SCALE) / 2 + 26 : target.x;
+    const y = dom ? dom.y : rows[side];
+    const p: PlacedChord = { id: ch.id, x, y, w: size.w, h: size.h, font: size.font, lane: false, box: { left: 0, right: 0, top: 0, bottom: 0 } };
+    placed.set(ch.id, p);
+    byRow[y < MAIN_Y ? 'above' : 'below'].push(p);
+  }
+  // Nudge neighbours in a band apart.
+  for (const row of Object.values(byRow)) {
+    row.sort((a, b) => a.x - b.x);
+    for (let i = 1; i < row.length; i++) {
+      const min = row[i - 1].x + ((row[i - 1].w + row[i].w) * PORTAL_SCALE) / 2 + 20;
+      if (row[i].x < min) row[i].x = min;
+    }
+  }
+
+  const edges: Edge[] = [...onMap];
+  for (const ch of portals.chords) {
+    const from = placed.get(ch.id);
+    const dom = ch.standsFor ? (placed.get(ch.standsFor) ?? base.chords.get(ch.standsFor)) : undefined;
+    if (from && dom && placed.has(ch.standsFor!)) {
+      const a = scaled(from);
+      const b = scaled(dom);
+      edges.push(cubic(`pt-${ch.id}`, 'twin', rim(b, 0, 4), rim(b, 0, 4), rim(a, Math.PI, 4), rim(a, Math.PI, 4), [], false));
+    }
+  }
+  for (const m of portals.moves) {
+    const fromP = placed.get(m.from);
+    const to = base.chords.get(m.to);
+    if (!fromP || !to) continue;
+    const a = scaled(fromP);
+    const theta = Math.atan2(a.y - to.y, a.x - to.x);
+    const kind = m.kind === 'secondary' ? 'portal' : m.kind;
+    const start = rim(a, theta + Math.PI, 4);
+    const end = rim(to, theta, gapFor(kind));
+    const reach = Math.abs(end.y - start.y) * 0.45;
+    const dir = a.y < to.y ? 1 : -1;
+    edges.push(
+      cubic(`p-${m.kind}-${m.from}-${m.to}`, kind, start, { x: start.x, y: start.y + dir * reach }, rim(to, theta, gapFor(kind) + reach), end, [`${m.from}>${m.to}`]),
+    );
+  }
+
+  const nodes = [...placed.values()];
+  const y0 = Math.min(vy, ...nodes.filter((p) => p.y < MAIN_Y).map((p) => p.y - half - 24));
+  const y1 = Math.max(vy + vh, ...nodes.filter((p) => p.y > MAIN_Y).map((p) => p.y + half + 24));
+  return { viewBox: `${fmt(vx)} ${fmt(y0)} ${fmt(vw)} ${fmt(y1 - y0)}`, nodes, edges };
+}
+
+
+/**
+ * A borrowed chord's pull into a chord on the map. Into a chord on or below the
+ * line: under both, deep enough to clear every chord between. Into a bracket's
+ * top chord: up through the gap beside its bracket, then down onto it.
+ */
+function onMapArrow(base: MapLayout, a: PlacedChord, z: PlacedChord): Edge {
+  const key = `p-on-${a.id}-${z.id}`;
+  const carries = [`${a.id}>${z.id}`];
+  if (z.y >= MAIN_Y) {
+    // A chord whose bottom already takes a lane road is left or met from its outer side instead.
+    const lanes = base.edges.filter((e) => e.kind === 'lane');
+    const busy = (id: string) => lanes.some((e) => e.carries.some((c) => c.startsWith(`${id}>`) || c.endsWith(`>${id}`)));
+    const way = z.x < a.x ? -1 : 1;
+    const start = busy(a.id) ? rim(a, way < 0 ? 0 : Math.PI, 4) : { x: a.x, y: a.box.bottom + 4 };
+    const end = busy(z.id) ? rim(z, way < 0 ? Math.PI : 0, gapFor('portal')) : { x: z.x, y: z.box.bottom + gapFor('portal') };
+    const [lo, hi] = [Math.min(a.x, z.x), Math.max(a.x, z.x)];
+    const between = [...base.chords.values()].filter((p) => p !== a && p !== z && p.box.right > lo && p.box.left < hi);
+    const roads = lanes.flatMap((e) => sampleCubic(e.d, 40));
+    const clear = (e: Edge) =>
+      sampleCubic(e.d, 40)
+        .slice(3, -3)
+        .every(
+          (q) =>
+            between.every((p) => q.x < p.box.left - 12 || q.x > p.box.right + 12 || q.y > p.box.bottom + 18) &&
+            roads.every((r) => Math.abs(q.x - r.x) > 8 || q.y > r.y + 16),
+        );
+    let h = 46;
+    let e: Edge;
+    do {
+      const y = Math.max(start.y, end.y) + h;
+      const c1 = busy(a.id) ? { x: start.x - way * 70, y } : { x: start.x, y };
+      const c2 = busy(z.id) ? { x: end.x + way * 70, y } : { x: end.x, y };
+      e = cubic(key, 'portal', start, c1, c2, end, carries);
+      h += 8;
+    } while (!clear(e) && h < 400);
+    return e;
+  }
+  // Up through the gap on either side of its bracket: the side crossing fewer roads (and no chords), else the nearer.
+  const slot = base.brackets.find((b) => b.box.left <= z.x && z.x <= b.box.right)!.box;
+  const slots = [...base.brackets.map((b) => b.box), ...[...base.chords.values()].filter((p) => !p.lane && p.y === MAIN_Y).map((p) => p.box)];
+  const route = (side: 1 | -1): Edge => {
+    const next = slots
+      .filter((b) => (side > 0 ? b.left >= slot.right : b.right <= slot.left))
+      .sort((p, q) => (side > 0 ? p.left - q.left : q.right - p.right))[0];
+    const edge = side > 0 ? slot.right : slot.left;
+    const gx = next ? (edge + (side > 0 ? next.left : next.right)) / 2 : edge + side * 30;
+    const peak = { x: gx, y: slot.top - 28 };
+    const start = rim(a, gx < a.x ? Math.PI : 0, 4);
+    const end = rim(z, -Math.PI / 2, gapFor('portal'));
+    const turn = { x: gx, y: start.y };
+    const up = cubic(`${key}-up`, 'portal', start, turn, turn, peak, [], false);
+    const down = cubic(key, 'portal', peak, { x: gx, y: peak.y - 50 }, { x: z.x, y: end.y - 70 }, end, carries);
+    return { ...down, d: up.d + down.d.replace(/^M[^C]+/, '') };
+  };
+  const others = [...base.chords.values()].filter((p) => p !== a && p !== z);
+  const strokes = base.brackets.flatMap(({ box }) => [
+    [{ x: box.left + 16, y: box.top }, { x: box.left, y: box.top }, { x: box.left, y: box.bottom }, { x: box.left + 16, y: box.bottom }],
+    [{ x: box.right - 16, y: box.top }, { x: box.right, y: box.top }, { x: box.right, y: box.bottom }, { x: box.right - 16, y: box.bottom }],
+  ]);
+  const cost = (e: Edge) => {
+    const path = sampleCubic(e.d, 40);
+    const hits = path.filter((q) => others.some((p) => q.x > p.box.left - 6 && q.x < p.box.right + 6 && q.y > p.box.top - 6 && q.y < p.box.bottom + 6));
+    const roads = base.edges.reduce((n, r) => n + crossings(path, sampleCubic(r.d, 40)), 0);
+    return roads + 10 * strokes.reduce((n, st) => n + crossings(path, st), 0) + 100 * hits.length;
+  };
+  const near = route(a.x > z.x ? 1 : -1);
+  const far = route(a.x > z.x ? -1 : 1);
+  return cost(far) < cost(near) ? far : near;
+}
+
+/** How many times two polylines cross. */
+function crossings(p: Pt[], q: Pt[]): number {
+  const cut = (a: Pt, b: Pt, c: Pt, d: Pt) => {
+    const den = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
+    if (Math.abs(den) < 1e-9) return false;
+    const t = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / den;
+    const u = ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)) / den;
+    return t > 0 && t < 1 && u > 0 && u < 1;
+  };
+  let n = 0;
+  for (let i = 1; i < p.length; i++) for (let j = 1; j < q.length; j++) if (cut(p[i - 1], p[i], q[j - 1], q[j])) n++;
+  return n;
 }

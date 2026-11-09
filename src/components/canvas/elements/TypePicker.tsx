@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { gsap } from 'gsap';
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import { SCALE_GROUPS, getScaleDef } from '@/lib/theory/scales';
@@ -23,9 +23,11 @@ interface TypePickerProps {
   onClose?(): void;
   /** Render flat inside a parent (spawn stub) instead of as a popover. */
   inline?: boolean;
+  /** Extra controls under the root grid. */
+  children?: ReactNode;
 }
 
-export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: TypePickerProps) {
+export function TypePicker({ kinds, root, typeId, onChange, onClose, inline, children }: TypePickerProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,17 +100,20 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
       className={inline ? styles.pickerInline : styles.picker}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className={styles.roots}>
-        {NOTE_NAMES.map((n) => (
-          <button
-            key={n}
-            className={styles.root}
-            data-active={n === root || undefined}
-            onClick={() => onChange(n, typeId)}
-          >
-            {n}
-          </button>
-        ))}
+      <div className={styles.side}>
+        <div className={styles.roots}>
+          {NOTE_NAMES.map((n) => (
+            <button
+              key={n}
+              className={styles.root}
+              data-active={n === root || undefined}
+              onClick={() => onChange(n, typeId)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        {children}
       </div>
       <div className={styles.types}>
         {sections.map((section) => (
