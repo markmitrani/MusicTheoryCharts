@@ -33,6 +33,7 @@ const BRACKET_PAD = 40; // room inside a bracket for its swap arrows
 const GAP = 58; // between neighbouring slots: the flow arrow lives here
 const FAN_W = 142;
 const LANE_GAP = 24;
+const ARC_CLEAR = 20; // an arc's least clearance over (or under) the slots it passes
 
 /** A node shows its labels in order: the first in the big face, the second (if any) as the subtitle. */
 export type { LabelKind };
@@ -52,11 +53,15 @@ export interface PlacedChord {
   /** Node centre. */
   x: number;
   y: number;
+  /** Drawn size: a circle, or a capsule when the label runs wide. */
   w: number;
   h: number;
   font: number;
+  /** The space it takes in the layout (wider than w × h when the node is tilted). */
   box: Box;
   lane: boolean;
+  /** Angle of the capsule's long axis in the layout (radians): nodes drawn upright in a turned frame. */
+  tilt?: number;
 }
 
 export interface Bracket {
@@ -121,6 +126,16 @@ function bigNameWidth(name: string, font: number): number {
   return (0.7 + (m[2] ? 0.36 : 0) + m[3].length * 0.34) * font;
 }
 
+/** A node's drawn size for its labels: the first in the big face, the second as the subtitle. */
+export function nodeSize(r: ResolvedChord, labels: LabelKind[], lane = false): { w: number; h: number; font: number } {
+  const font = lane ? LANE_FONT : FONT;
+  const [main, sub] = labels;
+  const h = (lane ? LANE_NODE_H : NODE_H)[sub ? 'names' : 'bare'];
+  const mainW = main === 'notes' ? bigNameWidth(r.name, font) : numeralWidth(r.numeral, font);
+  const subW = sub ? nameWidth(sub === 'notes' ? r.name : r.numeral, NAME_FONT) + 30 : 0;
+  return { w: Math.max(h, Math.max(mainW + 34, subW)), h, font };
+}
+
 // ---- geometry helpers ----
 
 type Pt = { x: number; y: number };
@@ -159,11 +174,35 @@ function cubic(key: string, kind: EdgeKind, a: Pt, c1: Pt, c2: Pt, b: Pt, carrie
 
 const line = (key: string, kind: EdgeKind, a: Pt, b: Pt, carries: string[]) => cubic(key, kind, a, a, b, b, carries);
 
-/** A point on a node's rim at angle θ (radians, y down), offset outward by `out`. */
+/** Points along a one-cubic road's path. */
+function sampleCubic(d: string, n = 48): Pt[] {
+  const v = d.match(/-?[\d.]+/g)!.map(Number);
+  const [a, c1, c2, b] = [0, 2, 4, 6].map((i) => ({ x: v[i], y: v[i + 1] }));
+  return Array.from({ length: n + 1 }, (_, k) => {
+    const t = k / n;
+    const u = 1 - t;
+    const f = (p: number, q: number, r: number, s: number) => u * u * u * p + 3 * u * u * t * q + 3 * u * t * t * r + t * t * t * s;
+    return { x: f(a.x, c1.x, c2.x, b.x), y: f(a.y, c1.y, c2.y, b.y) };
+  });
+}
+
+/** A point on a node's rim at angle θ (radians, y down), offset outward by `out`: on the end cap facing θ. */
 function rim(p: PlacedChord, theta: number, out = 0): Pt {
   const r = p.h / 2;
-  const cx = p.x + Math.sign(Math.cos(theta)) * Math.max(0, (p.w - p.h) / 2);
-  return { x: cx + Math.cos(theta) * (r + out), y: p.y + Math.sin(theta) * (r + out) };
+  const t = p.tilt ?? 0;
+  const c = Math.max(0, (p.w - p.h) / 2) * Math.sign(Math.cos(theta - t));
+  return { x: p.x + Math.cos(t) * c + Math.cos(theta) * (r + out), y: p.y + Math.sin(t) * c + Math.sin(theta) * (r + out) };
+}
+
+/** Distance from a node's centre to its edge, straight out at angle θ. */
+function along(p: PlacedChord, theta: number): number {
+  const r = p.h / 2;
+  const c = Math.max(0, (p.w - p.h) / 2);
+  const sin = Math.abs(Math.sin(theta - (p.tilt ?? 0)));
+  const cos = Math.abs(Math.cos(theta - (p.tilt ?? 0)));
+  if (c === 0) return r;
+  if (sin > 1e-9 && (r / sin) * cos <= c) return r / sin;
+  return c * cos + Math.sqrt(Math.max(0, r * r - c * c * sin * sin));
 }
 
 const pairs = (map: ProgressionMap, from: string, to: string) =>
@@ -183,26 +222,40 @@ export function layoutMap(
     fan?: boolean;
     /** Scales how far arcs bow off the line (default 1). */
     arcScale?: number;
+    /** Arcs into home meet it this many degrees off the flow line, not square on its top or bottom. */
+    homeArc?: number;
+    /** Nodes are drawn upright in a frame turned so their long axis lies at this angle (radians). */
+    tilt?: number;
+    /** Home's drawn width, when another map's home is drawn for it (the mandala's hub). */
+    homeW?: number;
+    /** Over-arcs leave a bracket from its top centre, above the chord, as under-arcs do from the bottom. */
+    centredArcs?: boolean;
   },
 ): MapLayout {
   const fan = opts.fan !== false;
+  const home = homeId(map);
+  const tilt = opts.tilt ?? 0;
   const gapAfter = (i: number) => (i === map.spine.length - 2 ? (opts.homeGap ?? GAP) : GAP);
   const node = (x: number, y: number, ch: MapChord, lane: boolean): PlacedChord => {
-    const r = resolved.get(ch.id)!;
-    const font = lane ? LANE_FONT : FONT;
-    const [main, sub] = opts.labels;
-    const h = (lane ? LANE_NODE_H : NODE_H)[sub ? 'names' : 'bare'];
-    const mainW = main === 'notes' ? bigNameWidth(r.name, font) : numeralWidth(r.numeral, font);
-    const subW = sub ? nameWidth(sub === 'notes' ? r.name : r.numeral, NAME_FONT) + 30 : 0;
-    const label = Math.max(mainW + 34, subW);
-    const w = Math.max(h, label);
-    return { id: ch.id, x, y, w, h, font, lane, box: { left: x - w / 2, right: x + w / 2, top: y - h / 2, bottom: y + h / 2 } };
+    const size = nodeSize(resolved.get(ch.id)!, opts.labels, lane);
+    const { h, font } = size;
+    const w = ch.id === home && opts.homeW ? opts.homeW : size.w;
+    const c = (w - h) / 2;
+    const hx = c * Math.abs(Math.cos(tilt)) + h / 2;
+    const hy = c * Math.abs(Math.sin(tilt)) + h / 2;
+    return { id: ch.id, x, y, w, h, font, lane, tilt, box: { left: x - hx, right: x + hx, top: y - hy, bottom: y + hy } };
   };
-  const widthOf = (ch: MapChord, lane = false) => node(0, 0, ch, lane).w;
+  const widthOf = (ch: MapChord, lane = false) => {
+    const { box } = node(0, 0, ch, lane);
+    return box.right - box.left;
+  };
+  const halfHeight = (ch: MapChord) => {
+    const { box } = node(0, 0, ch, false);
+    return (box.bottom - box.top) / 2;
+  };
 
   // Slot widths (a bracket leaves room for its swap arrows), then centre the
   // spine and the fan across the view with an even gap for each flow arrow.
-  const home = homeId(map);
   const widths = map.spine.map((s) =>
     isGroup(s) ? Math.max(widthOf(s.top), widthOf(s.bottom)) + 2 * BRACKET_PAD : widthOf(s),
   );
@@ -221,8 +274,10 @@ export function layoutMap(
     cursor += widths[i] + gapAfter(i);
     slotX.set(s.id, x);
     if (isGroup(s)) {
-      const top = node(x, MAIN_Y - MEMBER_DY, s.top, false);
-      const bottom = node(x, MAIN_Y + MEMBER_DY, s.bottom, false);
+      // Tilted capsules stand taller, so the pair spreads to keep its gap.
+      const dy = Math.max(MEMBER_DY, (halfHeight(s.top) + halfHeight(s.bottom)) / 2 + 20);
+      const top = node(x, MAIN_Y - dy, s.top, false);
+      const bottom = node(x, MAIN_Y + dy, s.bottom, false);
       chords.set(top.id, top);
       chords.set(bottom.id, bottom);
       const box = { left: x - widths[i] / 2, right: x + widths[i] / 2, top: top.box.top - 12, bottom: bottom.box.bottom + 12 };
@@ -238,12 +293,18 @@ export function layoutMap(
   const edges: Edge[] = [];
   const flowGap = gapFor('flow');
 
-  // Flow arrows between neighbouring slots, along the main line.
+  // Flow arrows between neighbouring slots, along the main line: from a
+  // bracket's side, or a chord's own edge.
+  const edgeX = (id: string, side: 1 | -1) => {
+    const p = chords.get(id);
+    if (!p) return side > 0 ? slotBox.get(id)!.right : slotBox.get(id)!.left;
+    return p.x + side * along(p, side > 0 ? 0 : Math.PI);
+  };
   map.spine.forEach((s, i) => {
     if (i === 0) return;
     const prev = map.spine[i - 1];
-    const a = { x: slotBox.get(prev.id)!.right + 4, y: MAIN_Y };
-    const b = { x: slotBox.get(s.id)!.left - flowGap, y: MAIN_Y };
+    const a = { x: edgeX(prev.id, 1) + 4, y: MAIN_Y };
+    const b = { x: edgeX(s.id, -1) - flowGap, y: MAIN_Y };
     edges.push(line(`f-${prev.id}-${s.id}`, 'flow', a, b, pairs(map, prev.id, s.id)));
   });
 
@@ -267,26 +328,57 @@ export function layoutMap(
     );
   }
 
-  // Arcs over or under the line. A group's over-arc leaves from its right half,
-  // so it clears the flow arrow; under-arcs meet at a bracket's bottom centre.
+  // Arcs over or under the line. A group's over-arc leaves from its right half
+  // (or its centre, with `centredArcs`), so it clears the flow arrow; under-arcs
+  // meet at a bracket's bottom centre.
+  // Each bows off the line, then lifts until it clears every slot it passes.
+  const spineAt = (id: string) => map.spine.findIndex((s) => s.id === id || members(map, s.id).includes(id));
   for (const arc of map.arcs) {
     const over = arc.side === 'over';
+    const sign = over ? -1 : 1;
     const anchor = (id: string, leaving: boolean) => {
       const box = slotBox.get(id)!;
       const x = slotX.get(id)!;
       const isGrp = brackets.some((br) => br.id === id);
-      const shift = over && isGrp ? (box.right - x) * (leaving ? 0.45 : -0.45) : 0;
+      const shift = over && isGrp && !(leaving && opts.centredArcs) ? (box.right - x) * (leaving ? 0.45 : -0.45) : 0;
       const gap = leaving ? 4 : gapFor('arc');
+      const p = chords.get(id);
+      if (p) return { x, y: p.y + sign * (along(p, (sign * Math.PI) / 2) + gap) };
       return { x: x + shift, y: over ? box.top - gap : box.bottom + gap };
     };
     const a = anchor(arc.from, true);
-    const b = anchor(arc.to, false);
+    const homeNode = chords.get(home)!;
+    // Into home at an angle, it comes in along that ray (its own wedge of the
+    // mandala's hub), opened past the last slot's corner when that stands taller.
+    let ray: number | null = null;
+    if (arc.to === home && opts.homeArc !== undefined) {
+      const last = slotBox.get(map.spine[map.spine.length - 2].id)!;
+      const corner = Math.atan2((over ? MAIN_Y - last.top : last.bottom - MAIN_Y) + ARC_CLEAR, homeNode.x - last.right);
+      ray = Math.PI - sign * Math.max(opts.homeArc * (Math.PI / 180), corner);
+    }
+    const b = ray === null ? anchor(arc.to, false) : rim(homeNode, ray, gapFor('arc'));
+    const [i0, i1] = [spineAt(arc.from), spineAt(arc.to)].sort((p, q) => p - q);
+    const passed = map.spine.slice(i0 + 1, i1).map((s) => slotBox.get(s.id)!);
     const span = Math.abs(b.x - a.x);
-    const h = Math.min(190, Math.max(100, span * 0.42)) * (opts.arcScale ?? 1) * (over ? -1 : 1);
     const lean = (a.x - b.x) * 0.16;
-    edges.push(
-      cubic(`a-${arc.from}-${arc.to}`, 'arc', a, { x: a.x - lean * 0.4, y: a.y + h }, { x: b.x + lean, y: b.y + h }, b, pairs(map, arc.from, arc.to)),
-    );
+    const clears = (e: Edge) =>
+      sampleCubic(e.d).every((p) =>
+        passed.every((box) =>
+          p.x < box.left - 10 || p.x > box.right + 10 || (over ? p.y <= box.top - ARC_CLEAR : p.y >= box.bottom + ARC_CLEAR),
+        ),
+      );
+    let h = Math.min(190, Math.max(100, span * 0.42)) * (opts.arcScale ?? 1);
+    let edge: Edge;
+    do {
+      const c1 = { x: a.x - lean * 0.4, y: a.y + sign * h };
+      const c2 =
+        ray === null
+          ? { x: b.x + lean, y: b.y + sign * h }
+          : rim(homeNode, ray, gapFor('arc') + (homeNode.h / 2 + h) / Math.sin(Math.abs(Math.PI - ray)));
+      edge = cubic(`a-${arc.from}-${arc.to}`, 'arc', a, c1, c2, b, pairs(map, arc.from, arc.to));
+      h += 8;
+    } while (!clears(edge) && h < 600);
+    edges.push(edge);
   }
 
   // Home goes anywhere: three arrows fan out to the right, into open space.

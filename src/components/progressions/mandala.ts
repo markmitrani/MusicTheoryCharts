@@ -7,7 +7,7 @@ import {
   type ProgressionMap,
   type ResolvedChord,
 } from '@/lib/theory/progressions';
-import { layoutMap, type LabelKind, type MapLayout, type PlacedChord } from './layout';
+import { layoutMap, nodeSize, type LabelKind, type MapLayout, type PlacedChord } from './layout';
 
 /**
  * The mandala: every mode's map as one arm around a twin hub, I on the left
@@ -43,8 +43,10 @@ export const ARMS: ArmSpec[] = [
 /** Hubs sit a node apart either side of the centre. */
 const HUB_X = 64;
 /** Opened gap into home, so arms clear the hub and each other near the centre. */
-const HOME_GAP = 250;
+const HOME_GAP = 320;
 const ARC_SCALE = 0.42;
+/** Arcs into home arrive this far off their arm, inside its wedge (arms sit about 52° apart). */
+const HOME_ARC = 24;
 const LABEL_OUT = 96;
 const MARGIN = 70;
 
@@ -71,22 +73,36 @@ export interface MandalaLayout {
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; sevenths: boolean }): MandalaLayout {
+  // Every arm on a side comes home to the same hub: its home is laid out at the hub's size.
+  const hubW = (mode: string) => {
+    const map = getProgressionMap(mode);
+    const home = mapChords(map).find((ch) => ch.id === homeId(map))!;
+    return nodeSize(resolveChord(map, home, root, opts.sevenths), opts.labels).w;
+  };
+  const homeW = { major: hubW('major'), minor: hubW('minor') };
+
   const arms: Arm[] = ARMS.map((spec) => {
     const map = getProgressionMap(spec.mode);
     const resolved = new Map(mapChords(map).map((ch) => [ch.id, resolveChord(map, ch, root, opts.sevenths)]));
+    // Flow (+x in the linear layout) must point from the arm's tip toward its hub.
+    const turn = spec.side === 'major' ? 180 - spec.angle : -spec.angle;
+    const mirror = spec.side === 'minor' ? -1 : 1;
+    const flip = spec.flip ? -1 : 1;
     const layout = layoutMap(map, resolved, {
       labels: opts.labels,
       borrowed: false,
       homeGap: HOME_GAP,
       fan: false,
       arcScale: ARC_SCALE,
+      homeArc: HOME_ARC,
+      // Nodes stay upright on the page, so in the arm's frame they lie turned back.
+      tilt: Math.atan2(-flip * Math.sin(rad(turn)), mirror * Math.cos(rad(turn))),
+      homeW: homeW[spec.side],
+      // Flat arcs leaving a bracket's shoulder would hug its top chord.
+      centredArcs: true,
     });
     const home = layout.chords.get(homeId(map))!;
     const hub = { x: spec.side === 'major' ? -HUB_X : HUB_X, y: 0 };
-    // Flow (+x in the linear layout) must point from the arm's tip toward its hub.
-    const turn = spec.side === 'major' ? 180 - spec.angle : -spec.angle;
-    const mirror = spec.side === 'minor' ? -1 : 1;
-    const flip = spec.flip ? -1 : 1;
     const cos = Math.cos(rad(turn));
     const sin = Math.sin(rad(turn));
     const place = (p: Pt): Pt => {
