@@ -134,7 +134,8 @@ const MINOR: ProgressionMap = {
   ],
   borrowedMoves: [],
   demo: ['i', 'VI', 'iv', 'V', 'i'],
-  caption: 'The same flow in minor. V and vii° take the raised 7th of harmonic minor; ♭VII keeps the natural one.',
+  caption:
+    'Chords flow toward i. Bracketed chords share a job: ii° and iv prepare, V and vii° pull home on the raised 7th of harmonic minor, while ♭VII keeps the natural one. i can go anywhere.',
   borrowedCaption: 'Borrowed (dashed): the Neapolitan ♭II, the major IV of melodic minor, and the major I of a Picardy ending.',
 };
 
