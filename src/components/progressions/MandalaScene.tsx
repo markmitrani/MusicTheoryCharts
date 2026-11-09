@@ -3,7 +3,7 @@
 import { useId, useMemo, useState, type CSSProperties } from 'react';
 import type { NoteName } from '@/lib/theory/note';
 import { getScaleDef } from '@/lib/theory/scales';
-import { homeId, mapMoves } from '@/lib/theory/progressions';
+import { getProgressionMap, homeId, mapMoves, parseStep, stepRef } from '@/lib/theory/progressions';
 import { HaloFilter } from '@/components/cadence/FractalScene';
 import { STROKE, type Edge, type LabelKind } from './layout';
 import { ChordNode, Glass, carriesMove, roadsFor } from './MapScene';
@@ -15,11 +15,12 @@ interface MandalaSceneProps {
   root: NoteName;
   sevenths?: boolean;
   labels?: LabelKind[];
-  /** The card's mode: its arm is the one written in. */
+  /** The card's mode: its name is marked, and its side's hub writes in it. */
   current: string;
+  /** Written steps ("mode:id"). */
   playing?: string | null;
   picked?: string | null;
-  travel?: { from: string; to: string; n: number } | null;
+  travel?: { mode: string; from: string; to: string; n: number } | null;
   onChordClick?: (mode: string, id: string) => void;
   onPickMode?: (mode: string) => void;
   ariaLabel?: string;
@@ -29,6 +30,14 @@ interface MandalaSceneProps {
 const DEFAULT_LABELS: LabelKind[] = ['functions', 'notes'];
 
 type Hover = { mode: string; id: string; hub?: 'major' | 'minor' } | null;
+
+/** The hub side a step lands on, when it is its mode's home. */
+const hubSide = (ref: string | null) => {
+  if (!ref) return null;
+  const { mode, id } = parseStep(ref);
+  const arm = ARMS.find((a) => a.mode === mode);
+  return arm && id === homeId(getProgressionMap(mode)) ? arm.side : null;
+};
 
 const armVars = (mode: string) =>
   ({
@@ -106,7 +115,7 @@ export function MandalaScene({
     ['--inner' as string]: conicAt(`${centre.x}% ${centre.y}%`, conicStops(ARMS, (mode) => `var(--mandala-${mode}-to)`)),
   } as CSSProperties;
 
-  const pulseArm = m.arms.find((a) => a.mode === current);
+  const pulseArm = travel ? m.arms.find((a) => a.mode === travel.mode) : undefined;
   const pulse = travel && pulseArm ? roadsFor(pulseArm.layout.edges, travel.from, travel.to)[0] : undefined;
 
   return (
@@ -153,7 +162,7 @@ export function MandalaScene({
                     {e.tip && <polygon points={e.tip} className={styles.tip} />}
                   </g>
                 ))}
-                {pulse && travel && arm.mode === current && (
+                {pulse && travel && arm === pulseArm && (
                   <path
                     key={`p${travel.n}`}
                     d={pulse.d}
@@ -172,8 +181,8 @@ export function MandalaScene({
                   labels={labels}
                   dim={nodeDim(arm, p.id)}
                   hovered={!hover?.hub && hover?.mode === arm.mode && hover.id === p.id}
-                  picked={arm.mode === current && picked === p.id}
-                  playing={arm.mode === current && playing === p.id}
+                  picked={picked === stepRef(arm.mode, p.id)}
+                  playing={playing === stepRef(arm.mode, p.id)}
                   glassId={glass}
                   colourGlassId={colourGlass}
                   haloId={`halo${uid}`}
@@ -218,8 +227,8 @@ export function MandalaScene({
                 labels={labels}
                 dim={hubDim(side)}
                 hovered={hover?.hub === side}
-                picked={currentSide === side && picked === hub.id}
-                playing={currentSide === side && playing === hub.id}
+                picked={hubSide(picked) === side}
+                playing={hubSide(playing) === side}
                 glassId={glass}
                 colourGlassId={glass}
                 ring={ARMS.filter((a) => a.side === side).map((a) => ({ angle: a.angle, color: `var(--prog-${a.mode}-node)` }))}

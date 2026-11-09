@@ -80,9 +80,9 @@ export interface ProgressionsElement extends ElementBase {
   labelOrder?: LabelKind[];
   /** The one label switched off, if any (at least one always shows). */
   labelsHidden?: LabelKind;
-  /** The written progression, as map chord ids in order. */
+  /** The written progression in order, each step "mode:id" (see `stepRef`); modes may mix. */
   trail: string[];
-  /** Mandala view: every mode as one arm around the tonic; this mode's arm writes. */
+  /** Mandala view: every mode as one arm around the tonic, all of them writing. */
   mandala?: boolean;
 }
 

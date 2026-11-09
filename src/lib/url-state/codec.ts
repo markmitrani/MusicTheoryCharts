@@ -1,7 +1,7 @@
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import type { CanvasElement, Page } from '@/lib/canvas-store/types';
 import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
-import { getProgressionMap, hasProgressionMap, mapChords } from '@/lib/theory/progressions';
+import { getProgressionMap, hasProgressionMap, mapChords, parseStep, stepRef } from '@/lib/theory/progressions';
 
 /**
  * Compact URL codec. The current writer emits v2; v1 is still decoded so links
@@ -12,8 +12,10 @@ import { getProgressionMap, hasProgressionMap, mapChords } from '@/lib/theory/pr
  *   scale   = s + pc1 + type1 + x2 + y2         (7 chars)
  *   harmony = h + pc1 + type1 + x2 + y2 [+f1]   (7-8 chars; trailing 1 = 7ths)
  *   progressions = g + pc1 + type1 + flags1 + x2 + y2 + steps (8 + n chars; flags = 7ths + borrowed*2
- *             + oneLabel*4 + mandala*8 + notesFirst*16; step = base36 index into the map's chords, see
- *             mapChords. Labels shown: functions | notes by default; oneLabel keeps just the first)
+ *             + oneLabel*4 + mandala*8 + notesFirst*16; step = base36 index into the chords of the
+ *             step's mode, see mapChords; an uppercase letter A + SCALE_REGISTRY index switches that
+ *             mode for the steps after it, which start in the element's own. Labels shown: functions |
+ *             notes by default; oneLabel keeps just the first)
  *   chord   = c + pc1 + type1 + pack1 + x2 + y2 (8 chars; pack = inv*2+seventh)
  *   circle  = o + center1 + flags1 + x2 + y2    (7 chars; flags = sig + minor*2)
  *   pitchax = p + center1 + x2 + y2             (6 chars)
@@ -166,13 +168,17 @@ export function encodeDoc(doc: DocSnapshot): string {
           return `s${pcCode(e.root)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
         }
         if (e.kind === 'progressions') {
-          const ids = mapChords(getProgressionMap(e.scaleId)).map((ch) => ch.id);
-          const steps = e.trail
-            .slice(-MAX_TRAIL)
-            .map((id) => ids.indexOf(id))
-            .filter((i) => i >= 0)
-            .map((i) => b36(i, 1))
-            .join('');
+          let mode = e.scaleId;
+          let steps = '';
+          for (const ref of e.trail.slice(-MAX_TRAIL)) {
+            const step = parseStep(ref);
+            if (!hasProgressionMap(step.mode)) continue;
+            const at = mapChords(getProgressionMap(step.mode)).findIndex((ch) => ch.id === step.id);
+            if (at < 0) continue;
+            if (step.mode !== mode) steps += String.fromCharCode(65 + SCALE_REGISTRY.indexOf(step.mode));
+            mode = step.mode;
+            steps += b36(at, 1);
+          }
           const shown = (e.labelOrder ?? ['functions', 'notes']).filter((k) => k !== e.labelsHidden);
           const flags =
             (e.showSevenths ? 1 : 0) +
@@ -307,19 +313,25 @@ function decodeV2(body: string): DecodedDoc | null {
             x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
           };
         }
-        if (kind === 'g' && code.length >= 8 && code.length <= 8 + MAX_TRAIL) {
+        if (kind === 'g' && code.length >= 8 && code.length <= 8 + 2 * MAX_TRAIL) {
           const root = parsePc(code[1]);
           const scaleId = SCALE_REGISTRY[parseInt(code[2], 36)];
           const flags = parseInt(code[3], 36);
           if (!root || !scaleId || !hasProgressionMap(scaleId) || Number.isNaN(flags)) {
             throw new Error(`bad progressions: ${code}`);
           }
-          const ids = mapChords(getProgressionMap(scaleId)).map((ch) => ch.id);
-          const trail = [...code.slice(8)].map((ch) => {
-            const id = ids[parseInt(ch, 36)];
+          let mode = scaleId;
+          const trail: string[] = [];
+          for (const ch of code.slice(8)) {
+            if (ch >= 'A' && ch <= 'Z') {
+              mode = SCALE_REGISTRY[ch.charCodeAt(0) - 65];
+              if (!mode || !hasProgressionMap(mode)) throw new Error(`bad trail mode: ${code}`);
+              continue;
+            }
+            const id = mapChords(getProgressionMap(mode))[parseInt(ch, 36)]?.id;
             if (!id) throw new Error(`bad trail: ${code}`);
-            return id;
-          });
+            trail.push(stepRef(mode, id));
+          }
           return {
             id: freshId(), kind: 'progressions', z: i + 1, root, octave: DEFAULT_OCTAVE, scaleId, trail,
             showSevenths: (flags & 1) === 1,

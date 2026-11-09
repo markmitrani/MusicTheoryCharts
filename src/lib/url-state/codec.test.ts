@@ -79,7 +79,7 @@ describe('url codec', () => {
         for (const showBorrowed of [false, true])
           for (const labels of LABEL_CASES)
             for (const mandala of [false, true]) {
-            const trail = scaleId === 'major' ? ['I', 'vi', 'iv', 'bVII', 'I'] : [];
+            const trail = scaleId === 'major' ? ['major:I', 'major:vi', 'major:iv', 'major:bVII', 'major:I'] : [];
             const el = {
               id: 'g', kind: 'progressions', x: 0, y: 0, z: 1, root: 'F#', octave: 3,
               scaleId, showSevenths, showBorrowed, ...labels, mandala, trail,
@@ -89,6 +89,14 @@ describe('url codec', () => {
               kind: 'progressions', root: 'F#', scaleId, showSevenths, showBorrowed, ...labels, mandala, trail,
             });
           }
+  });
+
+  it('round-trips a progression written across modes', () => {
+    const trail = ['dorian:i', 'major:IV', 'mixolydian:VII', 'mixolydian:I', 'locrian:II', 'dorian:i'];
+    const el = { id: 'g', kind: 'progressions', x: 0, y: 0, z: 1, root: 'D', octave: 3, scaleId: 'dorian', mandala: true, trail } as const;
+    const code = encodeDoc({ activePageId: 'p-g', pages: [page('g', [el])] });
+    expect(code).toMatch(/~g\w{7}.A.I..J.F.$/); // a mode letter only where the mode changes
+    expect(decodeDoc(code)!.pages[0].elements[0]).toMatchObject({ scaleId: 'dorian', trail });
   });
 
   it('reads old links that hid chord names as functions only', () => {
@@ -103,6 +111,9 @@ describe('url codec', () => {
     expect(decodeDoc('v2:0;~g01000000')).not.toBeNull(); // C minor, no trail
     expect(decodeDoc('v2:0;~g02000000')).toBeNull(); // melodic minor has no map
     expect(decodeDoc('v2:0;~g00000000z')).toBeNull(); // chord 35 doesn't exist
+    expect(decodeDoc('v2:0;~g00000000C0')).toBeNull(); // a step in melodic minor, which has no map
+    // older links have no mode letters: every step is in the element's own mode
+    expect(decodeDoc('v2:0;~g000000070')!.pages[0].elements[0]).toMatchObject({ trail: ['major:I', 'major:vii0'] });
   });
 
   it('round-trips the roads ring', () => {

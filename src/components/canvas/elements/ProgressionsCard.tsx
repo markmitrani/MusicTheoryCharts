@@ -5,11 +5,13 @@ import { getScaleDef } from '@/lib/theory/scales';
 import { voiceProgression } from '@/lib/theory/cadence';
 import {
   type LabelKind,
+  type ResolvedChord,
   getProgressionMap,
-  mapChords,
-  mapMoves,
-  progressionSpecs,
-  resolveChord,
+  resolveStep,
+  stepRef,
+  stepRoad,
+  stepSpecs,
+  stepTwins,
   tonicName,
 } from '@/lib/theory/progressions';
 import type { ProgressionsElement } from '@/lib/canvas-store/types';
@@ -36,17 +38,26 @@ interface ProgressionsCardProps {
 
 const MAX_TRAIL = 16;
 
+type Travel = { mode: string; from: string; to: string; n: number } | null;
+
+/** The pulse for a step: along the road that carries it, on the later chord's map. */
+const travelOf = (from: string, to: string, n: number): Travel => {
+  const road = stepRoad(from, to);
+  return road ? { ...road, n } : null;
+};
+
 /**
  * Progressions: the harmonic flow map of a key. Clicking a chord plays it and
- * writes it into the progression along the top; the play button plays what's
- * written (or walks the map's own example when nothing is).
+ * writes it into the progression along the top (in the mandala, from any
+ * mode); the play button plays what's written (or walks the map's own example
+ * when nothing is).
  */
 export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCardProps) {
   const [editing, setEditing] = useState(false);
   const [sounding, setSounding] = useState<string | null>(null);
   const [step, setStep] = useState(-1);
   const [playingAll, setPlayingAll] = useState(false);
-  const [travel, setTravel] = useState<{ from: string; to: string; n: number } | null>(null);
+  const [travel, setTravel] = useState<Travel>(null);
   // Pencil: on by default, clicks on the map write; off, they only play.
   const [writing, setWriting] = useState(true);
   // Crumb selected in the progression row (selecting doesn't sound).
@@ -65,22 +76,27 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
   const borrowed = !mandalaView && !!el.showBorrowed && map.borrowed.length > 0;
   const title = `${tonicName(el.root, map)} ${getScaleDef(el.scaleId).label}`;
 
-  const resolved = useMemo(
-    () => new Map(mapChords(map).map((ch) => [ch.id, resolveChord(map, ch, el.root, sevenths)])),
-    [map, el.root, sevenths],
-  );
-  const moves = useMemo(() => mapMoves(map, borrowed), [map, borrowed]);
-  const trail = el.trail.filter((id) => resolved.has(id));
+  // Written steps keep their own mode, so the trail outlives a change of mode.
+  const resolved = useMemo(() => {
+    const out = new Map<string, ResolvedChord>();
+    for (const ref of el.trail) {
+      const r = resolveStep(ref, el.root, sevenths);
+      if (r) out.set(ref, r);
+    }
+    return out;
+  }, [el.trail, el.root, sevenths]);
+  const trail = el.trail.filter((ref) => resolved.has(ref));
 
   const update = (patch: Partial<ProgressionsElement>) =>
     canvasStore.getState().updateElement(el.id, patch, { commit: true });
 
-  const voiced = (ids: string[]) => voiceProgression(progressionSpecs(map, ids, el.root, sevenths), el.root);
+  const voiced = (refs: string[]) => voiceProgression(stepSpecs(refs, el.root, sevenths), el.root);
 
-  const write = (id: string) => {
+  const write = (mode: string, id: string) => {
+    const ref = stepRef(mode, id);
     // Voice-led from the chord before it, so the step sounds as it will in the progression.
     const prev = writing ? trail[trail.length - 1] : undefined;
-    const chords = voiced(prev ? [prev, id] : [id]);
+    const chords = voiced(prev ? [prev, ref] : [ref]);
     playChord(chords[chords.length - 1], {
       onLit: () => {},
       onDone: () => {
@@ -88,15 +104,15 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
         setTravel(null);
       },
     });
-    setSounding(id);
+    setSounding(ref);
     setStep(-1);
     if (!writing) return;
-    setTravel(prev ? { from: prev, to: id, n: Date.now() } : null);
-    update({ trail: [...trail, id].slice(-MAX_TRAIL) });
+    setTravel(prev ? travelOf(prev, ref, Date.now()) : null);
+    update({ trail: [...trail, ref].slice(-MAX_TRAIL) });
   };
 
   const playAll = () => {
-    const ids = trail.length > 0 ? trail : map.demo;
+    const ids = trail.length > 0 ? trail : map.demo.map((id) => stepRef(el.scaleId, id));
     setPlayingAll(true);
     playProgression(
       voiced(ids),
@@ -105,7 +121,7 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
           setSounding(j < 0 ? null : ids[j]);
           setStep(trail.length > 0 ? j : -1);
           // While a chord sounds, a pulse runs along the road to the next one.
-          setTravel(j >= 0 && j < ids.length - 1 ? { from: ids[j], to: ids[j + 1], n: j } : null);
+          setTravel(j >= 0 && j < ids.length - 1 ? travelOf(ids[j], ids[j + 1], j) : null);
         },
         onDone: () => {
           setPlayingAll(false);
@@ -143,16 +159,12 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
     return () => ro.disconnect();
   }, [mandalaFrame]);
 
-  // In the mandala only the card's own mode writes; the other arms just sound.
-  const playFrom = (mode: string, id: string) => {
-    if (mode === el.scaleId) return write(id);
-    const other = getProgressionMap(mode);
-    const [chord] = voiceProgression(progressionSpecs(other, [id], el.root, sevenths), el.root);
-    playChord(chord, { onLit: () => {}, onDone: () => {} });
-  };
+  // A step lights the chord on this map that sounds like it, whichever mode wrote it.
+  const onMap = (ref: string | null | undefined) => (ref ? (stepTwins(ref, el.scaleId)[0] ?? null) : null);
+  const pickedRef = picked === null ? null : (trail[picked] ?? null);
 
   const caption = mandalaView
-    ? 'Every mode around one tonic: the major side comes home to I, the minor side to i. Click a mode’s name to write in it.'
+    ? 'Every mode around one tonic: the major side comes home to I, the minor side to i. Write with chords from any of them; a mode’s name picks the card’s own.'
     : borrowed && map.borrowedCaption
       ? map.borrowedCaption
       : map.caption;
@@ -188,8 +200,6 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
         >
           <div className={styles.topBar}>
             <ProgressionTrail
-              map={map}
-              moves={moves}
               trail={trail}
               resolved={resolved}
               playing={step}
@@ -243,14 +253,13 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
                 labels={labels}
                 current={el.scaleId}
                 playing={sounding}
-                picked={picked === null ? null : (trail[picked] ?? null)}
+                picked={pickedRef}
                 travel={travel}
-                onChordClick={playFrom}
+                onChordClick={write}
                 onPickMode={(mode) => {
                   if (mode === el.scaleId) return;
                   uiTick(1);
-                  setPicked(null);
-                  update({ scaleId: mode, trail: [] });
+                  update({ scaleId: mode });
                 }}
                 ariaLabel={`${tonicName(el.root, map)} progression mandala`}
               />
@@ -261,10 +270,10 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
                 sevenths={sevenths}
                 labels={labels}
                 borrowed={borrowed}
-                playing={sounding}
-                picked={picked === null ? null : (trail[picked] ?? null)}
-                travel={travel}
-                onChordClick={write}
+                playing={onMap(sounding)}
+                picked={onMap(pickedRef)}
+                travel={travel?.mode === el.scaleId ? travel : null}
+                onChordClick={(id) => write(el.scaleId, id)}
                 ariaLabel={`${title} progression map`}
               />
             )}
@@ -288,7 +297,7 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
             typeId={`progressions:${el.scaleId}`}
             onChange={(root, typeId) => {
               const scaleId = typeId?.split(':')[1] ?? el.scaleId;
-              update({ root: root ?? el.root, scaleId, trail: scaleId === el.scaleId ? el.trail : [] });
+              update({ root: root ?? el.root, scaleId });
             }}
             onClose={() => setEditing(false)}
           />

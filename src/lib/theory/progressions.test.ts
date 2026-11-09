@@ -9,6 +9,11 @@ import {
   mapMoves,
   progressionSpecs,
   resolveChord,
+  resolveStep,
+  stepFollows,
+  stepRoad,
+  stepSpecs,
+  stepTwins,
   tonicName,
 } from './progressions';
 
@@ -114,5 +119,37 @@ describe('progression maps', () => {
       { pc: 0, quality: 'maj7' },
     ]);
     expect(homeId(map)).toBe('I');
+  });
+});
+
+describe('written steps', () => {
+  it('resolve and voice in their own mode', () => {
+    expect(resolveStep('dorian:IV', 'D')).toMatchObject({ numeral: 'IV', name: 'G' });
+    expect(resolveStep('phrygian:II', 'E')).toMatchObject({ numeral: '♭II', name: 'F' });
+    expect(resolveStep('major:nope', 'C')).toBeUndefined();
+    expect(resolveStep('IV', 'C')).toBeUndefined();
+    expect(stepSpecs(['dorian:i', 'mixolydian:VII', 'major:I'], 'C')).toEqual([
+      { pc: 0, quality: 'min' },
+      { pc: 10, quality: 'maj' },
+      { pc: 0, quality: 'maj' },
+    ]);
+  });
+
+  it('find the chords on another map that sound the same', () => {
+    expect(stepTwins('major:IV', 'mixolydian')).toEqual(['IV']);
+    expect(stepTwins('mixolydian:VII', 'major')).toEqual(['bVII']); // borrowed there
+    expect(stepTwins('lydian:vii', 'major')).toEqual([]); // no Bm in C major
+    expect(stepTwins('major:vii', 'major')).toEqual(['vii']);
+    expect(stepTwins('lydian:V', 'major')).toEqual(['V']);
+  });
+
+  it('follow the flow on the later chord’s map, and change mode freely', () => {
+    expect(stepFollows('major:ii', 'major:V')).toBe(true);
+    expect(stepFollows('major:V', 'major:IV')).toBe(false); // retrogression
+    expect(stepFollows('major:IV', 'mixolydian:VII')).toBe(true); // IV ⇄ ♭VII in Mixolydian
+    expect(stepFollows('mixolydian:I', 'dorian:IV')).toBe(true); // no I in Dorian: a change of mode
+    expect(stepFollows('dorian:IV', 'minor:i')).toBe(true); // as melodic minor's IV, into i
+    expect(stepRoad('major:IV', 'mixolydian:VII')).toEqual({ mode: 'mixolydian', from: 'IV', to: 'VII' });
+    expect(stepRoad('mixolydian:I', 'dorian:IV')).toBeUndefined();
   });
 });

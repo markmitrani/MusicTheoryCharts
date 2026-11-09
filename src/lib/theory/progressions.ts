@@ -412,3 +412,81 @@ export function progressionSpecs(map: ProgressionMap, ids: string[], root: NoteN
       return { pc: r.pc, quality: r.quality };
     });
 }
+
+// ---- written steps ----
+
+/**
+ * A written step names its chord and the map it came from, "mode:id". Every
+ * map shares the tonic, so one progression can cross modes (in the mandala)
+ * and survives a change of mode.
+ */
+export const stepRef = (mode: string, id: string) => `${mode}:${id}`;
+
+export function parseStep(ref: string): { mode: string; id: string } {
+  const at = ref.indexOf(':');
+  return { mode: ref.slice(0, Math.max(0, at)), id: ref.slice(at + 1) };
+}
+
+function stepChord(ref: string): { map: ProgressionMap; chord: MapChord } | undefined {
+  const { mode, id } = parseStep(ref);
+  const map = MAPS[mode];
+  const chord = map && mapChords(map).find((ch) => ch.id === id);
+  return chord ? { map, chord } : undefined;
+}
+
+/** The step's chord in a real key, or undefined when it names no map chord. */
+export function resolveStep(ref: string, root: NoteName, sevenths = false): ResolvedChord | undefined {
+  const s = stepChord(ref);
+  return s && resolveChord(s.map, s.chord, root, sevenths);
+}
+
+/** Chord specs for written steps (voicing input for `voiceProgression`). */
+export function stepSpecs(refs: string[], root: NoteName, sevenths = false): ChordSpec[] {
+  return refs.flatMap((ref) => {
+    const r = resolveStep(ref, root, sevenths);
+    return r ? [{ pc: r.pc, quality: r.quality }] : [];
+  });
+}
+
+/** The chords on `mode`'s map that sound like the step (same root and triad). */
+export function stepTwins(ref: string, mode: string): string[] {
+  const s = stepChord(ref);
+  const map = MAPS[mode];
+  if (!s || !map) return [];
+  if (s.map === map) return [s.chord.id];
+  const sound = resolveChord(s.map, s.chord, 'C');
+  return mapChords(map)
+    .filter((ch) => {
+      const r = resolveChord(map, ch, 'C');
+      return r.pc === sound.pc && r.quality === sound.quality;
+    })
+    .map((ch) => ch.id);
+}
+
+const MOVES = new Map<string, Set<string>>();
+const allMoves = (map: ProgressionMap) => {
+  if (!MOVES.has(map.id)) MOVES.set(map.id, mapMoves(map, true));
+  return MOVES.get(map.id)!;
+};
+
+/**
+ * Whether a written step follows the flow, read on the later chord's map:
+ * a chord there that sounds like the earlier one stands in for it. When
+ * that map has no such chord the step changes mode, which never runs against
+ * the flow.
+ */
+export function stepFollows(from: string, to: string): boolean {
+  const z = stepChord(to);
+  if (!z) return true;
+  const twins = stepTwins(from, z.map.id);
+  return twins.length === 0 || twins.some((id) => followsFlow(z.map, allMoves(z.map), id, z.chord.id));
+}
+
+/** The road a step travels on the later chord's map, when one carries it. */
+export function stepRoad(from: string, to: string): { mode: string; from: string; to: string } | undefined {
+  const z = stepChord(to);
+  if (!z) return undefined;
+  const moves = allMoves(z.map);
+  const twin = stepTwins(from, z.map.id).find((id) => moves.has(key(id, z.chord.id)));
+  return twin === undefined ? undefined : { mode: z.map.id, from: twin, to: z.chord.id };
+}

@@ -7,15 +7,14 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
-import { followsFlow, type LabelKind, type ProgressionMap, type ResolvedChord } from '@/lib/theory/progressions';
+import { stepFollows, type LabelKind, type ResolvedChord } from '@/lib/theory/progressions';
 import { uiTick } from '@/lib/playback/playback';
 import { Acc } from '@/components/cadence/Acc';
 import { CloseIcon, PencilIcon } from '@/components/chrome/icons';
 import styles from './ProgressionTrail.module.scss';
 
 interface ProgressionTrailProps {
-  map: ProgressionMap;
-  moves: Set<string>;
+  /** Written steps ("mode:id"), possibly from several modes. */
   trail: string[];
   resolved: Map<string, ResolvedChord>;
   /** Crumb sounding during playback, -1 for none. */
@@ -51,8 +50,6 @@ const DRAG_START = 4;
  * ⌥←/⌥→ move the chord.
  */
 export function ProgressionTrail({
-  map,
-  moves,
   trail,
   resolved,
   playing,
@@ -191,8 +188,8 @@ export function ProgressionTrail({
           {trail.map((id, i) => {
             const r = resolved.get(id);
             if (!r) return null;
-            const against = i > 0 && !followsFlow(map, moves, trail[i - 1], id);
-            const nextAgainst = i < trail.length - 1 && !followsFlow(map, moves, id, trail[i + 1]);
+            const against = i > 0 && !stepFollows(trail[i - 1], id);
+            const nextAgainst = i < trail.length - 1 && !stepFollows(id, trail[i + 1]);
             const lifted = dragging?.i === i;
             return (
               <span
