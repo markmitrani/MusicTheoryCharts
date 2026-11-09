@@ -18,7 +18,7 @@ import { mod12, type ChordSpec } from './cadence';
  * borrowed chords from parallel scales, each standing in for a slot.
  *
  * Chord ids and their order (spine, then borrowed) are stored in shared links:
- * APPEND-ONLY per map.
+ * APPEND-ONLY per map. A map whose chords move keeps its old order in `linkOrder`.
  */
 
 /** What a chord shows: its function (numeral) or its notes (chord name). */
@@ -72,6 +72,8 @@ export interface ProgressionMap {
   /** One or two sentences under the map; **…** marks the colour chords, set bold. */
   caption: string;
   borrowedCaption?: string;
+  /** Chord ids in the order links store them, when the drawing has since moved chords. */
+  linkOrder?: string[];
 }
 
 export const isGroup = (s: MapSlot): s is MapGroup => 'top' in s;
@@ -141,8 +143,8 @@ const DORIAN: ProgressionMap = {
   modeDegree: 1,
   spine: [
     c('III', 2),
-    g('pre', c('v', 4), c('ii', 1, { colour: true }), true),
-    g('cad', c('VII', 6), c('IV', 3, { colour: true }), true),
+    g('pre', c('v', 4), c('VII', 6), true),
+    g('cad', c('ii', 1, { colour: true }), c('IV', 3, { colour: true }), true),
     c('i', 0),
   ],
   arcs: [
@@ -150,6 +152,7 @@ const DORIAN: ProgressionMap = {
     { from: 'pre', to: 'i', side: 'over' },
   ],
   borrowed: [b('V', 4, 'harmonicMinor', 'pre'), b('iv', 3, 'minor', 'cad')],
+  linkOrder: ['III', 'v', 'ii', 'VII', 'IV', 'i', 'V', 'iv'],
   borrowedMoves: [],
   demo: ['i', 'III', 'ii', 'IV', 'i'],
   caption: 'Minor with a raised 6th. **IV** and **ii** hold it (in fuller colour). vi° is left off: its tritone pulls toward the relative major.',
@@ -244,6 +247,13 @@ export function getProgressionMap(scaleId: string): ProgressionMap {
 export function mapChords(map: ProgressionMap): MapChord[] {
   const spine = map.spine.flatMap((s) => (isGroup(s) ? [s.top, s.bottom] : [s]));
   return [...spine, ...map.borrowed];
+}
+
+/** Every chord in the order shared links store it. */
+export function linkChords(map: ProgressionMap): MapChord[] {
+  if (!map.linkOrder) return mapChords(map);
+  const byId = new Map(mapChords(map).map((ch) => [ch.id, ch]));
+  return map.linkOrder.map((id) => byId.get(id)!);
 }
 
 export const homeId = (map: ProgressionMap) => (map.spine[map.spine.length - 1] as MapChord).id;

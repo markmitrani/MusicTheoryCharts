@@ -112,6 +112,8 @@ describe('url codec', () => {
     expect(decodeDoc('v2:0;~g02000000')).toBeNull(); // melodic minor has no map
     expect(decodeDoc('v2:0;~g00000000z')).toBeNull(); // chord 35 doesn't exist
     expect(decodeDoc('v2:0;~g00000000C0')).toBeNull(); // a step in melodic minor, which has no map
+    // Dorian links keep their order after ♭VII and ii traded places: i ii ♭VII
+    expect(decodeDoc('v2:0;~g0500000523')!.pages[0].elements[0]).toMatchObject({ trail: ['dorian:i', 'dorian:ii', 'dorian:VII'] });
     // older links have no mode letters: every step is in the element's own mode
     expect(decodeDoc('v2:0;~g000000070')!.pages[0].elements[0]).toMatchObject({ trail: ['major:I', 'major:vii0'] });
   });

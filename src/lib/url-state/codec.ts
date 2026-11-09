@@ -1,7 +1,7 @@
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import type { CanvasElement, Page } from '@/lib/canvas-store/types';
 import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
-import { getProgressionMap, hasProgressionMap, mapChords, parseStep, stepRef } from '@/lib/theory/progressions';
+import { getProgressionMap, hasProgressionMap, linkChords, parseStep, stepRef } from '@/lib/theory/progressions';
 
 /**
  * Compact URL codec. The current writer emits v2; v1 is still decoded so links
@@ -13,7 +13,7 @@ import { getProgressionMap, hasProgressionMap, mapChords, parseStep, stepRef } f
  *   harmony = h + pc1 + type1 + x2 + y2 [+f1]   (7-8 chars; trailing 1 = 7ths)
  *   progressions = g + pc1 + type1 + flags1 + x2 + y2 + steps (8 + n chars; flags = 7ths + borrowed*2
  *             + oneLabel*4 + mandala*8 + notesFirst*16; step = base36 index into the chords of the
- *             step's mode, see mapChords; an uppercase letter A + SCALE_REGISTRY index switches that
+ *             step's mode, see linkChords; an uppercase letter A + SCALE_REGISTRY index switches that
  *             mode for the steps after it, which start in the element's own. Labels shown: functions |
  *             notes by default; oneLabel keeps just the first)
  *   chord   = c + pc1 + type1 + pack1 + x2 + y2 (8 chars; pack = inv*2+seventh)
@@ -173,7 +173,7 @@ export function encodeDoc(doc: DocSnapshot): string {
           for (const ref of e.trail.slice(-MAX_TRAIL)) {
             const step = parseStep(ref);
             if (!hasProgressionMap(step.mode)) continue;
-            const at = mapChords(getProgressionMap(step.mode)).findIndex((ch) => ch.id === step.id);
+            const at = linkChords(getProgressionMap(step.mode)).findIndex((ch) => ch.id === step.id);
             if (at < 0) continue;
             if (step.mode !== mode) steps += String.fromCharCode(65 + SCALE_REGISTRY.indexOf(step.mode));
             mode = step.mode;
@@ -328,7 +328,7 @@ function decodeV2(body: string): DecodedDoc | null {
               if (!mode || !hasProgressionMap(mode)) throw new Error(`bad trail mode: ${code}`);
               continue;
             }
-            const id = mapChords(getProgressionMap(mode))[parseInt(ch, 36)]?.id;
+            const id = linkChords(getProgressionMap(mode))[parseInt(ch, 36)]?.id;
             if (!id) throw new Error(`bad trail: ${code}`);
             trail.push(stepRef(mode, id));
           }

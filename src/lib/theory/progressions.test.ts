@@ -5,6 +5,7 @@ import {
   getProgressionMap,
   hasProgressionMap,
   homeId,
+  linkChords,
   mapChords,
   mapMoves,
   progressionSpecs,
@@ -119,6 +120,16 @@ describe('progression maps', () => {
       { pc: 0, quality: 'maj7' },
     ]);
     expect(homeId(map)).toBe('I');
+  });
+});
+
+describe('link order', () => {
+  it('keeps every map’s chords, and Dorian’s order from before ♭VII and ii traded places', () => {
+    for (const id of MAP_GROUPS.flatMap((grp) => grp.ids)) {
+      const map = getProgressionMap(id);
+      expect(linkChords(map).map((ch) => ch.id).sort()).toEqual(mapChords(map).map((ch) => ch.id).sort());
+    }
+    expect(linkChords(getProgressionMap('dorian')).map((ch) => ch.id)).toEqual(['III', 'v', 'ii', 'VII', 'IV', 'i', 'V', 'iv']);
   });
 });
 
