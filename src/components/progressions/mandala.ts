@@ -11,9 +11,9 @@ import { layoutMap, type LabelKind, type MapLayout, type PlacedChord } from './l
 
 /**
  * The mandala: every mode's map as one arm around a twin hub, I on the left
- * and i on the right (the same tonic). The major-side modes come into I,
- * fanning counterclockwise from Lydian at the top to Mixolydian lowest; the
- * minor-side modes come into i, clockwise from minor at the top to Locrian.
+ * and i on the right (the same tonic). Clockwise the modes darken: Lydian
+ * lowest on the left, up through major to Mixolydian, coming into I; then
+ * Dorian at the top, down through minor and Phrygian to Locrian, into i.
  *
  * Each arm is that mode's own linear layout placed by one rigid transform:
  * rotated so its flow points at the hub (mirrored on the right, so its arcs
@@ -31,11 +31,11 @@ export interface ArmSpec {
 }
 
 export const ARMS: ArmSpec[] = [
-  { mode: 'lydian', side: 'major', angle: 128 },
+  { mode: 'mixolydian', side: 'major', angle: 128 },
   { mode: 'major', side: 'major', angle: 180 },
-  { mode: 'mixolydian', side: 'major', angle: 232 },
-  { mode: 'minor', side: 'minor', angle: 82, flip: true },
-  { mode: 'dorian', side: 'minor', angle: 29, flip: true },
+  { mode: 'lydian', side: 'major', angle: 232 },
+  { mode: 'dorian', side: 'minor', angle: 82, flip: true },
+  { mode: 'minor', side: 'minor', angle: 29 },
   { mode: 'phrygian', side: 'minor', angle: -24 },
   { mode: 'locrian', side: 'minor', angle: -77 },
 ];
@@ -153,7 +153,7 @@ export function layoutMandala(root: NoteName, opts: { labels: LabelKind[]; seven
  * Conic gradient arguments with one colour stop per arm, at the arm's own
  * angle (CSS conic angles run clockwise from 12 o'clock), starting and closing
  * on the first arm so the circle has no seam: "from 8deg, c1 0deg, …, c1 360deg".
- * Used for the angular wash and for the card's outline in the mandala.
+ * Used for the angular wash and the card's focus outline.
  */
 export function conicStops(arms: ArmSpec[], colourOf: (mode: string) => string): string {
   const stops = arms

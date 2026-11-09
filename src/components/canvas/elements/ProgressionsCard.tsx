@@ -117,8 +117,8 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
     );
   };
 
-  // Angular outline: in the mandala, the modes' colours round its centre (each
-  // at the angle its arm sits); selected, in either view, the focus version.
+  // Focus outline, in either view: the modes' colours round the mandala's
+  // centre (each at the angle its arm sits), over the selected stroke.
   const mandalaFrame = useMemo(
     () => (mandalaView ? layoutMandala(el.root, { labels, sevenths }).viewBox : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,12 +183,8 @@ export function ProgressionsCard({ el, selected, soloSelected }: ProgressionsCar
         <div
           ref={cardRef}
           className={`${chordStyles.card} ${styles.angular}`}
-          data-ring={selected ? 'focus' : mandalaView ? 'plain' : undefined}
-          style={
-            selected || mandalaView
-              ? { ['--angular-ring' as string]: modeRing(ringAt, selected ? 'focus' : 'plain') }
-              : undefined
-          }
+          data-ring={selected ? 'focus' : undefined}
+          style={selected ? { ['--angular-ring' as string]: modeRing(ringAt, 'focus') } : undefined}
         >
           <div className={styles.topBar}>
             <ProgressionTrail

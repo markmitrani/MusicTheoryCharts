@@ -5,7 +5,7 @@
   width: 820px;
 
   &[data-view='mandala'] {
-    width: 1040px;
+    width: 1136px;
   }
 }
 
@@ -47,8 +47,8 @@
   }
 }
 
-// The card's outline as the modes' angular gradient (--angular-ring, set
-// inline): plain in the mandala, and over the selected stroke when focused.
+// The focus outline as the modes' angular gradient over the selected stroke
+// (--angular-ring, set inline).
 .angular {
   @include angular-ring(2px);
 
