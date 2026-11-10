@@ -39,11 +39,7 @@ export function ScaleCard({ el, selected, soloSelected }: ScaleCardProps) {
 
   const play = () => {
     setPlaying(true);
-    playScale(
-      pitches,
-      { onLit: setLit, onDone: () => setPlaying(false) },
-      canvasStore.getState().tempoMs,
-    );
+    playScale(pitches, { onLit: setLit, onDone: () => setPlaying(false) });
   };
 
   return (

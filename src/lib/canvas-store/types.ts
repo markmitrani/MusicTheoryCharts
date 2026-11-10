@@ -1,6 +1,8 @@
 import type { NoteName } from '@/lib/theory/note';
 import type { Direction, WalkStep } from '@/lib/theory/cadence';
 import type { Triad } from '@/lib/theory/tonnetz';
+import type { LabelKind } from '@/lib/theory/progressions';
+import type { PortalKind } from '@/lib/theory/portals';
 
 export type Tool = 'select' | 'move' | 'frame' | 'upload';
 
@@ -60,6 +62,31 @@ export interface HarmonyElement extends ElementBase {
   showSevenths?: boolean;
   /** Highlight-colour preset index (0 = theme default); cycled with R. */
   highlightColor?: number;
+}
+
+/**
+ * Progressions: the harmonic flow map of a key (major, minor or a mode), the
+ * chords drawn left to right toward home. Clicking chords writes `trail`.
+ */
+export interface ProgressionsElement extends ElementBase {
+  kind: 'progressions';
+  root: NoteName;
+  octave: number;
+  /** The map's scale id: major, minor or a mode. */
+  scaleId: string;
+  showSevenths?: boolean;
+  /** Borrowed chords from parallel scales, in a dashed lane under the map. */
+  showBorrowed?: boolean;
+  /** Order of the Notes / Functions control; unset = functions first. */
+  labelOrder?: LabelKind[];
+  /** The one label switched off, if any (at least one always shows). */
+  labelsHidden?: LabelKind;
+  /** The written progression in order, each step "mode:id" (see `stepRef`); modes may mix. */
+  trail: string[];
+  /** Portals drawn off the single map (not in links yet, so they reset on reload). */
+  portals?: PortalKind[];
+  /** Mandala view: every mode as one arm around the tonic, all of them writing. */
+  mandala?: boolean;
 }
 
 /**
@@ -142,6 +169,7 @@ export type CanvasElement =
   | ScaleElement
   | ChordElement
   | HarmonyElement
+  | ProgressionsElement
   | CircleElement
   | PitchAxisElement
   | WaysHomeElement

@@ -1,6 +1,7 @@
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
 import type { CanvasElement, Page } from '@/lib/canvas-store/types';
 import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
+import { getProgressionMap, hasProgressionMap, linkChords, parseStep, stepRef } from '@/lib/theory/progressions';
 
 /**
  * Compact URL codec. The current writer emits v2; v1 is still decoded so links
@@ -10,6 +11,11 @@ import { CADENCE_TYPES, type WalkStep } from '@/lib/theory/cadence';
  *   page    = <escapedName>~<el>-<el>...        (elements joined by '-')
  *   scale   = s + pc1 + type1 + x2 + y2         (7 chars)
  *   harmony = h + pc1 + type1 + x2 + y2 [+f1]   (7-8 chars; trailing 1 = 7ths)
+ *   progressions = g + pc1 + type1 + flags1 + x2 + y2 + steps (8 + n chars; flags = 7ths + borrowed*2
+ *             + oneLabel*4 + mandala*8 + notesFirst*16; step = base36 index into the chords of the
+ *             step's mode, see linkChords; an uppercase letter A + SCALE_REGISTRY index switches that
+ *             mode for the steps after it, which start in the element's own. Labels shown: functions |
+ *             notes by default; oneLabel keeps just the first)
  *   chord   = c + pc1 + type1 + pack1 + x2 + y2 (8 chars; pack = inv*2+seventh)
  *   circle  = o + center1 + flags1 + x2 + y2    (7 chars; flags = sig + minor*2)
  *   pitchax = p + center1 + x2 + y2             (6 chars)
@@ -51,6 +57,7 @@ const BUCKET_V2 = 24;
 const BUCKET_V1 = 16;
 const DEFAULT_OCTAVE = 3;
 const MAX_WALK = 12;
+const MAX_TRAIL = 16;
 const ROADS_SHOW = ['both', 'in', 'out'] as const;
 
 export interface DocSnapshot {
@@ -94,11 +101,24 @@ export function encodeDoc(doc: DocSnapshot): string {
         e,
       ): e is Extract<
         CanvasElement,
-        { kind: 'scale' | 'chord' | 'harmony' | 'circle' | 'pitchaxis' | 'wayshome' | 'roads' | 'tonnetz' | 'section' }
+        {
+          kind:
+            | 'scale'
+            | 'chord'
+            | 'harmony'
+            | 'progressions'
+            | 'circle'
+            | 'pitchaxis'
+            | 'wayshome'
+            | 'roads'
+            | 'tonnetz'
+            | 'section';
+        }
       > =>
         e.kind === 'scale' ||
         e.kind === 'chord' ||
         e.kind === 'harmony' ||
+        e.kind === 'progressions' ||
         e.kind === 'circle' ||
         e.kind === 'pitchaxis' ||
         e.kind === 'wayshome' ||
@@ -147,6 +167,27 @@ export function encodeDoc(doc: DocSnapshot): string {
         if (e.kind === 'scale') {
           return `s${pcCode(e.root)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}`;
         }
+        if (e.kind === 'progressions') {
+          let mode = e.scaleId;
+          let steps = '';
+          for (const ref of e.trail.slice(-MAX_TRAIL)) {
+            const step = parseStep(ref);
+            if (!hasProgressionMap(step.mode)) continue;
+            const at = linkChords(getProgressionMap(step.mode)).findIndex((ch) => ch.id === step.id);
+            if (at < 0) continue;
+            if (step.mode !== mode) steps += String.fromCharCode(65 + SCALE_REGISTRY.indexOf(step.mode));
+            mode = step.mode;
+            steps += b36(at, 1);
+          }
+          const shown = (e.labelOrder ?? ['functions', 'notes']).filter((k) => k !== e.labelsHidden);
+          const flags =
+            (e.showSevenths ? 1 : 0) +
+            (e.showBorrowed ? 2 : 0) +
+            (shown.length === 1 ? 4 : 0) +
+            (e.mandala ? 8 : 0) +
+            (shown[0] === 'notes' ? 16 : 0);
+          return `g${pcCode(e.root)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${b36(flags, 1)}${x}${y}${steps}`;
+        }
         if (e.kind === 'harmony') {
           const sevenths = e.showSevenths ? '1' : '';
           return `h${pcCode(e.root)}${b36(SCALE_REGISTRY.indexOf(e.scaleId), 1)}${x}${y}${sevenths}`;
@@ -157,6 +198,12 @@ export function encodeDoc(doc: DocSnapshot): string {
     return `${escapeName(page.name)}~${els.join('-')}`;
   });
   return `${V2}${activeIdx.toString(36)};${pages.join(';')}`;
+}
+
+/** The shown labels from progressions flags; a hidden one goes to the end of the order. */
+function decodeLabels(flags: number) {
+  const labelOrder: Array<'functions' | 'notes'> = (flags & 16) === 16 ? ['notes', 'functions'] : ['functions', 'notes'];
+  return (flags & 4) === 4 ? { labelOrder, labelsHidden: labelOrder[1] } : { labelOrder };
 }
 
 let decodeSeq = 0;
@@ -264,6 +311,34 @@ function decodeV2(body: string): DecodedDoc | null {
           return {
             id: freshId(), kind: 'scale', z: i + 1, root, octave: DEFAULT_OCTAVE, scaleId,
             x: px(code.slice(3, 5)), y: px(code.slice(5, 7)),
+          };
+        }
+        if (kind === 'g' && code.length >= 8 && code.length <= 8 + 2 * MAX_TRAIL) {
+          const root = parsePc(code[1]);
+          const scaleId = SCALE_REGISTRY[parseInt(code[2], 36)];
+          const flags = parseInt(code[3], 36);
+          if (!root || !scaleId || !hasProgressionMap(scaleId) || Number.isNaN(flags)) {
+            throw new Error(`bad progressions: ${code}`);
+          }
+          let mode = scaleId;
+          const trail: string[] = [];
+          for (const ch of code.slice(8)) {
+            if (ch >= 'A' && ch <= 'Z') {
+              mode = SCALE_REGISTRY[ch.charCodeAt(0) - 65];
+              if (!mode || !hasProgressionMap(mode)) throw new Error(`bad trail mode: ${code}`);
+              continue;
+            }
+            const id = linkChords(getProgressionMap(mode))[parseInt(ch, 36)]?.id;
+            if (!id) throw new Error(`bad trail: ${code}`);
+            trail.push(stepRef(mode, id));
+          }
+          return {
+            id: freshId(), kind: 'progressions', z: i + 1, root, octave: DEFAULT_OCTAVE, scaleId, trail,
+            showSevenths: (flags & 1) === 1,
+            showBorrowed: (flags & 2) === 2,
+            ...decodeLabels(flags),
+            mandala: (flags & 8) === 8,
+            x: px(code.slice(4, 6)), y: px(code.slice(6, 8)),
           };
         }
         if (kind === 'h' && (code.length === 7 || code.length === 8)) {

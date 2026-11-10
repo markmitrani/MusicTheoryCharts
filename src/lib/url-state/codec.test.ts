@@ -1,12 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { encodeDoc, decodeDoc } from './codec';
 import type { Page } from '@/lib/canvas-store/types';
+import type { LabelKind } from '@/lib/theory/progressions';
 
 const page = (name: string, elements: Page['elements']): Page => ({
   id: `p-${name || 'untitled'}`,
   name,
   elements,
 });
+
+const LABEL_CASES: Array<{ labelOrder: LabelKind[]; labelsHidden?: LabelKind }> = [
+  { labelOrder: ['functions', 'notes'] },
+  { labelOrder: ['notes', 'functions'] },
+  { labelOrder: ['functions', 'notes'], labelsHidden: 'notes' },
+  { labelOrder: ['notes', 'functions'], labelsHidden: 'functions' },
+];
 
 describe('url codec', () => {
   it('round-trips every tonnetz centre, triad and flag', () => {
@@ -63,6 +71,51 @@ describe('url codec', () => {
     expect(decodeDoc('v2:0;~t1c00000')).toBeNull(); // centre 12
     expect(decodeDoc('v2:0;~t10o0000')).toBeNull(); // triad 24
     expect(decodeDoc('v2:0;~t30z0000l')).toBeNull(); // repeats 21/20
+  });
+
+  it('round-trips progressions maps, flags and the written trail', () => {
+    for (const scaleId of ['major', 'minor', 'dorian', 'locrian'])
+      for (const showSevenths of [false, true])
+        for (const showBorrowed of [false, true])
+          for (const labels of LABEL_CASES)
+            for (const mandala of [false, true]) {
+            const trail = scaleId === 'major' ? ['major:I', 'major:vi', 'major:iv', 'major:bVII', 'major:I'] : [];
+            const el = {
+              id: 'g', kind: 'progressions', x: 0, y: 0, z: 1, root: 'F#', octave: 3,
+              scaleId, showSevenths, showBorrowed, ...labels, mandala, trail,
+            } as const;
+            const doc = { activePageId: 'p-g', pages: [page('g', [el])] };
+            expect(decodeDoc(encodeDoc(doc))!.pages[0].elements[0]).toMatchObject({
+              kind: 'progressions', root: 'F#', scaleId, showSevenths, showBorrowed, ...labels, mandala, trail,
+            });
+          }
+  });
+
+  it('round-trips a progression written across modes', () => {
+    const trail = ['dorian:i', 'major:IV', 'mixolydian:VII', 'mixolydian:I', 'locrian:II', 'dorian:i'];
+    const el = { id: 'g', kind: 'progressions', x: 0, y: 0, z: 1, root: 'D', octave: 3, scaleId: 'dorian', mandala: true, trail } as const;
+    const code = encodeDoc({ activePageId: 'p-g', pages: [page('g', [el])] });
+    expect(code).toMatch(/~g\w{7}.A.I..J.F.$/); // a mode letter only where the mode changes
+    expect(decodeDoc(code)!.pages[0].elements[0]).toMatchObject({ scaleId: 'dorian', trail });
+  });
+
+  it('reads old links that hid chord names as functions only', () => {
+    // flags 4 once meant "names hidden"
+    expect(decodeDoc('v2:0;~g0040000')!.pages[0].elements[0]).toMatchObject({
+      labelOrder: ['functions', 'notes'],
+      labelsHidden: 'notes',
+    });
+  });
+
+  it('rejects progressions codes for scales without a map or with unknown chords', () => {
+    expect(decodeDoc('v2:0;~g01000000')).not.toBeNull(); // C minor, no trail
+    expect(decodeDoc('v2:0;~g02000000')).toBeNull(); // melodic minor has no map
+    expect(decodeDoc('v2:0;~g00000000z')).toBeNull(); // chord 35 doesn't exist
+    expect(decodeDoc('v2:0;~g00000000C0')).toBeNull(); // a step in melodic minor, which has no map
+    // Dorian links keep their order after ♭VII and ii traded places: i ii ♭VII
+    expect(decodeDoc('v2:0;~g0500000523')!.pages[0].elements[0]).toMatchObject({ trail: ['dorian:i', 'dorian:ii', 'dorian:VII'] });
+    // older links have no mode letters: every step is in the element's own mode
+    expect(decodeDoc('v2:0;~g000000070')!.pages[0].elements[0]).toMatchObject({ trail: ['major:I', 'major:vii0'] });
   });
 
   it('round-trips the roads ring', () => {

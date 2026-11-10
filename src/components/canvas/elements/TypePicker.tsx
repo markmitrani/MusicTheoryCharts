@@ -1,29 +1,33 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { gsap } from 'gsap';
 import { NOTE_NAMES, type NoteName } from '@/lib/theory/note';
-import { SCALE_GROUPS } from '@/lib/theory/scales';
+import { SCALE_GROUPS, getScaleDef } from '@/lib/theory/scales';
 import { CHORD_GROUPS } from '@/lib/theory/chords';
 import { hasHarmony } from '@/lib/theory/harmony';
+import { MAP_GROUPS } from '@/lib/theory/progressions';
 import styles from './TypePicker.module.scss';
 
 /**
  * Root + type picker, shared by the spawn stub and the name-tab editor.
- * Type ids are namespaced: 'scale:<id>', 'chord:<id>', or 'harmony:<scaleId>'.
+ * Type ids are namespaced: 'scale:<id>', 'chord:<id>', 'harmony:<scaleId>' or
+ * 'progressions:<scaleId>'.
  * `kinds` limits which sections show (editing keeps the element's kind).
  */
 interface TypePickerProps {
-  kinds: Array<'scale' | 'chord' | 'harmony'>;
+  kinds: Array<'scale' | 'chord' | 'harmony' | 'progressions'>;
   root: NoteName | null;
   typeId: string | null;
   onChange(root: NoteName | null, typeId: string | null): void;
   onClose?(): void;
   /** Render flat inside a parent (spawn stub) instead of as a popover. */
   inline?: boolean;
+  /** Extra controls under the root grid. */
+  children?: ReactNode;
 }
 
-export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: TypePickerProps) {
+export function TypePicker({ kinds, root, typeId, onChange, onClose, inline, children }: TypePickerProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,23 +85,35 @@ export function TypePicker({ kinds, root, typeId, onChange, onClose, inline }: T
     }
   }
 
+  if (kinds.includes('progressions')) {
+    for (const g of MAP_GROUPS) {
+      sections.push({
+        label: kinds.length > 1 ? `Progressions – ${g.label}` : g.label,
+        items: g.ids.map((id) => ({ id: `progressions:${id}`, label: getScaleDef(id).label })),
+      });
+    }
+  }
+
   return (
     <div
       ref={ref}
       className={inline ? styles.pickerInline : styles.picker}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className={styles.roots}>
-        {NOTE_NAMES.map((n) => (
-          <button
-            key={n}
-            className={styles.root}
-            data-active={n === root || undefined}
-            onClick={() => onChange(n, typeId)}
-          >
-            {n}
-          </button>
-        ))}
+      <div className={styles.side}>
+        <div className={styles.roots}>
+          {NOTE_NAMES.map((n) => (
+            <button
+              key={n}
+              className={styles.root}
+              data-active={n === root || undefined}
+              onClick={() => onChange(n, typeId)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        {children}
       </div>
       <div className={styles.types}>
         {sections.map((section) => (

@@ -79,6 +79,58 @@
   --cadence-plagal-up: #f2b84f;
   --cadence-backdoor: #0ea5e9;
 
+  // Progressions maps: each mode's own gradient (left → right) and ink, the
+  // same in every theme. Major and minor gradients are Mark's reference
+  // charts; the modes sit on the brightness ladder around them, Lydian
+  // brightest. Lydian, major and Mixolydian ink take their nodes' hue, deepened.
+  --prog-lydian-from: #5fd3ef;
+  --prog-lydian-to: #fff1b4;
+  --prog-lydian-ink: #155e75;
+  --prog-major-from: #0bb7dd;
+  --prog-major-to: #f8d54e;
+  --prog-major-ink: #115e59;
+  --prog-mixolydian-from: #0f9fb3;
+  --prog-mixolydian-to: #f2a13f;
+  --prog-mixolydian-ink: #134e4a;
+  --prog-dorian-from: #061a2e;
+  --prog-dorian-to: #0b8fd6;
+  --prog-dorian-ink: #ffffff;
+  --prog-minor-from: #050914;
+  --prog-minor-to: #1d55d4;
+  --prog-minor-ink: #ffffff;
+  --prog-phrygian-from: #0c0408;
+  --prog-phrygian-to: #a8153f;
+  --prog-phrygian-ink: #ffffff;
+  --prog-locrian-from: #040404;
+  --prog-locrian-to: #3a1d1e;
+  --prog-locrian-ink: #f2e9e4;
+  // Node colours per mode, Ways Home style: the base is the stroke and tints the
+  // fill (24%) and glass (22% mid, 34% rim); -up is the brighter tone the glass
+  // highlight starts from (42%). Light takes one shade deeper. Major and
+  // Mixolydian share teal (major the lighter), Dorian and minor sky (minor the
+  // deeper), following the brightness ladder.
+  --prog-lydian-node: #06b6d4;
+  --prog-lydian-node-up: #22d3ee;
+  --prog-major-node: #2dd4bf;
+  --prog-major-node-up: #5eead4;
+  --prog-mixolydian-node: #14b8a6;
+  --prog-mixolydian-node-up: #2dd4bf;
+  --prog-dorian-node: #0ea5e9;
+  --prog-dorian-node-up: #38bdf8;
+  --prog-minor-node: #0284c7;
+  --prog-minor-node-up: #0ea5e9;
+  --prog-phrygian-node: #f43f5e;
+  --prog-phrygian-node-up: #fb7185;
+  --prog-locrian-node: #c2564f;
+  --prog-locrian-node-up: #d9776f;
+  // Chords from outside the mode (borrowed, secondary dominants, tritone subs),
+  // in the warm accent of Ways Home's centre chord.
+  --prog-outside-node: var(--accent-warm);
+  --prog-outside-ink: var(--accent-warm);
+  // how opaque the mode gradients sit over the card's own glass
+  --prog-stage-alpha-from: 92%;
+  --prog-stage-alpha-to: 85%;
+
   // piano
   --key-white: #f4f0ea;
   --key-black: #1a1416;
@@ -207,6 +259,24 @@
   --cadence-plagal: #c8851a;
   --cadence-plagal-up: #dc9c34;
   --cadence-backdoor: #0284c7;
+
+  // Progressions node colours, one shade deeper (600, with the 500 as -up).
+  --prog-lydian-node: #0891b2;
+  --prog-lydian-node-up: #06b6d4;
+  --prog-major-node: #14b8a6;
+  --prog-major-node-up: #2dd4bf;
+  --prog-mixolydian-node: #0d9488;
+  --prog-mixolydian-node-up: #14b8a6;
+  --prog-dorian-node: #0284c7;
+  --prog-dorian-node-up: #0ea5e9;
+  --prog-minor-node: #0369a1;
+  --prog-minor-node-up: #0284c7;
+  --prog-phrygian-node: #e11d48;
+  --prog-phrygian-node-up: #f43f5e;
+  --prog-locrian-node: #a3403a;
+  --prog-locrian-node-up: #c2564f;
+  --prog-outside-node: var(--accent-warm);
+  --prog-outside-ink: var(--accent-warm);
 
   // piano
   --key-white: #ffffff;

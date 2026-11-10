@@ -115,6 +115,13 @@ export const CloseIcon = (p: IconProps) => (
   </svg>
 );
 
+export const PencilIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4.5 19.5 5.6 15 15.9 4.7a1.8 1.8 0 0 1 2.6 0l.8.8a1.8 1.8 0 0 1 0 2.6L9 18.4z" />
+    <path d="m14.2 6.4 3.4 3.4" />
+  </svg>
+);
+
 export const CheckIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="m5 12.5 4.5 4.5L19 7.5" />
